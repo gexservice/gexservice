@@ -13,12 +13,13 @@ import (
 //Market is struct to market impl
 /**
  *
- * @api {WS} /ws/market Ws Market
+ * @api {WS} /ws/market WS Market
  * @apiName WsMarket
  * @apiGroup Market
  *
  * @apiParam  {String} action subscribe action, supported is "sub.kline"/"sub.depth"/"sub.ticker"
- * @apiParam  {Arrasy} [intervals] the kline interval, only for "sub.kline", supported is "5min"/"30min"/"1hour"/"4hour"/"day"/"week"/"mon"
+ * @apiParam  {String} symbol the market symbol
+ * @apiParam  {Arrasy} [interval] the kline interval, only for "sub.kline", supported is "5min"/"30min"/"1hour"/"4hour"/"day"/"week"/"mon"
  * @apiParam  {Number} [max] the depth max size
  *
  * @apiSuccess (Success) {Number} code the response code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>
@@ -217,6 +218,7 @@ func ListKLineH(s *web.Session) web.Result {
  * @apiName LoadDepth
  * @apiGroup Market
  *
+ * @apiParam  {String} symbol the market symbol
  * @apiParam  {Number} [max] max depth
  *
  * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>

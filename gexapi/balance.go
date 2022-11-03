@@ -93,7 +93,7 @@ func LoadBalanceOverviewH(s *web.Session) web.Result {
  * @apiGroup Balance
  *
  *
- * @apiParam  {Number} area the balance area to list
+ * @apiParam  {Number} area the balance area to list, all type supported is <a href="#metadata-Balance">BalanceAreaAll</a>
  *
  * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>
  * @apiSuccess (Success) {Object} total_value the user total estimated value by quote
