@@ -7,5 +7,9 @@ if [ ! -f /app/conf/gexservice.properties ];then
 fi
 
 cd /app/gexservice/
-/app/gexservice/service /app/conf/gexservice.properties
+if [ "$1" != "" ];then
+    /app/gexservice/service $1
+else
+    /app/gexservice/service /app/conf/gexservice.properties
+fi
 echo "service is done"
