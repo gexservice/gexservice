@@ -53,6 +53,8 @@ func Handle(pre string, mux *web.SessionMux) {
 	mux.HandleFunc("^"+pre+"/usr/queryOrder(\\?.*)?$", QueryOrderH)
 	// mux.HandleFunc("^"+pre+"/usr/countOrderComm(\\?.*)?$", CountOrderCommH)
 	//market
+	mux.HandleFunc("^"+pre+"/pub/listSymbol(\\?.*)?$", ListSymbolH)
+	mux.HandleFunc("^"+pre+"/pub/loadSymbol(\\?.*)?$", LoadSymbolH)
 	MarketOnline = NewOnlineHander(mux, market.Shared)
 	mux.Handle("^"+pre+"/ws/market(\\?.*)?$", MarketOnline)
 	mux.HandleFunc("^"+pre+"/pub/listKLine(\\?.*)?$", ListKLineH)

@@ -15,8 +15,20 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+type SymbolInfo struct {
+	PrecisionQuantity int32             `json:"precision_quantity"`
+	PrecisionPrice    int32             `json:"precision_price"`
+	Area              gexdb.BalanceArea `json:"area"`
+	Symbol            string            `json:"symbol"`
+	Base              string            `json:"base"`
+	Quote             string            `json:"quote"`
+	Fee               decimal.Decimal   `json:"fee"`
+	MarginMax         decimal.Decimal   `json:"margin_max"`
+	MarginAdd         decimal.Decimal   `json:"margin_add"`
+}
+
 type MatcherCenter struct {
-	Symbols      []string
+	Symbols      map[string]*SymbolInfo
 	TriggerDelay time.Duration
 	matcherAll   map[string]Matcher
 	matcherLock  sync.RWMutex
@@ -35,6 +47,7 @@ type MatcherCenter struct {
 func NewMatcherCenter(eventRun, eventMax, cacheMax int) (center *MatcherCenter) {
 	center = &MatcherCenter{
 		TriggerDelay: time.Second,
+		Symbols:      map[string]*SymbolInfo{},
 		matcherAll:   map[string]Matcher{},
 		matcherLock:  sync.RWMutex{},
 		monitorAll:   map[string]map[string]MatcherMonitor{},
@@ -62,10 +75,13 @@ func BootstrapMatcherCenterByConfig(config *xprop.Config) (center *MatcherCenter
 		if config.StrDef("0", sec+"/on") != "1" {
 			continue
 		}
-		var precisionQuantity int32 = 8
-		var precisionPrice int32 = 8
-		var symbol, base, quote string
-		var fee, marginMax, marginAdd float64 = 0.002, 0.99, 0.01
+		info := &SymbolInfo{
+			PrecisionQuantity: 8,
+			PrecisionPrice:    8,
+			Fee:               decimal.NewFromFloat(0.002),
+			MarginMax:         decimal.NewFromFloat(0.99),
+			MarginAdd:         decimal.NewFromFloat(0.01),
+		}
 		err = config.ValidFormat(
 			strings.ReplaceAll(`
 				_S/precision_quantity,o|i,r:0;
@@ -77,31 +93,31 @@ func BootstrapMatcherCenterByConfig(config *xprop.Config) (center *MatcherCenter
 				_S/margin_max,o|f,r:0~1;
 				_S/margin_add,o|f,r:0~1;
 			`, "_S", sec),
-			&precisionQuantity, &precisionPrice, &symbol, &base, &quote, &fee, &marginMax, &marginAdd,
+			&info.PrecisionQuantity, &info.PrecisionPrice, &info.Symbol, &info.Base, &info.Quote, &info.Fee, &info.MarginMax, &info.MarginAdd,
 		)
 		if err != nil {
 			break
 		}
-		if strings.HasPrefix(symbol, "spot.") {
-			spot := NewSpotMatcher(symbol, base, quote, center)
-			spot.Fee = decimal.NewFromFloat(fee)
-			spot.PrecisionPrice = precisionPrice
-			spot.PrecisionQuantity = precisionQuantity
+		if strings.HasPrefix(info.Symbol, "spot.") {
+			spot := NewSpotMatcher(info.Symbol, info.Base, info.Quote, center)
+			spot.Fee = info.Fee
+			spot.PrecisionPrice = info.PrecisionPrice
+			spot.PrecisionQuantity = info.PrecisionQuantity
 			spot.PrepareProcess = center.PrepareSpotMatcher
-			center.AddMatcher(symbol, spot)
-			xlog.Infof("Bootstrap register spot matcher by symbol %v", symbol)
-		} else if strings.HasPrefix(symbol, "futures.") {
-			futures := NewFuturesMatcher(symbol, quote, center)
-			futures.Fee = decimal.NewFromFloat(fee)
-			futures.PrecisionPrice = precisionPrice
-			futures.PrecisionQuantity = precisionQuantity
-			futures.MarginMax = decimal.NewFromFloat(marginMax)
-			futures.MarginAdd = decimal.NewFromFloat(marginAdd)
+			center.AddMatcher(info, spot)
+			xlog.Infof("Bootstrap register spot matcher by symbol %v", info.Symbol)
+		} else if strings.HasPrefix(info.Symbol, "futures.") {
+			futures := NewFuturesMatcher(info.Symbol, info.Quote, center)
+			futures.Fee = info.Fee
+			futures.PrecisionPrice = info.PrecisionPrice
+			futures.PrecisionQuantity = info.PrecisionQuantity
+			futures.MarginMax = info.MarginMax
+			futures.MarginAdd = info.MarginAdd
 			futures.PrepareProcess = center.PrepareFuturesMatcher
-			center.AddMatcher(symbol, futures)
-			xlog.Infof("Bootstrap register futures matcher by symbol %v", symbol)
+			center.AddMatcher(info, futures)
+			xlog.Infof("Bootstrap register futures matcher by symbol %v", info.Symbol)
 		} else {
-			err = fmt.Errorf("symbol %v is not supported, it must be started with spot. or futures. ", symbol)
+			err = fmt.Errorf("symbol %v is not supported, it must be started with spot. or futures. ", info.Symbol)
 			break
 		}
 	}
@@ -125,11 +141,11 @@ func (m *MatcherCenter) Stop() {
 	m.waiter.Wait()
 }
 
-func (m *MatcherCenter) AddMatcher(symbol string, matcher Matcher) {
+func (m *MatcherCenter) AddMatcher(symbol *SymbolInfo, matcher Matcher) {
 	m.matcherLock.Lock()
 	defer m.matcherLock.Unlock()
-	m.Symbols = append(m.Symbols, symbol)
-	m.matcherAll[symbol] = matcher
+	m.Symbols[symbol.Symbol] = symbol
+	m.matcherAll[symbol.Symbol] = matcher
 }
 
 func (m *MatcherCenter) FindMatcher(symbol string) (matcher Matcher) {
@@ -225,7 +241,7 @@ func (m *MatcherCenter) procTriggerOrder() (err error) {
 		cancel()
 	}()
 	for _, symbol := range m.Symbols {
-		m.procTriggerSybmolOrder(ctx, symbol)
+		m.procTriggerSybmolOrder(ctx, symbol.Symbol)
 	}
 	return
 }

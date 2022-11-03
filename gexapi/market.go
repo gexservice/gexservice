@@ -10,6 +10,140 @@ import (
 	"github.com/gexservice/gexservice/market"
 )
 
+//ListSymbolH is http handler
+/**
+ *
+ * @api {GET} /pub/listSymbol List Symbol
+ * @apiName ListSymbol
+ * @apiGroup Market
+ *
+ * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>
+ * @apiSuccess (Success) {Array} symbols the symbol info list
+ * @apiSuccess (Success) {String} symbols.base the symbol base asset
+ * @apiSuccess (Success) {String} symbols.quote the symbol quote asset
+ * @apiSuccess (Success) {String} symbols.fee the symbol trade fee
+ * @apiSuccess (Success) {String} symbols.precision_price the symbol price percision
+ * @apiSuccess (Success) {String} symbols.precision_quantity the symbol quantity percision
+ * @apiSuccess (KLine) {Object} days the symbol day change line, mapping by key is symbol
+ * @apiUse KLineObject
+ *
+ * @apiParamExample  {Query} QueryOrder:
+ * interval=100&start_time=100&end_time=1632578100000
+ *
+ *
+ * @apiSuccessExample {JSON} Success-Response:
+ * {
+ *     "code": 0,
+ *     "days": {
+ *         "spot.YWEUSDT": {
+ *             "amount": "0.5",
+ *             "close": "100",
+ *             "count": 1,
+ *             "high": "100",
+ *             "interv": "1day",
+ *             "low": "100",
+ *             "open": "100",
+ *             "start_time": 1667404800000,
+ *             "symbol": "spot.YWEUSDT",
+ *             "update_time": 1667486761280,
+ *             "volume": "50"
+ *         }
+ *     },
+ *     "symbols": [
+ *         {
+ *             "base": "YWE",
+ *             "fee": "0.002",
+ *             "margin_add": "0.01",
+ *             "margin_max": "0.99",
+ *             "precision_price": 8,
+ *             "precision_quantity": 8,
+ *             "quote": "USDT",
+ *             "symbol": "spot.YWEUSDT"
+ *         },
+ *         {
+ *             "base": "YWE",
+ *             "fee": "0.002",
+ *             "margin_add": "0.01",
+ *             "margin_max": "0.99",
+ *             "precision_price": 8,
+ *             "precision_quantity": 8,
+ *             "quote": "USDT",
+ *             "symbol": "futures.YWEUSDT"
+ *         }
+ *     ]
+ * }
+ *
+ */
+func ListSymbolH(s *web.Session) web.Result {
+	symbols, days := market.ListSymbol()
+	return s.SendJSON(xmap.M{
+		"code":    0,
+		"symbols": symbols,
+		"days":    days,
+	})
+}
+
+//LoadSymbolH is http handler
+/**
+ *
+ * @api {GET} /pub/loadSymbol Load Symbol
+ * @apiName LoadSymbol
+ * @apiGroup Market
+ *
+ * @apiParam  {String} symbol the symbol
+ *
+ * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>
+ * @apiSuccess (Success) {Object} symbol the symbol info
+ * @apiSuccess (Success) {String} symbol.base the symbol base asset
+ * @apiSuccess (Success) {String} symbol.quote the symbol quote asset
+ * @apiSuccess (Success) {String} symbol.fee the symbol trade fee
+ * @apiSuccess (Success) {String} symbol.precision_price the symbol price percision
+ * @apiSuccess (Success) {String} symbol.precision_quantity the symbol quantity percision
+ * @apiSuccess (KLine) {Object} day the symbol day change line
+ * @apiUse KLineObject
+ *
+ * @apiParamExample  {Query} QueryOrder:
+ * interval=100&start_time=100&end_time=1632578100000
+ *
+ *
+ * @apiSuccessExample {JSON} Success-Response:
+ * {
+ *     "code": 0,
+ *     "day": {
+ *         "amount": "0.5",
+ *         "close": "100",
+ *         "count": 1,
+ *         "high": "100",
+ *         "interv": "1day",
+ *         "low": "100",
+ *         "open": "100",
+ *         "start_time": 1667404800000,
+ *         "symbol": "spot.YWEUSDT",
+ *         "update_time": 1667486840555,
+ *         "volume": "50"
+ *     },
+ *     "symbol": {
+ *         "base": "YWE",
+ *         "fee": "0.002",
+ *         "margin_add": "0.01",
+ *         "margin_max": "0.99",
+ *         "precision_price": 8,
+ *         "precision_quantity": 8,
+ *         "quote": "USDT",
+ *         "symbol": "spot.YWEUSDT"
+ *     }
+ * }
+ *
+ */
+func LoadSymbolH(s *web.Session) web.Result {
+	symbol, day := market.LoadSymbol(s.Argument("symbol"))
+	return s.SendJSON(xmap.M{
+		"code":   0,
+		"symbol": symbol,
+		"day":    day,
+	})
+}
+
 //Market is struct to market impl
 /**
  *
@@ -29,16 +163,8 @@ import (
  * @apiSuccess (Success) {String} depth.symbol the received depth symbol
  * @apiSuccess (Success) {Array} depth.bids the received depth bids data, the inner data is ["price","quantity"]
  * @apiSuccess (Success) {Array} depth.asks the received depth asks data, the inner data is ["price","quantity"]
- * @apiSuccess (Success) {Object} kline the received kline data, only for "notify.kline"
- * @apiSuccess (Success) {String} kline.symbol the received kline symbol
- * @apiSuccess (Success) {String} kline.start_time the received kline id, the timeline
- * @apiSuccess (Success) {String} kline.volume the received kline total traded price
- * @apiSuccess (Success) {String} kline.amount the received kline total traded quantity
- * @apiSuccess (Success) {String} kline.count the received kline total traded count
- * @apiSuccess (Success) {String} kline.open the received kline open price
- * @apiSuccess (Success) {String} kline.close the received kline close price
- * @apiSuccess (Success) {String} kline.high the received kline high price
- * @apiSuccess (Success) {String} kline.low the received kline low price
+ * @apiSuccess (KLine) {Object} kline the received kline data, only for "notify.kline"
+ * @apiUse KLineObject
  *
  * @apiParamExample  {JSON} Subscribe-KLine:
  * {
@@ -156,11 +282,8 @@ var MarketOnline *OnlineHander
  * @apiParam  {Number} end_time filter kline kline.start_time<end_time
  *
  * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>
- * @apiSuccess (Success) {Array} lines the all kline array
- * @apiSuccess (Success) {String} lines.start_time the received kline id, the timeline
- * @apiSuccess (Success) {String} lines.volume the received kline total traded price
- * @apiSuccess (Success) {String} lines.amount the received kline total traded quantity
- * @apiSuccess (Success) {String} lines.count the received kline total traded count
+ * @apiSuccess (KLine) {Array} lines the all kline array
+ * @apiUse KLineObject
  *
  * @apiParamExample  {Query} QueryOrder:
  * interval=100&start_time=100&end_time=1632578100000

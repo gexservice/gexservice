@@ -160,6 +160,14 @@ func TestShared(t *testing.T) {
 	fmt.Printf("buy open order %v\n", buyOpenOrder.OrderID)
 
 	time.Sleep(300 * time.Millisecond)
+	if symbols, _ := ListSymbol(); len(symbols) != 2 {
+		t.Error("error")
+		return
+	}
+	if info, line := LoadSymbol(symbol); info == nil || line == nil {
+		t.Error("error")
+		return
+	}
 	if LoadLatestPrice(symbol).Sign() <= 0 {
 		t.Error("error")
 		return
@@ -198,6 +206,28 @@ func TestShared(t *testing.T) {
 	pgx.MockerStop()
 	matcher.Shared.RemoveMonitor("*", Shared)
 	Shared.Stop()
+
+	for _, symbol := range Shared.Symbols {
+		Shared.klineVal[klineKey(symbol.Symbol, "1day")] = &gexdb.KLine{
+			Open:  decimal.Zero,
+			Close: decimal.NewFromFloat(1),
+		}
+	}
+	if symbols, _ := ListSymbol(); len(symbols) != 2 {
+		t.Error("error")
+		return
+	}
+
+	for _, symbol := range Shared.Symbols {
+		Shared.klineVal[klineKey(symbol.Symbol, "1day")] = &gexdb.KLine{
+			Open:  decimal.NewFromFloat(1),
+			Close: decimal.NewFromFloat(1),
+		}
+	}
+	if symbols, _ := ListSymbol(); len(symbols) != 2 {
+		t.Error("error")
+		return
+	}
 }
 
 func TestMarketConn(t *testing.T) {
@@ -259,7 +289,7 @@ func TestMarket(t *testing.T) {
 	if testCount++; enabled[0] || enabled[testCount] {
 		fmt.Printf("\n\n==>start case %v: market notify\n", testCount)
 
-		market := NewMarket(matcher.Shared.Symbols...)
+		market := NewMarket(matcher.Shared.Symbols)
 		market.Symbols = matcher.Shared.Symbols
 		market.OnConnect = func(conn *websocket.Conn) {}
 		market.OnDisconnect = func(conn *websocket.Conn) {}
@@ -452,7 +482,7 @@ func TestMarket(t *testing.T) {
 	if testCount++; enabled[0] || enabled[testCount] {
 		fmt.Printf("\n\n==>start case %v: proc kline\n", testCount)
 		//
-		market := NewMarket(matcher.Shared.Symbols...)
+		market := NewMarket(matcher.Shared.Symbols)
 		market.Symbols = matcher.Shared.Symbols
 		market.OnConnect = func(conn *websocket.Conn) {}
 		market.OnDisconnect = func(conn *websocket.Conn) {}
@@ -594,7 +624,7 @@ func TestMarket(t *testing.T) {
 		fmt.Printf("\n\n==>start case %v: proc error\n", testCount)
 		//
 		//
-		market := NewMarket(matcher.Shared.Symbols...)
+		market := NewMarket(matcher.Shared.Symbols)
 		market.Symbols = matcher.Shared.Symbols
 		market.OnConnect = func(conn *websocket.Conn) {}
 		market.OnDisconnect = func(conn *websocket.Conn) {}

@@ -9,6 +9,7 @@ import (
 
 	"github.com/codingeasygo/util/debug"
 	"github.com/codingeasygo/util/xmap"
+	"github.com/codingeasygo/util/xsort"
 	"github.com/codingeasygo/util/xsql"
 	"github.com/codingeasygo/util/xtime"
 	"github.com/codingeasygo/web"
@@ -24,9 +25,40 @@ var Shared *Market
 var Quote string = "USDT"
 
 func Bootstrap() {
-	Shared = NewMarket(matcher.Shared.Symbols...)
+	Shared = NewMarket(matcher.Shared.Symbols)
 	matcher.Shared.AddMonitor("*", Shared)
 	Shared.Start()
+}
+
+func ListSymbol() (symbols []*matcher.SymbolInfo, lines map[string]*gexdb.KLine) {
+	lines = map[string]*gexdb.KLine{}
+	for _, symbol := range Shared.Symbols {
+		symbols = append(symbols, symbol)
+		line := LoadKLine(symbol.Symbol, "1day")
+		if line == nil {
+			continue
+		}
+		lines[symbol.Symbol] = line
+	}
+	xsort.SortFunc(symbols, func(x, y int) bool {
+		linex, liney := lines[symbols[x].Symbol], lines[symbols[y].Symbol]
+		if linex == nil || liney == nil {
+			return liney == nil
+		}
+		if linex.Open.Sign() <= 0 || liney.Open.Sign() <= 0 {
+			return linex.Open.Sign() >= liney.Open.Sign()
+		}
+		ratex := linex.Close.Sub(linex.Open).Div(linex.Open)
+		ratey := liney.Close.Sub(liney.Open).Div(liney.Open)
+		return ratex.GreaterThan(ratey)
+	})
+	return
+}
+
+func LoadSymbol(symbol string) (info *matcher.SymbolInfo, line *gexdb.KLine) {
+	info = Shared.Symbols[symbol]
+	line = LoadKLine(symbol, "1day")
+	return
 }
 
 func LoadKLine(symbol, interval string) (line *gexdb.KLine) {
@@ -184,7 +216,7 @@ type depthQueueItem struct {
 }
 
 type Market struct {
-	Symbols          []string
+	Symbols          map[string]*matcher.SymbolInfo
 	WaitTimeout      time.Duration
 	KLineGenDelay    time.Duration
 	KLineNotifyDelay time.Duration
@@ -206,7 +238,7 @@ type Market struct {
 	waiter           sync.WaitGroup
 }
 
-func NewMarket(symbols ...string) (market *Market) {
+func NewMarket(symbols map[string]*matcher.SymbolInfo) (market *Market) {
 	market = &Market{
 		Symbols:          symbols,
 		WaitTimeout:      3 * time.Second,
@@ -355,7 +387,7 @@ func (m *Market) procGenKLine(event *matcher.MatcherEvent) (err error) {
 	} else {
 		m.klineLock.Lock()
 		for _, symbol := range m.Symbols {
-			for _, line := range m.listCurrentKLine(symbol) {
+			for _, line := range m.listCurrentKLine(symbol.Symbol) {
 				key := klineKey(line.Symbol, line.Interv)
 				having, ok := m.klineVal[key]
 				if ok && having.StartTime.Timestamp() != line.StartTime.Timestamp() {

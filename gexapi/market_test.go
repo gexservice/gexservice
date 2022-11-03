@@ -14,6 +14,12 @@ import (
 func TestMarket(t *testing.T) {
 	symbol := "spot.YWEUSDT"
 
+	//symbol
+	listSymbol, _ := ts.Should(t, "code", define.Success, "symbols", xmap.ShouldIsNoEmpty, "days", xmap.ShouldIsNoEmpty).GetMap("/pub/listSymbol")
+	fmt.Printf("listSymbol--->%v\n", converter.JSON(listSymbol))
+	loadSymbol, _ := ts.Should(t, "code", define.Success, "symbol", xmap.ShouldIsNoNil, "day", xmap.ShouldIsNoNil).GetMap("/pub/loadSymbol?symbol=%v", symbol)
+	fmt.Printf("loadSymbol--->%v\n", converter.JSON(loadSymbol))
+
 	//kline
 	ts.Should(t, "code", define.ArgsInvalid).GetMap("/pub/listKLine?symbol=%v&interval=5min&start_time=xx&end_time=%v", symbol, xsql.TimeNow().Timestamp())
 	listKLine, _ := ts.Should(t, "code", define.Success, "lines", xmap.ShouldIsNoEmpty).GetMap("/pub/listKLine?symbol=%v&interval=5min&start_time=100&end_time=%v", symbol, xsql.TimeNow().Timestamp())
