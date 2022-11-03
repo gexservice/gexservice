@@ -1,0 +1,4 @@
+package baseupgrade
+
+const INIT = `
+`

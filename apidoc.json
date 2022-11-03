@@ -1,0 +1,14 @@
+{
+    "name": "Golden Chain Service",
+    "version": "1.0.0",
+    "description": "the api document of golden chain service",
+    "title": "Golden Chain Service Reference",
+    "header": {
+        "title": "Readme",
+        "filename": "header_.md"
+    },
+    "template": {
+        "forceLanguage": "en"
+    },
+    "order": []
+}

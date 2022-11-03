@@ -1,0 +1,9 @@
+{
+    "go.testFlags": [
+        "-v",
+        // "-coverpkg=github.com/gexservice/gexservice/gexapi,github.com/gexservice/gexservice/gexdb"
+    ],
+    "go.testEnvVars": {
+        "GEX_DEBUG": "0"
+    },
+}
