@@ -48,7 +48,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	basedb.SYS = "exs"
+	basedb.SYS = "gex"
 	basedb.Pool = pgx.Pool
 	gexdb.Pool = pgx.Pool
 	gexdb.Redis = rediscache.C

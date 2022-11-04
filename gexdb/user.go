@@ -48,7 +48,7 @@ func UpdateUserByOld(ctx context.Context, user, old *User) (err error) {
 
 func UserHavingTradePassword(ctx context.Context, userID int64) (having int, err error) {
 	var tradePass *string
-	err = Pool().QueryRow(ctx, `select trade_pass from exs_user where tid=$1`, userID).Scan(&tradePass)
+	err = Pool().QueryRow(ctx, `select trade_pass from gex_user where tid=$1`, userID).Scan(&tradePass)
 	if err == nil && tradePass != nil && len(*tradePass) > 0 {
 		having = 1
 	}
@@ -56,7 +56,7 @@ func UserHavingTradePassword(ctx context.Context, userID int64) (having int, err
 }
 
 func UserVerifyTradePassword(ctx context.Context, userID int64, password string) (err error) {
-	err = Pool().QueryRow(ctx, `select tid from exs_user where tid=$1 and trade_pass=$2`, userID, password).Scan(converter.Int64Ptr(0))
+	err = Pool().QueryRow(ctx, `select tid from gex_user where tid=$1 and trade_pass=$2`, userID, password).Scan(converter.Int64Ptr(0))
 	return
 }
 

@@ -37,11 +37,11 @@ var BalanceStatusAll = BalanceStatusArray{BalanceStatusNormal, BalanceStatusLock
 var BalanceStatusShow = BalanceStatusArray{BalanceStatusNormal, BalanceStatusLocked}
 
 /*
- * Balance  represents exs_balance
+ * Balance  represents gex_balance
  * Balance Fields:tid,user_id,area,asset,free,locked,margin,update_time,create_time,status,
  */
 type Balance struct {
-	T          string          `json:"-" table:"exs_balance"`                              /* the table name tag */
+	T          string          `json:"-" table:"gex_balance"`                              /* the table name tag */
 	TID        int64           `json:"tid,omitempty" valid:"tid,r|i,r:0;"`                 /* the primary key */
 	UserID     int64           `json:"user_id,omitempty" valid:"user_id,r|i,r:0;"`         /* the balance user id */
 	Area       BalanceArea     `json:"area,omitempty" valid:"area,r|i,e:0;"`               /* the balance area, Funds=100:is funds area, Spot=200:is spot area, Futures=300:is futures area */
@@ -69,11 +69,11 @@ var BalanceHistoryStatusAll = BalanceHistoryStatusArray{BalanceHistoryStatusNorm
 var BalanceHistoryStatusShow = BalanceHistoryStatusArray{BalanceHistoryStatusNormal}
 
 /*
- * BalanceHistory  represents exs_balance_history
+ * BalanceHistory  represents gex_balance_history
  * BalanceHistory Fields:tid,user_id,asset,valuation,update_time,create_time,status,
  */
 type BalanceHistory struct {
-	T          string               `json:"-" table:"exs_balance_history"`                      /* the table name tag */
+	T          string               `json:"-" table:"gex_balance_history"`                      /* the table name tag */
 	TID        int64                `json:"tid,omitempty" valid:"tid,r|i,r:0;"`                 /* the primary key */
 	UserID     int64                `json:"user_id,omitempty" valid:"user_id,r|i,r:0;"`         /* the balance user id */
 	Asset      string               `json:"asset,omitempty" valid:"asset,r|s,l:0;"`             /* the balance asset key */
@@ -99,11 +99,11 @@ var HoldingStatusAll = HoldingStatusArray{HoldingStatusNormal, HoldingStatusLock
 var HoldingStatusShow = HoldingStatusArray{HoldingStatusNormal, HoldingStatusLocked}
 
 /*
- * Holding  represents exs_holding
+ * Holding  represents gex_holding
  * Holding Fields:tid,user_id,symbol,amount,open,blowup,lever,margin_used,margin_added,update_time,create_time,status,
  */
 type Holding struct {
-	T           string          `json:"-" table:"exs_holding"`                                /* the table name tag */
+	T           string          `json:"-" table:"gex_holding"`                                /* the table name tag */
 	TID         int64           `json:"tid,omitempty" valid:"tid,r|i,r:0;"`                   /* the primary key */
 	UserID      int64           `json:"user_id,omitempty" valid:"user_id,r|i,r:0;"`           /* the holding user id */
 	Symbol      string          `json:"symbol,omitempty" valid:"symbol,r|s,l:0;"`             /* the holding symbol */
@@ -121,11 +121,11 @@ type Holding struct {
 /***** metadata:KLine *****/
 
 /*
- * KLine  represents exs_kline
+ * KLine  represents gex_kline
  * KLine Fields:tid,symbol,interv,amount,count,open,close,low,high,volume,start_time,update_time,
  */
 type KLine struct {
-	T          string          `json:"-" table:"exs_kline"`                                /* the table name tag */
+	T          string          `json:"-" table:"gex_kline"`                                /* the table name tag */
 	TID        int64           `json:"tid,omitempty" valid:"tid,r|i,r:0;"`                 /* the primay key */
 	Symbol     string          `json:"symbol,omitempty" valid:"symbol,r|s,l:0;"`           /* the kline symbol */
 	Interv     string          `json:"interv,omitempty" valid:"interv,r|s,l:0;"`           /* the kline interval key */
@@ -207,11 +207,11 @@ var OrderStatusShow = OrderStatusArray{OrderStatusWaiting, OrderStatusPending, O
 const OrderOrderbyAll = "update_time,create_time"
 
 /*
- * Order  represents exs_order
+ * Order  represents gex_order
  * Order Fields:tid,order_id,type,user_id,creator,symbol,side,quantity,filled,price,trigger_type,trigger_price,avg_price,total_price,holding,profit,owned,unhedged,in_balance,in_filled,out_balance,out_filled,fee_balance,fee_filled,fee_rate,transaction,fee_settled_status,fee_settled_next,update_time,create_time,status,
  */
 type Order struct {
-	T                string           `json:"-" table:"exs_order"`                                              /* the table name tag */
+	T                string           `json:"-" table:"gex_order"`                                              /* the table name tag */
 	TID              int64            `json:"tid,omitempty" valid:"tid,o|i,r:0;"`                               /* the primary key */
 	OrderID          string           `json:"order_id,omitempty" valid:"order_id,r|s,l:0;"`                     /* the order string id */
 	Type             OrderType        `json:"type,omitempty" valid:"type,r|i,e:0;"`                             /* the order type, Trade=100: is trade type, Trigger=200: is trigger trade order, Blowup=300: is blow up type */
@@ -273,11 +273,11 @@ var OrderCommStatusAll = OrderCommStatusArray{OrderCommStatusNormal}
 var OrderCommStatusShow = OrderCommStatusArray{OrderCommStatusNormal}
 
 /*
- * OrderComm  represents exs_order_comm
+ * OrderComm  represents gex_order_comm
  * OrderComm Fields:tid,order_id,user_id,type,in_balance,in_fee,update_time,create_time,status,
  */
 type OrderComm struct {
-	T          string          `json:"-" table:"exs_order_comm"`                           /* the table name tag */
+	T          string          `json:"-" table:"gex_order_comm"`                           /* the table name tag */
 	TID        int64           `json:"tid,omitempty" valid:"tid,r|i,r:0;"`                 /* the primary key */
 	OrderID    int64           `json:"order_id,omitempty" valid:"order_id,r|i,r:0;"`       /* the order id */
 	UserID     int64           `json:"user_id,omitempty" valid:"user_id,r|i,r:0;"`         /* the user id */
@@ -337,11 +337,11 @@ var UserStatusShow = UserStatusArray{UserStatusNormal, UserStatusLocked}
 const UserOrderbyAll = "account,phone,update_time,create_time"
 
 /*
- * User  represents exs_user
+ * User  represents gex_user
  * User Fields:tid,type,role,name,account,phone,password,trade_pass,image,fee,external,update_time,create_time,status,
  */
 type User struct {
-	T          string     `json:"-" table:"exs_user"`                                 /* the table name tag */
+	T          string     `json:"-" table:"gex_user"`                                 /* the table name tag */
 	TID        int64      `json:"tid,omitempty" valid:"tid,r|i,r:0;"`                 /* the primary key */
 	Type       UserType   `json:"type,omitempty" valid:"type,r|i,e:0;"`               /* the user type,Admin=10:is admin user, Normal=100:is normal user */
 	Role       UserRole   `json:"role,omitempty" valid:"role,o|i,e:0;"`               /* ther user role, Normal=100:is normal, Staff=200:is staff */
@@ -391,11 +391,11 @@ var WithdrawStatusAll = WithdrawStatusArray{WithdrawStatusPending, WithdrawStatu
 var WithdrawStatusShow = WithdrawStatusArray{WithdrawStatusPending, WithdrawStatusConfirmed, WithdrawStatusDone, WithdrawStatusCanceled}
 
 /*
- * Withdraw  represents exs_withdraw
+ * Withdraw  represents gex_withdraw
  * Withdraw Fields:tid,order_id,type,user_id,creator,asset,quantity,transaction,update_time,create_time,status,
  */
 type Withdraw struct {
-	T           string          `json:"-" table:"exs_withdraw"`                             /* the table name tag */
+	T           string          `json:"-" table:"gex_withdraw"`                             /* the table name tag */
 	TID         int64           `json:"tid,omitempty" valid:"tid,r|i,r:0;"`                 /* the primary key */
 	OrderID     string          `json:"order_id,omitempty" valid:"order_id,r|s,l:0;"`       /* the withdraw order string id */
 	Type        WithdrawType    `json:"type,omitempty" valid:"type,r|i,e:0;"`               /* the withdraw order type, Withdraw=100: is withdraw type, Topup=200: is topup type, Goldbar=300: is goldbar bar */

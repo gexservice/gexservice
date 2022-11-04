@@ -136,7 +136,7 @@ func TestBalance(t *testing.T) {
 	// }
 	// pgx.MockerClear()
 
-	// Pool().Exec(ctx, `update exs_balance set status=$1 where user_id=$2 and asset=$3`, BalanceStatusLocked, user.TID, BalanceAssetMMK)
+	// Pool().Exec(ctx, `update gex_balance set status=$1 where user_id=$2 and asset=$3`, BalanceStatusLocked, user.TID, BalanceAssetMMK)
 	// balance = &Balance{UserID: user.TID, Asset: BalanceAssetMMK, Status: BalanceStatusNormal, Free: decimal.NewFromFloat(100)}
 	// err = IncreaseBalanceCall(Pool(), ctx, balance)
 	// if err == nil {

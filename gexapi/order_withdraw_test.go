@@ -39,7 +39,7 @@ package gexapi
 // 			return
 // 		}
 // 	}
-// 	gexdb.Pool().ExecRow(ctx, `update exs_user set kbz_openid=$1 where tid=$2`, uuid.New(), userMMK.TID)
+// 	gexdb.Pool().ExecRow(ctx, `update gex_user set kbz_openid=$1 where tid=$2`, uuid.New(), userMMK.TID)
 // 	{ //create user cancel
 // 		clearCookie()
 // 		login, err := ts.GetMap("/pub/login?username=%v&password=%v", *userMMK.Account, "123")

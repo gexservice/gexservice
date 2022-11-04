@@ -46,7 +46,7 @@ var Redis = func() redis.Conn {
 
 //CheckDb will check database if is initial
 func CheckDb(ctx context.Context) (created bool, err error) {
-	_, _, err = Pool().Exec(ctx, `select tid from exs_user limit 1`)
+	_, _, err = Pool().Exec(ctx, `select tid from gex_user limit 1`)
 	if err != nil {
 		xlog.Infof("start generate database...")
 		_, _, err = Pool().Exec(ctx, gexupgrade.LATEST)

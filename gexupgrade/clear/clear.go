@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	basedb.SYS = "exs"
+	basedb.SYS = "gex"
 	_, err := pgx.Bootstrap(os.Args[1])
 	if err != nil {
 		panic(err)

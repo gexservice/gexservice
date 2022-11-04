@@ -29,13 +29,13 @@ func init() {
 		panic(err)
 	}
 	gexdb.Pool = pgx.Pool
-	basedb.SYS = "exs"
+	basedb.SYS = "gex"
 	basedb.Pool = pgx.Pool
 	_, _, err = gexdb.Pool().Exec(ctx, gexupgrade.DROP)
 	if err != nil {
 		panic(err)
 	}
-	_, _, err = gexdb.Pool().Exec(ctx, strings.ReplaceAll(baseupgrade.DROP, "_sys_", "exs_"))
+	_, _, err = gexdb.Pool().Exec(ctx, strings.ReplaceAll(baseupgrade.DROP, "_sys_", "gex_"))
 	if err != nil {
 		panic(err)
 	}

@@ -60,7 +60,7 @@ package gexdb
 // 	pgx.MockerClear()
 
 // 	for i := int64(1); i <= 6; i++ {
-// 		Pool().Exec(`update exs_order set fee_settled_next=$1 where tid=$2`, time.Time{}, order.TID)
+// 		Pool().Exec(`update gex_order set fee_settled_next=$1 where tid=$2`, time.Time{}, order.TID)
 // 		pgx.MockerClear()
 // 		pgx.MockerSet("Row.Scan", i)
 // 		err = ProcSettleOrderFee()
@@ -71,7 +71,7 @@ package gexdb
 // 		pgx.MockerClear()
 // 	}
 
-// 	Pool().Exec(`update exs_order set fee_settled_next=$1 where tid=$2`, time.Time{}, order.TID)
+// 	Pool().Exec(`update gex_order set fee_settled_next=$1 where tid=$2`, time.Time{}, order.TID)
 // 	pgx.MockerClear()
 // 	pgx.MockerSet("Pool.Begin", 1)
 // 	err = ProcSettleOrderFee()

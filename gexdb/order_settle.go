@@ -19,9 +19,9 @@ package gexdb
 // 	}
 // 	var orderID int64
 // 	updateSQL := `
-// 		update exs_order set fee_settled_next=$1
-// 		from (select tid from exs_order where type=$2 and status=any($3) and fee_settled_status=$4 and fee_settled_next<$5 order by update_time asc limit 1) o
-// 		where exs_order.tid=o.tid
+// 		update gex_order set fee_settled_next=$1
+// 		from (select tid from gex_order where type=$2 and status=any($3) and fee_settled_status=$4 and fee_settled_next<$5 order by update_time asc limit 1) o
+// 		where gex_order.tid=o.tid
 // 		returning o.tid
 // 	`
 // 	err = Pool().QueryRow(updateSQL, time.Now().Add(time.Minute), OrderTypeTrade, []int{OrderStatusPartcanceled, OrderStatusDone}, 0, time.Now()).Scan(&orderID)
@@ -58,7 +58,7 @@ package gexdb
 // 		}
 // 	}()
 // 	querySQL := `
-// 		select u.role,u.broker_id,o.fee_balance,o.fee_filled from exs_order o join exs_user u on o.user_id=u.tid
+// 		select u.role,u.broker_id,o.fee_balance,o.fee_filled from gex_order o join gex_user u on o.user_id=u.tid
 // 		where o.tid=$1 and o.type=$2 and o.status=any($3) and o.fee_settled_status=$4  for update
 // 	`
 // 	queryArg := []interface{}{orderID, OrderTypeTrade, []int{OrderStatusPartcanceled, OrderStatusDone}, 0}
@@ -100,6 +100,6 @@ package gexdb
 // 			return
 // 		}
 // 	}
-// 	err = tx.ExecRow(`update exs_order set fee_settled_status=$1 where tid=$2`, 1, orderID)
+// 	err = tx.ExecRow(`update gex_order set fee_settled_status=$1 where tid=$2`, 1, orderID)
 // 	return
 // }

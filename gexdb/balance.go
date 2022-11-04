@@ -28,7 +28,7 @@ func TouchBalanceCall(caller crud.Queryer, ctx context.Context, area BalanceArea
 		}
 	}
 	upsertSQL := fmt.Sprintf(`
-		insert into exs_balance(free,locked,update_time,create_time,status,user_id,area,asset)
+		insert into gex_balance(free,locked,update_time,create_time,status,user_id,area,asset)
 		values %v
 		on conflict(user_id,area,asset) do nothing
 	`, strings.Join(values, ","))
@@ -46,7 +46,7 @@ func IncreaseBalanceCall(caller crud.Queryer, ctx context.Context, balance *Bala
 	var free, locked, margin decimal.Decimal
 	err = caller.QueryRow(
 		ctx,
-		`select tid,free,locked,margin,create_time,status from exs_balance where user_id=$1 and area=$2 and asset=$3 for update`,
+		`select tid,free,locked,margin,create_time,status from gex_balance where user_id=$1 and area=$2 and asset=$3 for update`,
 		balance.UserID, balance.Area, balance.Asset,
 	).Scan(
 		&balance.TID, &free, &locked, &margin, &balance.CreateTime, &balance.Status,
@@ -176,7 +176,7 @@ func CountBalance(ctx context.Context, area BalanceArea, start, end time.Time) (
 // 		order.OutBalance = balance.Asset
 // 		order.OutFilled = balance.Free.Abs()
 // 		var having decimal.Decimal
-// 		err = caller.QueryRow(ctx, `select free from exs_balance where user_id=$1 and asset=$2 for update`, balance.UserID, balance.Asset).Scan(&having)
+// 		err = caller.QueryRow(ctx, `select free from gex_balance where user_id=$1 and asset=$2 for update`, balance.UserID, balance.Asset).Scan(&having)
 // 		if err != nil {
 // 			return
 // 		}

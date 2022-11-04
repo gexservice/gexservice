@@ -93,7 +93,7 @@ package gexdb
 // 			return
 // 		}
 // 		for i := 0; i < 2; i++ {
-// 			err = Pool().ExecRow(`update exs_order set withdraw_next=$1 where tid=$2`, xsql.Time{}, order.TID)
+// 			err = Pool().ExecRow(`update gex_order set withdraw_next=$1 where tid=$2`, xsql.Time{}, order.TID)
 // 			if err != nil {
 // 				t.Error(err)
 // 				return
@@ -134,7 +134,7 @@ package gexdb
 // 			return
 // 		}
 // 		for i := 0; i < 3; i++ {
-// 			err = Pool().ExecRow(`update exs_order set withdraw_next=$1 where tid=$2`, xsql.Time{}, order.TID)
+// 			err = Pool().ExecRow(`update gex_order set withdraw_next=$1 where tid=$2`, xsql.Time{}, order.TID)
 // 			if err != nil {
 // 				t.Error(err)
 // 				return
@@ -174,7 +174,7 @@ package gexdb
 // 			return
 // 		}
 // 		for i := 0; i < 3; i++ {
-// 			err = Pool().ExecRow(`update exs_order set withdraw_next=$1 where tid=$2`, xsql.Time{}, order.TID)
+// 			err = Pool().ExecRow(`update gex_order set withdraw_next=$1 where tid=$2`, xsql.Time{}, order.TID)
 // 			if err != nil {
 // 				t.Error(err)
 // 				return
@@ -218,7 +218,7 @@ package gexdb
 // 			return
 // 		}
 // 		for i := 0; i < 3; i++ {
-// 			err = Pool().ExecRow(`update exs_order set withdraw_next=$1 where tid=$2`, xsql.Time{}, order.TID)
+// 			err = Pool().ExecRow(`update gex_order set withdraw_next=$1 where tid=$2`, xsql.Time{}, order.TID)
 // 			if err != nil {
 // 				t.Error(err)
 // 				return
@@ -284,7 +284,7 @@ package gexdb
 // 			return
 // 		}
 // 		for i := 0; i < 4; i++ {
-// 			err = Pool().ExecRow(`update exs_order set withdraw_next=$1 where tid=$2`, xsql.Time{}, order.TID)
+// 			err = Pool().ExecRow(`update gex_order set withdraw_next=$1 where tid=$2`, xsql.Time{}, order.TID)
 // 			if err != nil {
 // 				t.Error(err)
 // 				return
@@ -326,7 +326,7 @@ package gexdb
 // 			return
 // 		}
 // 		for i := 0; i < 3; i++ {
-// 			err = Pool().ExecRow(`update exs_order set withdraw_next=$1 where tid=$2`, xsql.Time{}, order.TID)
+// 			err = Pool().ExecRow(`update gex_order set withdraw_next=$1 where tid=$2`, xsql.Time{}, order.TID)
 // 			if err != nil {
 // 				t.Error(err)
 // 				return
@@ -369,7 +369,7 @@ package gexdb
 // 			return
 // 		}
 // 		for i := 0; i < 3; i++ {
-// 			err = Pool().ExecRow(`update exs_order set withdraw_next=$1 where tid=$2`, xsql.Time{}, order.TID)
+// 			err = Pool().ExecRow(`update gex_order set withdraw_next=$1 where tid=$2`, xsql.Time{}, order.TID)
 // 			if err != nil {
 // 				t.Error(err)
 // 				return

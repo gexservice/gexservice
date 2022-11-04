@@ -27,10 +27,10 @@ func init() {
 
 func nameConv(isTable bool, name string) string {
 	if isTable {
-		if name == "exs_kline" {
+		if name == "gex_kline" {
 			return "KLine"
 		}
-		return gen.ConvCamelCase(true, strings.TrimPrefix(name, "exs_"))
+		return gen.ConvCamelCase(true, strings.TrimPrefix(name, "gex_"))
 	}
 	if name == "tid" || name == "uuid" || name == "i18n" || name == "qq" || name == "ip" {
 		return strings.ToUpper(name)
@@ -45,18 +45,18 @@ func nameConv(isTable bool, name string) string {
 
 var PgGen = gen.AutoGen{
 	TypeField: map[string]map[string]string{
-		"exs_order": {
+		"gex_order": {
 			"transaction": "OrderTransaction",
 		},
 	},
 	FieldFilter: map[string]map[string]string{
-		"exs_user": {
+		"gex_user": {
 			gen.FieldsOrder:    "account,phone,update_time,create_time",
 			gen.FieldsOptional: "role,name,account,phone,password,trade_pass,image,external,status",
 			gen.FieldsFind:     "^password,trade_pass#all",
 			gen.FieldsScan:     "^password,trade_pass#all",
 		},
-		"exs_order": {
+		"gex_order": {
 			gen.FieldsOrder:    "update_time,create_time",
 			gen.FieldsOptional: "tid,quantity,price,total_price,trigger_type,trigger_price,status",
 			gen.FieldsScan:     "^transaction#all",
@@ -67,22 +67,22 @@ var PgGen = gen.AutoGen{
 	CodeSlice:    gen.CodeSlicePG,
 	TableRetAdd:  map[string]string{},
 	TableGenAdd: xsql.StringArray{
-		"exs_balance",
-		"exs_balance_history",
-		"exs_kline",
-		"exs_order",
-		"exs_order_comm",
-		"exs_withdraw",
-		"exs_user",
+		"gex_balance",
+		"gex_balance_history",
+		"gex_kline",
+		"gex_order",
+		"gex_order_comm",
+		"gex_withdraw",
+		"gex_user",
 	},
 	TableNotValid: xsql.StringArray{},
 	TableInclude:  xsql.StringArray{},
 	TableExclude: xsql.StringArray{
-		"exs_config",
-		"exs_object",
-		"exs_version_object",
-		"exs_announce",
-		"exs_file",
+		"gex_config",
+		"gex_object",
+		"gex_version_object",
+		"gex_announce",
+		"gex_file",
 	},
 	Queryer: pgx.Pool,
 	TableQueryer: func(queryer interface{}, tableSQL, columnSQL, schema string) (tables []*gen.Table, err error) {

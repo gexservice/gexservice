@@ -129,9 +129,9 @@ func CancelWithdraw(ctx context.Context, userID int64, orderID string) (withdraw
 // 	var orderID string
 // 	var oldStatus int
 // 	updateSQL := `
-// 		update exs_order set withdraw_status=$5,withdraw_next=$6,status=$7
-// 		from (select tid,order_id,status from exs_order where type=$1 and status=any($2) and withdraw_status=any($3) and withdraw_next<$4 order by update_time asc limit 1) o
-// 		where exs_order.tid=o.tid
+// 		update gex_order set withdraw_status=$5,withdraw_next=$6,status=$7
+// 		from (select tid,order_id,status from gex_order where type=$1 and status=any($2) and withdraw_status=any($3) and withdraw_next<$4 order by update_time asc limit 1) o
+// 		where gex_order.tid=o.tid
 // 		returning o.order_id,o.status
 // 	`
 // 	err = Pool().QueryRow(
@@ -174,10 +174,10 @@ func CancelWithdraw(ctx context.Context, userID int64, orderID string) (withdraw
 // 		err = UpdateOrderPrepay(order.TID, xsql.M(info))
 // 	case WithdrawVerifyFail, WithdrawVerifyNotFound:
 // 		xlog.Warnf("ProcWithdrawApply apply order(%v) is fail by result:%v,info:%v, will retry next time", orderID, result, converter.JSON(info))
-// 		err = Pool().ExecRow(`update exs_order set withdraw_status=$2,withdraw_next=$3,status=$4 where tid=$1`, order.TID, OrderWithdrawStatusPending, time.Now().Add(time.Minute), OrderStatusPending)
+// 		err = Pool().ExecRow(`update gex_order set withdraw_status=$2,withdraw_next=$3,status=$4 where tid=$1`, order.TID, OrderWithdrawStatusPending, time.Now().Add(time.Minute), OrderStatusPending)
 // 	case WithdrawVerifyDone:
 // 		xlog.Infof("ProcWithdrawApply apply order(%v) is done by result:%v,info:%v", orderID, result, converter.JSON(info))
-// 		err = Pool().ExecRow(`update exs_order set filled=quantity,out_filled=quantity,withdraw_status=$2,notify_result=$3,status=$4 where tid=$1`, order.TID, OrderWithdrawStatusDone, xsql.M(info), OrderStatusDone)
+// 		err = Pool().ExecRow(`update gex_order set filled=quantity,out_filled=quantity,withdraw_status=$2,notify_result=$3,status=$4 where tid=$1`, order.TID, OrderWithdrawStatusDone, xsql.M(info), OrderStatusDone)
 // 	default:
 // 		err = fmt.Errorf("unknow result code(%v)", result)
 // 	}

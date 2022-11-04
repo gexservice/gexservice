@@ -37,13 +37,13 @@ func init() {
 	}
 	Pool = pgx.Pool
 	Redis = rediscache.C
-	basedb.SYS = "exs"
+	basedb.SYS = "gex"
 	basedb.Pool = pgx.Pool
 	_, _, err = Pool().Exec(ctx, gexupgrade.DROP)
 	if err != nil {
 		panic(err)
 	}
-	_, _, err = Pool().Exec(ctx, strings.ReplaceAll(baseupgrade.DROP, "_sys_", "exs_"))
+	_, _, err = Pool().Exec(ctx, strings.ReplaceAll(baseupgrade.DROP, "_sys_", "gex_"))
 	if err != nil {
 		panic(err)
 	}

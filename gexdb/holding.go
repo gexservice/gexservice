@@ -26,7 +26,7 @@ func TouchHoldingCall(caller crud.Queryer, ctx context.Context, symbols []string
 		}
 	}
 	upsertSQL := fmt.Sprintf(`
-		insert into exs_holding(update_time,create_time,status,user_id,symbol)
+		insert into gex_holding(update_time,create_time,status,user_id,symbol)
 		values %v
 		on conflict(user_id,symbol) do nothing
 	`, strings.Join(values, ","))

@@ -58,11 +58,11 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	basedb.SYS = "exs"
+	basedb.SYS = "gex"
 	gexdb.Pool = pgx.Pool
 	basedb.Pool = pgx.Pool
 	gexdb.Pool().Exec(ctx, gexupgrade.DROP)
-	basedb.Pool().Exec(ctx, strings.ReplaceAll(baseupgrade.DROP, "_sys_", "exs_"))
+	basedb.Pool().Exec(ctx, strings.ReplaceAll(baseupgrade.DROP, "_sys_", "gex_"))
 
 	//
 	redisURI := "redis.loc:6379?db=1"

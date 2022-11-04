@@ -27,7 +27,7 @@ package gexdb
 // 	querySQL := `
 // 		select
 // 			tid,order_id,user_id,type,in_balance,in_fee,create_time,status
-// 		from exs_order_comm where user_id=$1 and order_id=any($2)
+// 		from gex_order_comm where user_id=$1 and order_id=any($2)
 // 	`
 // 	args := []interface{}{userID, xsql.Int64Array(orderIDs).DbArray()}
 // 	rows, err := Pool().Query(querySQL, args...)
@@ -51,7 +51,7 @@ package gexdb
 // 	}
 // 	countSQL := `
 // 		select in_balance,sum(in_fee)
-// 		from exs_order_comm where user_id=$1 and order_id=any($2)
+// 		from gex_order_comm where user_id=$1 and order_id=any($2)
 // 		group by in_balance
 // 	`
 // 	total, err = countOrderComm(countSQL, args...)
@@ -72,7 +72,7 @@ package gexdb
 // 	}
 // 	querySQL := `
 // 		select in_balance,sum(in_fee)
-// 		from exs_order_comm where
+// 		from gex_order_comm where
 // 	`
 // 	querySQL += strings.Join(where, " and ")
 // 	querySQL += ` group by in_balance `
@@ -109,7 +109,7 @@ package gexdb
 // 	}
 // 	querySQL := `
 // 		select o.user_id,c.in_balance,sum(c.in_fee)
-// 		from exs_order_comm c join exs_order o on c.order_id=o.tid where
+// 		from gex_order_comm c join gex_order o on c.order_id=o.tid where
 // 	`
 // 	querySQL += strings.Join(where, " and ")
 // 	querySQL += ` group by o.user_id,c.in_balance `

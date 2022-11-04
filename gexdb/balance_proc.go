@@ -36,8 +36,8 @@ func (b *BalanceRecordSyncer) Proc() (err error) {
 	// }
 	// syncTime := xsql.TimeStartOfToday()
 	// syncSQL := `
-	// 	insert into exs_balance_history(user_id,asset,current,update_time,create_time,status)
-	// 	select m.user_id,m.asset,m.free+m.locked+(y.free+y.locked)*$1,$2,$2,$3 from exs_balance m join exs_balance y on m.asset=$4 and y.asset=$5 and m.user_id=y.user_id
+	// 	insert into gex_balance_history(user_id,asset,current,update_time,create_time,status)
+	// 	select m.user_id,m.asset,m.free+m.locked+(y.free+y.locked)*$1,$2,$2,$3 from gex_balance m join gex_balance y on m.asset=$4 and y.asset=$5 and m.user_id=y.user_id
 	// 	on conflict(user_id,asset,create_time) do update set current=excluded.current
 	// `
 	// syncArg := []interface{}{price, syncTime, BalanceHistoryStatusNormal, BalanceAssetMMK, BalanceAssetYWE}
