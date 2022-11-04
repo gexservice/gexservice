@@ -10,6 +10,17 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+type FeeCache interface {
+	LoadFee(ctx context.Context, userID int64, symbol string) (fee decimal.Decimal, err error)
+}
+
+type ConstFee float64
+
+func (c ConstFee) LoadFee(ctx context.Context, userID int64, symbol string) (fee decimal.Decimal, err error) {
+	fee = decimal.NewFromFloat(float64(c))
+	return
+}
+
 type MatcherEvent struct {
 	Symbol       string
 	Orders       []*gexdb.Order

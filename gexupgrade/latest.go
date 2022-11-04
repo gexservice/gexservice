@@ -476,6 +476,7 @@ CREATE TABLE exs_order (
     out_filled double precision NOT NULL,
     fee_balance character varying(30) NOT NULL,
     fee_filled double precision DEFAULT 0 NOT NULL,
+    fee_rate double precision DEFAULT 0 NOT NULL,
     transaction jsonb DEFAULT '{}'::jsonb NOT NULL,
     fee_settled_status integer DEFAULT 0 NOT NULL,
     fee_settled_next timestamp with time zone NOT NULL,
@@ -654,6 +655,13 @@ COMMENT ON COLUMN exs_order.fee_filled IS 'the fee amount';
 
 
 --
+-- Name: COLUMN exs_order.fee_rate; Type: COMMENT; Schema: public;
+--
+
+COMMENT ON COLUMN exs_order.fee_rate IS 'the order fee rate';
+
+
+--
 -- Name: COLUMN exs_order.transaction; Type: COMMENT; Schema: public;
 --
 
@@ -820,6 +828,7 @@ CREATE TABLE exs_user (
     password character varying(255),
     trade_pass character varying(255),
     image text,
+    fee jsonb DEFAULT '{}'::jsonb NOT NULL,
     external jsonb DEFAULT '{}'::jsonb NOT NULL,
     update_time timestamp with time zone NOT NULL,
     create_time timestamp with time zone NOT NULL,
@@ -888,6 +897,13 @@ COMMENT ON COLUMN exs_user.trade_pass IS 'the user trade password';
 --
 
 COMMENT ON COLUMN exs_user.image IS 'the user image';
+
+
+--
+-- Name: COLUMN exs_user.fee; Type: COMMENT; Schema: public;
+--
+
+COMMENT ON COLUMN exs_user.fee IS 'the user fee';
 
 
 --

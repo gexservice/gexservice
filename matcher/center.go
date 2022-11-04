@@ -9,6 +9,7 @@ import (
 
 	"github.com/codingeasygo/util/converter"
 	"github.com/codingeasygo/util/debug"
+	"github.com/codingeasygo/util/xmap"
 	"github.com/codingeasygo/util/xprop"
 	"github.com/gexservice/gexservice/base/xlog"
 	"github.com/gexservice/gexservice/gexdb"
@@ -27,8 +28,131 @@ type SymbolInfo struct {
 	MarginAdd         decimal.Decimal   `json:"margin_add"`
 }
 
+type MatcherFeeCache struct {
+	Default   map[string]decimal.Decimal
+	cacheMax  int
+	cacheFee  map[int64]xmap.M
+	cacheLast time.Time
+	cacheLock sync.RWMutex
+}
+
+func NewMatcherFeeCache(cacheMax int) (cache *MatcherFeeCache) {
+	cache = &MatcherFeeCache{
+		Default:   map[string]decimal.Decimal{},
+		cacheMax:  cacheMax,
+		cacheFee:  map[int64]xmap.M{},
+		cacheLock: sync.RWMutex{},
+	}
+	return
+}
+
+func (m *MatcherFeeCache) readFee(config xmap.M, symbol string) (fee decimal.Decimal) {
+	if v, ok := config[symbol]; ok {
+		fee = decimal.NewFromFloat(v.(float64))
+	} else if v, ok := config["*"]; ok {
+		fee = decimal.NewFromFloat(v.(float64))
+	} else {
+		fee = m.Default[symbol]
+	}
+	return
+}
+
+func (m *MatcherFeeCache) loadCache(userID int64, symbol string) (fee decimal.Decimal, ok bool) {
+	m.cacheLock.Lock()
+	defer m.cacheLock.Unlock()
+	if len(m.cacheFee) > m.cacheMax || time.Since(m.cacheLast) > 24*time.Hour {
+		m.cacheFee = map[int64]xmap.M{}
+		m.cacheLast = time.Now()
+	}
+	config, ok := m.cacheFee[userID]
+	if ok {
+		fee = m.readFee(config, symbol)
+	}
+	return
+}
+
+func (m *MatcherFeeCache) updateCache(userID int64, cache xmap.M) {
+	m.cacheLock.Lock()
+	defer m.cacheLock.Unlock()
+	m.cacheFee[userID] = cache
+}
+
+func (m *MatcherFeeCache) LoadFee(ctx context.Context, userID int64, symbol string) (fee decimal.Decimal, err error) {
+	fee, ok := m.loadCache(userID, symbol)
+	if ok {
+		return
+	}
+	config, err := gexdb.LoadUserFee(ctx, userID)
+	if err != nil {
+		return
+	}
+	m.updateCache(userID, config)
+	fee = m.readFee(config, symbol)
+	return
+}
+
+type MatcherBalancePreparer struct {
+	cacheMax     int
+	cacheBalance map[string]bool
+	cacheLast    time.Time
+	cacheLock    sync.RWMutex
+}
+
+func NewMatcherBalancePreparer(cacheMax int) (preparer *MatcherBalancePreparer) {
+	preparer = &MatcherBalancePreparer{
+		cacheMax:     cacheMax,
+		cacheBalance: map[string]bool{},
+		cacheLock:    sync.RWMutex{},
+	}
+	return
+}
+
+func (m *MatcherBalancePreparer) touchBalance(key string) {
+	if len(m.cacheBalance) > m.cacheMax || time.Since(m.cacheLast) > 24*time.Hour {
+		m.cacheBalance = map[string]bool{}
+		m.cacheLast = time.Now()
+	}
+	m.cacheBalance[key] = true
+}
+
+func (m *MatcherBalancePreparer) PrepareSpotMatcher(ctx context.Context, matcher *SpotMatcher, userID int64) (err error) {
+	m.cacheLock.Lock()
+	defer m.cacheLock.Unlock()
+	keyQuote := fmt.Sprintf("%v-%v-%v", matcher.Area, matcher.Quote, userID)
+	if m.cacheBalance[keyQuote] {
+		return
+	}
+	_, err = gexdb.TouchBalance(ctx, matcher.Area, []string{matcher.Base, matcher.Quote}, userID)
+	if err != nil {
+		return
+	}
+	m.touchBalance(keyQuote)
+	return
+}
+
+func (m *MatcherBalancePreparer) PrepareFuturesMatcher(ctx context.Context, matcher *FuturesMatcher, userID int64) (err error) {
+	m.cacheLock.Lock()
+	defer m.cacheLock.Unlock()
+	keyQuote := fmt.Sprintf("%v-%v-%v", matcher.Area, matcher.Quote, userID)
+	if m.cacheBalance[keyQuote] {
+		return
+	}
+	_, err = gexdb.TouchBalance(ctx, matcher.Area, []string{matcher.Quote}, userID)
+	if err != nil {
+		return
+	}
+	_, err = gexdb.TouchHolding(ctx, []string{matcher.Symbol}, userID)
+	if err != nil {
+		return
+	}
+	m.touchBalance(keyQuote)
+	return
+}
+
 type MatcherCenter struct {
 	Symbols      map[string]*SymbolInfo
+	FeeCache     *MatcherFeeCache
+	Preparer     *MatcherBalancePreparer
 	TriggerDelay time.Duration
 	matcherAll   map[string]Matcher
 	matcherLock  sync.RWMutex
@@ -36,10 +160,6 @@ type MatcherCenter struct {
 	monitorLock  sync.RWMutex
 	eventRun     int
 	eventQueue   chan *MatcherEvent
-	cacheMax     int
-	cacheBalance map[string]bool
-	cacheLast    time.Time
-	cacheLock    sync.RWMutex
 	exiter       chan int
 	waiter       sync.WaitGroup
 }
@@ -48,15 +168,14 @@ func NewMatcherCenter(eventRun, eventMax, cacheMax int) (center *MatcherCenter) 
 	center = &MatcherCenter{
 		TriggerDelay: time.Second,
 		Symbols:      map[string]*SymbolInfo{},
+		FeeCache:     NewMatcherFeeCache(cacheMax),
+		Preparer:     NewMatcherBalancePreparer(cacheMax),
 		matcherAll:   map[string]Matcher{},
 		matcherLock:  sync.RWMutex{},
 		monitorAll:   map[string]map[string]MatcherMonitor{},
 		monitorLock:  sync.RWMutex{},
 		eventQueue:   make(chan *MatcherEvent, eventMax),
 		eventRun:     eventRun,
-		cacheMax:     cacheMax,
-		cacheBalance: map[string]bool{},
-		cacheLock:    sync.RWMutex{},
 		exiter:       make(chan int, 1),
 		waiter:       sync.WaitGroup{},
 	}
@@ -100,20 +219,22 @@ func BootstrapMatcherCenterByConfig(config *xprop.Config) (center *MatcherCenter
 		}
 		if strings.HasPrefix(info.Symbol, "spot.") {
 			spot := NewSpotMatcher(info.Symbol, info.Base, info.Quote, center)
-			spot.Fee = info.Fee
+			spot.Fee = center.FeeCache
 			spot.PrecisionPrice = info.PrecisionPrice
 			spot.PrecisionQuantity = info.PrecisionQuantity
-			spot.PrepareProcess = center.PrepareSpotMatcher
+			spot.PrepareProcess = center.Preparer.PrepareSpotMatcher
+			center.FeeCache.Default[info.Symbol] = info.Fee
 			center.AddMatcher(info, spot)
 			xlog.Infof("Bootstrap register spot matcher by symbol %v", info.Symbol)
 		} else if strings.HasPrefix(info.Symbol, "futures.") {
 			futures := NewFuturesMatcher(info.Symbol, info.Quote, center)
-			futures.Fee = info.Fee
+			futures.Fee = center.FeeCache
 			futures.PrecisionPrice = info.PrecisionPrice
 			futures.PrecisionQuantity = info.PrecisionQuantity
 			futures.MarginMax = info.MarginMax
 			futures.MarginAdd = info.MarginAdd
-			futures.PrepareProcess = center.PrepareFuturesMatcher
+			futures.PrepareProcess = center.Preparer.PrepareFuturesMatcher
+			center.FeeCache.Default[info.Symbol] = info.Fee
 			center.AddMatcher(info, futures)
 			xlog.Infof("Bootstrap register futures matcher by symbol %v", info.Symbol)
 		} else {
@@ -305,47 +426,6 @@ func (m *MatcherCenter) procTriggerSybmolOrder(ctx context.Context, symbol strin
 			xlog.Infof("MatcherCenter cancel %v,%v other same symbol trigger succss", args.UserID, args.Symbol)
 		}
 	}
-}
-
-func (m *MatcherCenter) touchBalance(key string) {
-	if len(m.cacheBalance) > m.cacheMax || time.Since(m.cacheLast) > 24*time.Hour {
-		m.cacheBalance = map[string]bool{}
-	}
-	m.cacheBalance[key] = true
-}
-
-func (m *MatcherCenter) PrepareSpotMatcher(ctx context.Context, matcher *SpotMatcher, userID int64) (err error) {
-	m.cacheLock.Lock()
-	defer m.cacheLock.Unlock()
-	keyQuote := fmt.Sprintf("%v-%v-%v", matcher.Area, matcher.Quote, userID)
-	if m.cacheBalance[keyQuote] {
-		return
-	}
-	_, err = gexdb.TouchBalance(ctx, matcher.Area, []string{matcher.Base, matcher.Quote}, userID)
-	if err != nil {
-		return
-	}
-	m.touchBalance(keyQuote)
-	return
-}
-
-func (m *MatcherCenter) PrepareFuturesMatcher(ctx context.Context, matcher *FuturesMatcher, userID int64) (err error) {
-	m.cacheLock.Lock()
-	defer m.cacheLock.Unlock()
-	keyQuote := fmt.Sprintf("%v-%v-%v", matcher.Area, matcher.Quote, userID)
-	if m.cacheBalance[keyQuote] {
-		return
-	}
-	_, err = gexdb.TouchBalance(ctx, matcher.Area, []string{matcher.Quote}, userID)
-	if err != nil {
-		return
-	}
-	_, err = gexdb.TouchHolding(ctx, []string{matcher.Symbol}, userID)
-	if err != nil {
-		return
-	}
-	m.touchBalance(keyQuote)
-	return
 }
 
 func (m *MatcherCenter) ProcessCancel(ctx context.Context, userID int64, symbol string, orderID string) (order *gexdb.Order, err error) {

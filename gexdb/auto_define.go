@@ -112,6 +112,7 @@ package gexdb
  * @apiSuccess (Order) {Time} Order.update_time the order update time
  * @apiSuccess (Order) {Time} Order.create_time the order create time
  * @apiSuccess (Order) {OrderStatus} Order.status the order status, all suported is <a href="#metadata-Order">OrderStatusAll</a>
+ * @apiSuccess (Order) {Decimal} Order.fee_rate the order fee rate
  */
 
 /**
@@ -153,6 +154,7 @@ package gexdb
  * @apiSuccess (User) {StringPtr} User.password the user password to login
  * @apiSuccess (User) {StringPtr} User.trade_pass the user trade password
  * @apiSuccess (User) {StringPtr} User.image the user image
+ * @apiSuccess (User) {Object} User.fee the user fee
  * @apiSuccess (User) {Object} User.external the user external info
  * @apiSuccess (User) {Time} User.update_time the last updat time
  * @apiSuccess (User) {Time} User.create_time the craete time

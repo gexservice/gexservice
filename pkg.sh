@@ -12,10 +12,7 @@ set -xe
 export cpwd=`pwd`
 output=$cpwd/build
 #### Package ####
-srv_ver=$1
-if [ "$1" == "" ];then
-    srv_ver=`git rev-parse --abbrev-ref HEAD`
-fi 
+srv_ver=`git rev-parse --abbrev-ref HEAD`
 srv_name=gexservice
 
 cat header.md > header_.md
@@ -25,6 +22,6 @@ item2md "GEX Struct Define" gexdb/auto_models.go >>  header_.md
 item2md "GEX External Define" gexdb/auto_external.go >>  header_.md
 apidoc -c apidoc.json -i base/basedb -i base/baseapi -i gexdb -i gexapi -o www/apidoc
 
-docker build --build-arg=https_proxy=$HTTPS_PROXY --build-arg=http_proxy=$HTTPS_PROXY -t gex.loc/gexservice:$srv_ver .
-
+docker build --build-arg=https_proxy=$HTTPS_PROXY --build-arg=http_proxy=$HTTPS_PROXY -t $1/gexservice:$srv_ver .
+docker push $1/gexservice:$srv_ver
 

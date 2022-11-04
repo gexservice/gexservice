@@ -25,7 +25,7 @@ type SpotMatcher struct {
 	Symbol            string
 	Base              string
 	Quote             string
-	Fee               decimal.Decimal
+	Fee               FeeCache
 	NewOrderID        func() string
 	PrepareProcess    func(ctx context.Context, matcher *SpotMatcher, userID int64) error
 	Monitor           MatcherMonitor
@@ -42,7 +42,7 @@ func NewSpotMatcher(symbol, base, quote string, monitor MatcherMonitor) (matcher
 		Symbol:            symbol,
 		Base:              base,
 		Quote:             quote,
-		Fee:               decimal.NewFromFloat(0.002),
+		Fee:               ConstFee(0.002),
 		NewOrderID:        gexdb.NewOrderID,
 		PrepareProcess:    func(ctx context.Context, matcher *SpotMatcher, userID int64) error { return nil },
 		Monitor:           monitor,
@@ -187,7 +187,10 @@ func (s *SpotMatcher) ProcessOrder(ctx context.Context, args *gexdb.Order) (orde
 			err = NewErrMatcher(err, "[ProcessOrder] args invalid")
 			return
 		}
-		order, err = s.processLimitOrder(ctx, args)
+		args.FeeRate, err = s.Fee.LoadFee(ctx, args.UserID, s.Symbol)
+		if err == nil {
+			order, err = s.processLimitOrder(ctx, args)
+		}
 	} else {
 		args.Quantity = args.Quantity.Round(s.PrecisionQuantity)
 		args.TotalPrice = args.TotalPrice.Round(s.PrecisionPrice)
@@ -211,7 +214,10 @@ func (s *SpotMatcher) ProcessOrder(ctx context.Context, args *gexdb.Order) (orde
 			err = NewErrMatcher(err, "[ProcessOrder] args invalid")
 			return
 		}
-		order, err = s.processMarketOrder(ctx, args)
+		args.FeeRate, err = s.Fee.LoadFee(ctx, args.UserID, s.Symbol)
+		if err == nil {
+			order, err = s.processMarketOrder(ctx, args)
+		}
 	}
 	return
 }
@@ -354,6 +360,7 @@ func (s *SpotMatcher) processMarketOrder(ctx context.Context, args *gexdb.Order)
 			err = NewErrMatcher(fmt.Errorf("status invalid"), "[ProcessLimit] order by %v is not waiting fail", args.TID)
 			return
 		}
+		order.FeeRate = args.FeeRate
 	} else {
 		order = &gexdb.Order{
 			OrderID: s.NewOrderID(),
@@ -362,6 +369,7 @@ func (s *SpotMatcher) processMarketOrder(ctx context.Context, args *gexdb.Order)
 			Creator: args.UserID,
 			Symbol:  s.Symbol,
 			Side:    args.Side,
+			FeeRate: args.FeeRate,
 		}
 	}
 
@@ -402,18 +410,18 @@ func (s *SpotMatcher) processMarketOrder(ctx context.Context, args *gexdb.Order)
 
 	if order.Side == gexdb.OrderSideBuy {
 		order.InBalance = s.Base
-		order.InFilled = order.Filled.Sub(order.Filled.Mul(s.Fee))
+		order.InFilled = order.Filled.Sub(order.Filled.Mul(order.FeeRate))
 		order.OutBalance = s.Quote
 		order.OutFilled = order.TotalPrice
 		order.FeeBalance = s.Base
-		order.FeeFilled = order.Filled.Mul(s.Fee)
+		order.FeeFilled = order.Filled.Mul(order.FeeRate)
 	} else {
 		order.InBalance = s.Quote
-		order.InFilled = order.TotalPrice.Sub(order.TotalPrice.Mul(s.Fee))
+		order.InFilled = order.TotalPrice.Sub(order.TotalPrice.Mul(order.FeeRate))
 		order.OutBalance = s.Base
 		order.OutFilled = order.Filled
 		order.FeeBalance = s.Quote
-		order.FeeFilled = order.TotalPrice.Mul(s.Fee)
+		order.FeeFilled = order.TotalPrice.Mul(order.FeeRate)
 	}
 	if totalPrice.IsPositive() && totalQuantity.IsPositive() {
 		order.Transaction.Trans = s.allTrans(order, order.Price, doneOrder, partOrder, partFilled)
@@ -515,6 +523,7 @@ func (s *SpotMatcher) processLimitOrder(ctx context.Context, args *gexdb.Order) 
 			err = NewErrMatcher(fmt.Errorf("status invalid"), "[ProcessLimit] order by %v is not waiting fail", args.TID)
 			return
 		}
+		order.FeeRate = args.FeeRate
 	} else {
 		order = &gexdb.Order{
 			OrderID:  s.NewOrderID(),
@@ -525,6 +534,7 @@ func (s *SpotMatcher) processLimitOrder(ctx context.Context, args *gexdb.Order) 
 			Side:     args.Side,
 			Quantity: args.Quantity,
 			Price:    args.Price,
+			FeeRate:  args.FeeRate,
 		}
 	}
 
@@ -600,18 +610,18 @@ func (s *SpotMatcher) processLimitOrder(ctx context.Context, args *gexdb.Order) 
 	//save order
 	if order.Side == gexdb.OrderSideBuy {
 		order.InBalance = s.Base
-		order.InFilled = order.Filled.Sub(order.Filled.Mul(s.Fee))
+		order.InFilled = order.Filled.Sub(order.Filled.Mul(order.FeeRate))
 		order.OutBalance = s.Quote
 		order.OutFilled = order.TotalPrice
 		order.FeeBalance = s.Base
-		order.FeeFilled = order.Filled.Mul(s.Fee)
+		order.FeeFilled = order.Filled.Mul(order.FeeRate)
 	} else {
 		order.InBalance = s.Quote
-		order.InFilled = order.TotalPrice.Sub(order.TotalPrice.Mul(s.Fee))
+		order.InFilled = order.TotalPrice.Sub(order.TotalPrice.Mul(order.FeeRate))
 		order.OutBalance = s.Base
 		order.OutFilled = order.Filled
 		order.FeeBalance = s.Quote
-		order.FeeFilled = order.TotalPrice.Mul(s.Fee)
+		order.FeeFilled = order.TotalPrice.Mul(order.FeeRate)
 	}
 	order.Transaction.Trans = s.allTrans(order, order.Price, refDoneOrder, partOrder, partFilled)
 
@@ -649,10 +659,10 @@ func (s *SpotMatcher) allTrans(base *gexdb.Order, price decimal.Decimal, doneOrd
 		}
 		if base.Side == gexdb.OrderSideBuy {
 			tran.FeeBalance = s.Base
-			tran.FeeFilled = tran.Filled.Mul(s.Fee)
+			tran.FeeFilled = tran.Filled.Mul(base.FeeRate)
 		} else {
 			tran.FeeBalance = s.Quote
-			tran.FeeFilled = tran.TotalPrice.Mul(s.Fee)
+			tran.FeeFilled = tran.TotalPrice.Mul(base.FeeRate)
 		}
 		trans = append(trans, tran)
 	}
@@ -666,10 +676,10 @@ func (s *SpotMatcher) allTrans(base *gexdb.Order, price decimal.Decimal, doneOrd
 		}
 		if base.Side == gexdb.OrderSideBuy {
 			tran.FeeBalance = s.Base
-			tran.FeeFilled = tran.Filled.Mul(s.Fee)
+			tran.FeeFilled = tran.Filled.Mul(base.FeeRate)
 		} else {
 			tran.FeeBalance = s.Quote
-			tran.FeeFilled = tran.TotalPrice.Mul(s.Fee)
+			tran.FeeFilled = tran.TotalPrice.Mul(base.FeeRate)
 		}
 		trans = append(trans, tran)
 	}
@@ -679,7 +689,7 @@ func (s *SpotMatcher) allTrans(base *gexdb.Order, price decimal.Decimal, doneOrd
 func (s *SpotMatcher) doneBookOrder(tx *pgx.Tx, ctx context.Context, changed *MatcherEvent, base *gexdb.Order, bookOrders ...*orderbook.Order) (err error) {
 	for _, bookOrder := range bookOrders {
 		var order *gexdb.Order
-		order, err = gexdb.FindOrderFilterWherefCall(tx, ctx, false, "order_id,type,user_id,side,quantity,filled,price,transaction#all", "order_id=$%v", bookOrder.ID())
+		order, err = gexdb.FindOrderFilterWherefCall(tx, ctx, false, "order_id,type,user_id,side,quantity,filled,price,fee_rate,transaction#all", "order_id=$%v", bookOrder.ID())
 		if err != nil {
 			err = NewErrMatcher(err, "[doneBookOrder] find order by %v fail", bookOrder.ID())
 			break
@@ -693,22 +703,22 @@ func (s *SpotMatcher) doneBookOrder(tx *pgx.Tx, ctx context.Context, changed *Ma
 		}
 		if order.Side == gexdb.OrderSideBuy {
 			tran.FeeBalance = s.Base
-			tran.FeeFilled = tran.Filled.Mul(s.Fee)
+			tran.FeeFilled = tran.Filled.Mul(order.FeeRate)
 		} else {
 			tran.FeeBalance = s.Quote
-			tran.FeeFilled = tran.TotalPrice.Mul(s.Fee)
+			tran.FeeFilled = tran.TotalPrice.Mul(order.FeeRate)
 		}
 		order.Transaction.Trans = append(order.Transaction.Trans, tran)
 		order.Filled = order.Filled.Add(tran.Filled)
 		order.TotalPrice = order.Filled.Mul(order.Price)
 		if bookOrder.Side() == orderbook.Buy {
-			order.InFilled = order.Filled.Sub(order.Filled.Mul(s.Fee))
+			order.InFilled = order.Filled.Sub(order.Filled.Mul(order.FeeRate))
 			order.OutFilled = order.TotalPrice
-			order.FeeFilled = order.Filled.Mul(s.Fee)
+			order.FeeFilled = order.Filled.Mul(order.FeeRate)
 		} else {
-			order.InFilled = order.TotalPrice.Sub(order.TotalPrice.Mul(s.Fee))
+			order.InFilled = order.TotalPrice.Sub(order.TotalPrice.Mul(order.FeeRate))
 			order.OutFilled = order.Filled
-			order.FeeFilled = order.TotalPrice.Mul(s.Fee)
+			order.FeeFilled = order.TotalPrice.Mul(order.FeeRate)
 		}
 		order.Status = gexdb.OrderStatusDone
 		err = s.updateOrder(tx, ctx, order, gexdb.OrderStatusPending, gexdb.OrderStatusPartialled)
@@ -727,7 +737,7 @@ func (s *SpotMatcher) doneBookOrder(tx *pgx.Tx, ctx context.Context, changed *Ma
 }
 
 func (s *SpotMatcher) partBookOrder(tx *pgx.Tx, ctx context.Context, base *gexdb.Order, partOrder *orderbook.Order, partDone decimal.Decimal) (err error) {
-	order, err := gexdb.FindOrderFilterWherefCall(tx, ctx, false, "order_id,type,user_id,side,quantity,filled,price,transaction#all", "order_id=$%v", partOrder.ID())
+	order, err := gexdb.FindOrderFilterWherefCall(tx, ctx, false, "order_id,type,user_id,side,quantity,filled,price,fee_rate,transaction#all", "order_id=$%v", partOrder.ID())
 	if err != nil {
 		err = NewErrMatcher(err, "[partBookOrder] find order by %v fail", partOrder.ID())
 		return
@@ -742,23 +752,23 @@ func (s *SpotMatcher) partBookOrder(tx *pgx.Tx, ctx context.Context, base *gexdb
 	}
 	if base.Side == gexdb.OrderSideBuy {
 		tran.FeeBalance = s.Base
-		tran.FeeFilled = tran.Filled.Mul(s.Fee)
+		tran.FeeFilled = tran.Filled.Mul(order.FeeRate)
 	} else {
 		tran.FeeBalance = s.Quote
-		tran.FeeFilled = tran.TotalPrice.Mul(s.Fee)
+		tran.FeeFilled = tran.TotalPrice.Mul(order.FeeRate)
 	}
 	order.Transaction.Trans = append(order.Transaction.Trans, tran)
 
 	order.Filled = order.Filled.Add(partDone)
 	order.TotalPrice = order.Filled.Mul(order.Price)
 	if partOrder.Side() == orderbook.Buy {
-		order.InFilled = order.Filled.Sub(order.Filled.Mul(s.Fee))
+		order.InFilled = order.Filled.Sub(order.Filled.Mul(order.FeeRate))
 		order.OutFilled = order.TotalPrice
-		order.FeeFilled = order.Filled.Mul(s.Fee)
+		order.FeeFilled = order.Filled.Mul(order.FeeRate)
 	} else {
-		order.InFilled = order.TotalPrice.Sub(order.TotalPrice.Mul(s.Fee))
+		order.InFilled = order.TotalPrice.Sub(order.TotalPrice.Mul(order.FeeRate))
 		order.OutFilled = order.Filled
-		order.FeeFilled = order.TotalPrice.Mul(s.Fee)
+		order.FeeFilled = order.TotalPrice.Mul(order.FeeRate)
 	}
 	order.Status = gexdb.OrderStatusPartialled
 	err = s.updateOrder(tx, ctx, order, gexdb.OrderStatusPending, gexdb.OrderStatusPartialled)
@@ -770,7 +780,7 @@ func (s *SpotMatcher) partBookOrder(tx *pgx.Tx, ctx context.Context, base *gexdb
 }
 
 func (s *SpotMatcher) updateOrder(tx *pgx.Tx, ctx context.Context, order *gexdb.Order, status ...gexdb.OrderStatus) (err error) {
-	err = gexdb.UpdateOrderFilterWherefCall(tx, ctx, order, "filled,total_price,in_filled,out_filled,fee_filled,transaction,status", "order_id=$%v,status=any($%v)", order.OrderID, status)
+	err = gexdb.UpdateOrderFilterWherefCall(tx, ctx, order, "filled,total_price,in_filled,out_filled,fee_filled,fee_rate,transaction,status", "order_id=$%v,status=any($%v)", order.OrderID, status)
 	if err != nil {
 		err = NewErrMatcher(err, "[updateOrder] upda order by %v fail", converter.JSON(order))
 	}

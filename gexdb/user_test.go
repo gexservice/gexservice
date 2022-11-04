@@ -89,6 +89,13 @@ func TestUser(t *testing.T) {
 		return
 	}
 
+	fee, err := LoadUserFee(ctx, user.TID)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	fmt.Printf("-->%v\n", converter.JSON(fee))
+
 	searcher := &UserUnifySearcher{}
 	searcher.Where.Type = UserTypeAll
 	searcher.Where.Key = *user.Name

@@ -18,6 +18,7 @@ const (
 	spotBalanceSymbol = "spot.YWEUSDT"
 )
 
+var spotFeeRate = decimal.NewFromFloat(0.002)
 var spotBalanceAll = []string{spotBalanceBase, spotBalanceQuote}
 
 func TestSpotMatcherBootstrap(t *testing.T) {
@@ -164,8 +165,8 @@ func TestSpotMatcherMarket(t *testing.T) {
 		assetBalanceLocked(userBase.TID, area, spotBalanceQuote, decimal.NewFromFloat(0))
 		assetBalanceLocked(userBase.TID, area, spotBalanceBase, decimal.NewFromFloat(0))
 		assetBalanceFree(userQuote.TID, area, spotBalanceQuote, decimal.NewFromFloat(9950))
-		assetBalanceFree(userQuote.TID, area, spotBalanceBase, decimal.NewFromFloat(0.5).Mul(decimal.NewFromFloat(1).Sub(matcher.Fee)))
-		assetBalanceFree(userBase.TID, area, spotBalanceQuote, decimal.NewFromFloat(50).Mul(decimal.NewFromFloat(1).Sub(matcher.Fee)))
+		assetBalanceFree(userQuote.TID, area, spotBalanceBase, decimal.NewFromFloat(0.5).Mul(decimal.NewFromFloat(1).Sub(spotFeeRate)))
+		assetBalanceFree(userBase.TID, area, spotBalanceQuote, decimal.NewFromFloat(50).Mul(decimal.NewFromFloat(1).Sub(spotFeeRate)))
 		assetBalanceFree(userBase.TID, area, spotBalanceBase, decimal.NewFromFloat(9999.5))
 	}
 	{ //sell buy all, invest
@@ -206,8 +207,8 @@ func TestSpotMatcherMarket(t *testing.T) {
 		assetBalanceLocked(userBase.TID, area, spotBalanceQuote, decimal.NewFromFloat(0))
 		assetBalanceLocked(userBase.TID, area, spotBalanceBase, decimal.NewFromFloat(0))
 		assetBalanceFree(userQuote.TID, area, spotBalanceQuote, decimal.NewFromFloat(9900))
-		assetBalanceFree(userQuote.TID, area, spotBalanceBase, decimal.NewFromFloat(1).Mul(decimal.NewFromFloat(1).Sub(matcher.Fee)))
-		assetBalanceFree(userBase.TID, area, spotBalanceQuote, decimal.NewFromFloat(100).Mul(decimal.NewFromFloat(1).Sub(matcher.Fee)))
+		assetBalanceFree(userQuote.TID, area, spotBalanceBase, decimal.NewFromFloat(1).Mul(decimal.NewFromFloat(1).Sub(spotFeeRate)))
+		assetBalanceFree(userBase.TID, area, spotBalanceQuote, decimal.NewFromFloat(100).Mul(decimal.NewFromFloat(1).Sub(spotFeeRate)))
 		assetBalanceFree(userBase.TID, area, spotBalanceBase, decimal.NewFromFloat(9999))
 	}
 	{ //sell buy all, quantity

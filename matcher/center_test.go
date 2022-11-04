@@ -9,6 +9,7 @@ import (
 	"github.com/codingeasygo/crud/pgx"
 	"github.com/codingeasygo/util/xmap"
 	"github.com/codingeasygo/util/xprop"
+	"github.com/codingeasygo/util/xsql"
 	"github.com/gexservice/gexservice/gexdb"
 	"github.com/shopspring/decimal"
 )
@@ -34,6 +35,41 @@ margin_add=0.01
 [matcher.OFF]
 on=0
 `
+
+func TestMatcherFeeCache(t *testing.T) {
+	usera := testAddUser("TestMatcherFeeCache-a")
+	usera.Fee = xsql.M{
+		"A": 0.002,
+	}
+	usera.UpdateFilter(gexdb.Pool, ctx, "fee")
+	userb := testAddUser("TestMatcherFeeCache-b")
+	userb.Fee = xsql.M{
+		"*": 0.003,
+	}
+	userb.UpdateFilter(gexdb.Pool, ctx, "fee")
+	userc := testAddUser("TestMatcherFeeCache-c")
+
+	cache := NewMatcherFeeCache(100)
+	if fee, err := cache.LoadFee(ctx, usera.TID, "A"); err != nil || fee.InexactFloat64() != 0.002 {
+		t.Errorf("%v,%v", err, fee)
+		return
+	}
+	if fee, err := cache.LoadFee(ctx, usera.TID, "B"); err != nil || fee.InexactFloat64() != 0 {
+		t.Errorf("%v,%v", err, fee)
+		return
+	}
+	if fee, err := cache.LoadFee(ctx, userb.TID, "B"); err != nil || fee.InexactFloat64() != 0.003 {
+		t.Errorf("%v,%v", err, fee)
+		return
+	}
+
+	pgx.MockerStart()
+	defer pgx.MockerStop()
+	pgx.MockerSetCall("Rows.Scan", 1).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
+		_, err = cache.LoadFee(ctx, userc.TID, "A")
+		return
+	})
+}
 
 func TestMatcherCenter(t *testing.T) {
 	clear()
@@ -155,16 +191,16 @@ func TestMatcherCenter(t *testing.T) {
 		pgx.MockerClear()
 		pgx.MockerStart()
 		pgx.MockerSetCall("Pool.Exec", 1).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
-			err = center.PrepareSpotMatcher(ctx, center.FindMatcher(symbol).(*SpotMatcher), 100)
+			err = center.Preparer.PrepareSpotMatcher(ctx, center.FindMatcher(symbol).(*SpotMatcher), 100)
 			return
 		})
-		err = center.PrepareSpotMatcher(ctx, center.FindMatcher(symbol).(*SpotMatcher), 100)
+		err = center.Preparer.PrepareSpotMatcher(ctx, center.FindMatcher(symbol).(*SpotMatcher), 100)
 		if err != nil {
 			t.Error(err)
 			return
 		}
 		pgx.MockerSetCall("Pool.Exec", 1).Call(func(trigger int) (res xmap.M, err error) {
-			err = center.PrepareSpotMatcher(ctx, center.FindMatcher(symbol).(*SpotMatcher), 100)
+			err = center.Preparer.PrepareSpotMatcher(ctx, center.FindMatcher(symbol).(*SpotMatcher), 100)
 			return
 		})
 		pgx.MockerStop()
@@ -204,16 +240,16 @@ func TestMatcherCenter(t *testing.T) {
 		pgx.MockerClear()
 		pgx.MockerStart()
 		pgx.MockerSetCall("Pool.Exec", 1, "Pool.Exec", 2).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
-			err = center.PrepareFuturesMatcher(ctx, center.FindMatcher(symbol).(*FuturesMatcher), 100)
+			err = center.Preparer.PrepareFuturesMatcher(ctx, center.FindMatcher(symbol).(*FuturesMatcher), 100)
 			return
 		})
-		err = center.PrepareFuturesMatcher(ctx, center.FindMatcher(symbol).(*FuturesMatcher), 100)
+		err = center.Preparer.PrepareFuturesMatcher(ctx, center.FindMatcher(symbol).(*FuturesMatcher), 100)
 		if err != nil {
 			t.Error(err)
 			return
 		}
 		pgx.MockerSetCall("Pool.Exec", 1).Call(func(trigger int) (res xmap.M, err error) {
-			err = center.PrepareFuturesMatcher(ctx, center.FindMatcher(symbol).(*FuturesMatcher), 100)
+			err = center.Preparer.PrepareFuturesMatcher(ctx, center.FindMatcher(symbol).(*FuturesMatcher), 100)
 			return
 		})
 		pgx.MockerStop()
@@ -428,7 +464,7 @@ func TestMatcherCenter(t *testing.T) {
 		fmt.Printf("sell open order %v\n", sellOpenOrder3.OrderID)
 		assetOrderStatus(sellOpenOrder3.OrderID, gexdb.OrderStatusPending)
 		pgx.MockerClear()
-		pgx.MockerSetCall("Pool.Exec", 3).Call(func(trigger int) (res xmap.M, err error) {
+		pgx.MockerSetCall("Pool.Exec", 1).Call(func(trigger int) (res xmap.M, err error) {
 			err = center.procTriggerOrder()
 			return
 		})

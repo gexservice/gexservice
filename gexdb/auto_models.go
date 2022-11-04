@@ -208,7 +208,7 @@ const OrderOrderbyAll = "update_time,create_time"
 
 /*
  * Order  represents exs_order
- * Order Fields:tid,order_id,type,user_id,creator,symbol,side,quantity,filled,price,trigger_type,trigger_price,avg_price,total_price,holding,profit,owned,unhedged,in_balance,in_filled,out_balance,out_filled,fee_balance,fee_filled,transaction,fee_settled_status,fee_settled_next,update_time,create_time,status,
+ * Order Fields:tid,order_id,type,user_id,creator,symbol,side,quantity,filled,price,trigger_type,trigger_price,avg_price,total_price,holding,profit,owned,unhedged,in_balance,in_filled,out_balance,out_filled,fee_balance,fee_filled,transaction,fee_settled_status,fee_settled_next,update_time,create_time,status,fee_rate,
  */
 type Order struct {
 	T                string           `json:"-" table:"exs_order"`                                              /* the table name tag */
@@ -242,6 +242,7 @@ type Order struct {
 	UpdateTime       xsql.Time        `json:"update_time,omitempty" valid:"update_time,r|i,r:1;"`               /* the order update time */
 	CreateTime       xsql.Time        `json:"create_time,omitempty" valid:"create_time,r|i,r:1;"`               /* the order create time */
 	Status           OrderStatus      `json:"status,omitempty" valid:"status,o|i,e:0;"`                         /* the order status, Waiting=100, Pending=200:is pending, Partialled=300:is partialled, Done=400:is done, PartCanceled=410: is partialled canceled, Canceled=420: is canceled */
+	FeeRate          decimal.Decimal  `json:"fee_rate,omitempty" valid:"fee_rate,r|f,r:0;"`                     /* the order fee rate */
 }
 
 /***** metadata:OrderComm *****/
@@ -337,7 +338,7 @@ const UserOrderbyAll = "account,phone,update_time,create_time"
 
 /*
  * User  represents exs_user
- * User Fields:tid,type,role,name,account,phone,password,trade_pass,image,external,update_time,create_time,status,
+ * User Fields:tid,type,role,name,account,phone,password,trade_pass,image,fee,external,update_time,create_time,status,
  */
 type User struct {
 	T          string     `json:"-" table:"exs_user"`                                 /* the table name tag */
@@ -350,6 +351,7 @@ type User struct {
 	Password   *string    `json:"password,omitempty" valid:"password,o|s,l:0;"`       /* the user password to login */
 	TradePass  *string    `json:"trade_pass,omitempty" valid:"trade_pass,o|s,l:0;"`   /* the user trade password */
 	Image      *string    `json:"image,omitempty" valid:"image,o|s,l:0;"`             /* the user image */
+	Fee        xsql.M     `json:"fee,omitempty" valid:"fee,r|s,l:0;"`                 /* the user fee */
 	External   xsql.M     `json:"external,omitempty" valid:"external,o|s,l:0;"`       /* the user external info */
 	UpdateTime xsql.Time  `json:"update_time,omitempty" valid:"update_time,r|i,r:1;"` /* the last updat time */
 	CreateTime xsql.Time  `json:"create_time,omitempty" valid:"create_time,r|i,r:1;"` /* the craete time */

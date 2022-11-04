@@ -20,9 +20,9 @@ dump_clear(){
     $used -i 's/DROP TABLE/DROP TABLE IF EXISTS/g' $ofile
 }
 
-tmpfile=exservice.sql
-go run clear/clear.go postgresql://dev:123@psql.loc:5432/exservice
-docker exec postgres pg_dump -s -c -U dev -d exservice -f /tmp/$tmpfile
+tmpfile=gexservice.sql
+go run clear/clear.go postgresql://dev:123@psql.loc:5432/gexservice
+docker exec postgres pg_dump -s -c -U dev -d gexservice -f /tmp/$tmpfile
 docker cp postgres:/tmp/$tmpfile ./
 dump_clear $tmpfile
 

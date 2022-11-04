@@ -5,6 +5,7 @@ import (
 
 	"github.com/codingeasygo/crud"
 	"github.com/codingeasygo/util/converter"
+	"github.com/codingeasygo/util/xmap"
 )
 
 //FindUserByUsrPwd will return user by match account/email/phone=username and passowrd=matched
@@ -56,6 +57,19 @@ func UserHavingTradePassword(ctx context.Context, userID int64) (having int, err
 
 func UserVerifyTradePassword(ctx context.Context, userID int64, password string) (err error) {
 	err = Pool().QueryRow(ctx, `select tid from exs_user where tid=$1 and trade_pass=$2`, userID, password).Scan(converter.Int64Ptr(0))
+	return
+}
+
+func LoadUserFee(ctx context.Context, userID int64) (fee xmap.M, err error) {
+	fee, err = LoadUserFeeCall(Pool(), ctx, userID)
+	return
+}
+
+func LoadUserFeeCall(caller crud.Queryer, ctx context.Context, userID int64) (fee xmap.M, err error) {
+	user, err := FindUserFilterWheref(ctx, "fee#all", "tid=$%v", userID)
+	if err == nil {
+		fee = user.Fee.AsMap()
+	}
 	return
 }
 

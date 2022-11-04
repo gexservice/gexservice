@@ -38,7 +38,7 @@ type FuturesMatcher struct {
 	Area              gexdb.BalanceArea
 	Symbol            string
 	Quote             string
-	Fee               decimal.Decimal
+	Fee               FeeCache
 	MarginMax         decimal.Decimal
 	MarginAdd         decimal.Decimal
 	NewOrderID        func() string
@@ -57,7 +57,7 @@ func NewFuturesMatcher(symbol, quote string, monitor MatcherMonitor) (matcher *F
 		Area:              gexdb.BalanceAreaFutures,
 		Symbol:            symbol,
 		Quote:             quote,
-		Fee:               decimal.NewFromFloat(0.002),
+		Fee:               ConstFee(0.002),
 		MarginMax:         decimal.NewFromFloat(0.99),
 		MarginAdd:         decimal.NewFromFloat(0.05),
 		NewOrderID:        gexdb.NewOrderID,
@@ -208,7 +208,10 @@ func (f *FuturesMatcher) ProcessOrder(ctx context.Context, args *gexdb.Order) (o
 			err = NewErrMatcher(err, "[ProcessOrder] args invalid")
 			return
 		}
-		order, err = f.processLimitOrder(ctx, args)
+		args.FeeRate, err = f.Fee.LoadFee(ctx, args.UserID, f.Symbol)
+		if err == nil {
+			order, err = f.processLimitOrder(ctx, args)
+		}
 	} else {
 		//check args
 		args.Quantity = args.Quantity.Round(f.PrecisionQuantity)
@@ -233,7 +236,10 @@ func (f *FuturesMatcher) ProcessOrder(ctx context.Context, args *gexdb.Order) (o
 			err = NewErrMatcher(err, "[ProcessMarket] args invalid")
 			return
 		}
-		order, err = f.processMarketOrder(ctx, args)
+		args.FeeRate, err = f.Fee.LoadFee(ctx, args.UserID, f.Symbol)
+		if err == nil {
+			order, err = f.processMarketOrder(ctx, args)
+		}
 	}
 	return
 }
@@ -397,6 +403,7 @@ func (f *FuturesMatcher) processMarketOrder(ctx context.Context, args *gexdb.Ord
 			err = NewErrMatcher(fmt.Errorf("status invalid"), "[ProcessLimit] order by %v is not waiting fail", args.TID)
 			return
 		}
+		order.FeeRate = args.FeeRate
 	} else {
 		order = &gexdb.Order{
 			OrderID: f.NewOrderID(),
@@ -405,6 +412,7 @@ func (f *FuturesMatcher) processMarketOrder(ctx context.Context, args *gexdb.Ord
 			Creator: args.UserID,
 			Symbol:  f.Symbol,
 			Side:    args.Side,
+			FeeRate: args.FeeRate,
 		}
 	}
 
@@ -457,7 +465,7 @@ func (f *FuturesMatcher) processMarketOrder(ctx context.Context, args *gexdb.Ord
 	order.Filled = totalQuantity
 	order.TotalPrice = totalPrice
 	order.FeeBalance = f.Quote
-	order.FeeFilled = order.TotalPrice.Mul(f.Fee)
+	order.FeeFilled = order.TotalPrice.Mul(order.FeeRate)
 	if order.Side == gexdb.OrderSideBuy {
 		order.Holding = order.Filled
 	} else {
@@ -576,6 +584,7 @@ func (f *FuturesMatcher) processLimitOrder(ctx context.Context, args *gexdb.Orde
 			err = NewErrMatcher(fmt.Errorf("status invalid"), "[ProcessLimit] order by %v is not waiting fail", args.TID)
 			return
 		}
+		order.FeeRate = args.FeeRate
 	} else {
 		order = &gexdb.Order{
 			OrderID:  f.NewOrderID(),
@@ -586,6 +595,7 @@ func (f *FuturesMatcher) processLimitOrder(ctx context.Context, args *gexdb.Orde
 			Side:     args.Side,
 			Quantity: args.Quantity,
 			Price:    args.Price,
+			FeeRate:  args.FeeRate,
 		}
 	}
 
@@ -645,7 +655,7 @@ func (f *FuturesMatcher) processLimitOrder(ctx context.Context, args *gexdb.Orde
 		order.Status = gexdb.OrderStatusPending
 	}
 	order.FeeBalance = f.Quote
-	order.FeeFilled = order.TotalPrice.Mul(f.Fee)
+	order.FeeFilled = order.TotalPrice.Mul(order.FeeRate)
 	if order.Filled.IsPositive() {
 		order.Profit, err = f.syncHoldingByPartDone(tx, ctx, changed, order, order.Filled)
 	}
@@ -884,7 +894,7 @@ func (f *FuturesMatcher) blowupHolding(tx *pgx.Tx, ctx context.Context, changed 
 		order.AvgPrice = totalPrice.DivRound(totalQuantity, f.PrecisionPrice)
 	}
 	order.FeeBalance = f.Quote
-	order.FeeFilled = order.TotalPrice.Mul(f.Fee)
+	order.FeeFilled = order.TotalPrice.Mul(order.FeeRate)
 	if order.Side == gexdb.OrderSideBuy {
 		order.Holding = order.Filled
 	} else {
@@ -955,7 +965,7 @@ func (f *FuturesMatcher) allTrans(base *gexdb.Order, price decimal.Decimal, done
 			Price:      price,
 			TotalPrice: price.Mul(doneOrder.Quantity()),
 			FeeBalance: f.Quote,
-			FeeFilled:  price.Mul(doneOrder.Quantity()).Mul(f.Fee),
+			FeeFilled:  price.Mul(doneOrder.Quantity()).Mul(base.FeeRate),
 			CreateTime: xsql.TimeNow(),
 		}
 		trans = append(trans, tran)
@@ -967,7 +977,7 @@ func (f *FuturesMatcher) allTrans(base *gexdb.Order, price decimal.Decimal, done
 			Price:      price,
 			TotalPrice: price.Mul(partFilled),
 			FeeBalance: f.Quote,
-			FeeFilled:  price.Mul(partFilled).Mul(f.Fee),
+			FeeFilled:  price.Mul(partFilled).Mul(base.FeeRate),
 			CreateTime: xsql.TimeNow(),
 		}
 		trans = append(trans, tran)
@@ -989,14 +999,14 @@ func (f *FuturesMatcher) doneBookOrder(tx *pgx.Tx, ctx context.Context, changed 
 			Price:      order.Price,
 			TotalPrice: order.Price.Mul(bookOrder.Quantity()),
 			FeeBalance: f.Quote,
-			FeeFilled:  order.Price.Mul(bookOrder.Quantity()).Mul(f.Fee),
+			FeeFilled:  order.Price.Mul(bookOrder.Quantity()).Mul(order.FeeRate),
 			CreateTime: xsql.TimeNow(),
 		}
 		order.Transaction.Trans = append(order.Transaction.Trans, tran)
 		order.Filled = order.Filled.Add(tran.Filled)
 		order.TotalPrice = order.Filled.Mul(order.Price)
 		order.FeeBalance = f.Quote
-		order.FeeFilled = order.TotalPrice.Mul(f.Fee)
+		order.FeeFilled = order.TotalPrice.Mul(order.FeeRate)
 		order.Status = gexdb.OrderStatusDone
 		profit, xerr := f.syncHoldingByPartDone(tx, ctx, changed, order, tran.Filled)
 		if xerr != nil {
@@ -1026,14 +1036,14 @@ func (f *FuturesMatcher) partBookOrder(tx *pgx.Tx, ctx context.Context, changed 
 		Price:      order.Price,
 		TotalPrice: order.Price.Mul(partDone),
 		FeeBalance: f.Quote,
-		FeeFilled:  order.Price.Mul(partDone).Mul(f.Fee),
+		FeeFilled:  order.Price.Mul(partDone).Mul(order.FeeRate),
 		CreateTime: xsql.TimeNow(),
 	}
 	order.Transaction.Trans = append(order.Transaction.Trans, tran)
 	order.Filled = order.Filled.Add(partDone)
 	order.TotalPrice = order.Filled.Mul(order.Price)
 	order.FeeBalance = f.Quote
-	order.FeeFilled = order.TotalPrice.Mul(f.Fee)
+	order.FeeFilled = order.TotalPrice.Mul(order.FeeRate)
 	order.Status = gexdb.OrderStatusPartialled
 	_, err = f.syncHoldingByPartDone(tx, ctx, changed, order, tran.Filled)
 	if err != nil {
@@ -1049,7 +1059,7 @@ func (f *FuturesMatcher) partBookOrder(tx *pgx.Tx, ctx context.Context, changed 
 }
 
 func (f *FuturesMatcher) updateOrder(tx *pgx.Tx, ctx context.Context, order *gexdb.Order, status ...gexdb.OrderStatus) (err error) {
-	err = gexdb.UpdateOrderFilterWherefCall(tx, ctx, order, "filled,total_price,in_filled,out_filled,fee_filled,transaction,status", "order_id=$%v,status=any($%v)", order.OrderID, status)
+	err = gexdb.UpdateOrderFilterWherefCall(tx, ctx, order, "filled,total_price,in_filled,out_filled,fee_filled,fee_rate,transaction,status", "order_id=$%v,status=any($%v)", order.OrderID, status)
 	if err != nil {
 		err = NewErrMatcher(err, "[updateOrder] update order by %v,%v", converter.JSON(order), converter.JSON(status))
 	}
@@ -1134,7 +1144,7 @@ func (f *FuturesMatcher) calcHoldingLocked(holding *gexdb.Holding, orders []*gex
 	closeOnly := true
 	for _, order := range orders {
 		remain := order.Quantity.Sub(order.Filled)
-		fee = fee.Add(remain.Mul(order.Price).Mul(f.Fee))
+		fee = fee.Add(remain.Mul(order.Price).Mul(order.FeeRate))
 		if order.Side == gexdb.OrderSideSell {
 			remain = decimal.Zero.Sub(remain)
 		}
@@ -1152,10 +1162,10 @@ func (f *FuturesMatcher) calcHoldingLocked(holding *gexdb.Holding, orders []*gex
 	if newOrder != nil {
 		var remain decimal.Decimal
 		if newOrder.Price.IsPositive() {
-			fee = fee.Add(newOrder.Quantity.Mul(newOrder.Price).Mul(f.Fee))
+			fee = fee.Add(newOrder.Quantity.Mul(newOrder.Price).Mul(newOrder.FeeRate))
 			remain = newOrder.Quantity.Sub(newOrder.Filled)
 		} else {
-			fee = fee.Add(newOrder.TotalPrice.Mul(f.Fee))
+			fee = fee.Add(newOrder.TotalPrice.Mul(newOrder.FeeRate))
 			remain = newOrder.Filled
 		}
 		if newOrder.Side == gexdb.OrderSideSell {
@@ -1233,7 +1243,7 @@ func (f *FuturesMatcher) syncHoldingByPartDone(tx *pgx.Tx, ctx context.Context, 
 		marginOpen := holding.CalcMargin(f.PrecisionPrice)
 		balance.Margin = balance.Margin.Add(marginOpen)
 	}
-	fee := partHolding.Abs().Mul(order.AvgPrice).Mul(f.Fee)
+	fee := partHolding.Abs().Mul(order.AvgPrice).Mul(order.FeeRate)
 	balance.Locked = balance.Locked.Sub(fee)
 	holding.MarginUsed = holding.CalcMargin(f.PrecisionPrice)
 	holding.Blowup = holding.CalcBlowup(f.PrecisionPrice, f.MarginMax)

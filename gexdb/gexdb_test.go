@@ -31,7 +31,7 @@ func init() {
 		Redis()
 	}()
 	rediscache.InitRedisPool("redis.loc:6379?db=11")
-	_, err := pgx.Bootstrap("postgresql://dev:123@psql.loc:5432/exservice")
+	_, err := pgx.Bootstrap("postgresql://dev:123@psql.loc:5432/gexservice")
 	if err != nil {
 		panic(err)
 	}

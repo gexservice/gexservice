@@ -2280,6 +2280,10 @@ func (user *User) Valid() (err error) {
 //Insert will add exs_user to database
 func (user *User) Insert(caller interface{}, ctx context.Context) (err error) {
 
+	if len(user.Fee) < 1 {
+		user.Fee = xsql.M{}
+	}
+
 	if len(user.External) < 1 {
 		user.External = xsql.M{}
 	}
