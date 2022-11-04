@@ -7,6 +7,7 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
+	"strings"
 
 	"github.com/Centny/rediscache"
 	"github.com/codingeasygo/crud/pgx"
@@ -122,8 +123,21 @@ func main() {
 	web.Handle("^/usr/upload(\\?.*)?$", uploader)
 	web.Shared.HandleNormal("^/upload.*$", http.StripPrefix("/upload", http.FileServer(http.Dir(conf.StrDef("upload", "/server/upload")))))
 	web.Shared.HandleNormal("^/debug/.*$", http.DefaultServeMux)
-	web.Shared.HandleNormal("^/apidoc.*$", http.FileServer(http.Dir(conf.StrDef("www", "/server/apidoc"))))
-	web.Shared.HandleNormal("^.*$", http.FileServer(http.Dir(conf.StrDef("www", "/server/www"))))
+	web.Shared.HandleNormal("^/apidoc.*$", http.FileServer(http.Dir(conf.StrDef("www", "/www/apidoc"))))
+	wwwFS := http.FileServer(http.Dir(conf.StrDef("www", "/www/_")))
+	wapFS := http.FileServer(http.Dir(conf.StrDef("www", "/www/wap")))
+	adminFS := http.FileServer(http.Dir(conf.StrDef("www", "/www/admin")))
+	web.Shared.HandleNormalFunc("^.*$", func(w http.ResponseWriter, r *http.Request) {
+		key := strings.SplitN(r.Host, ".", 2)[0]
+		switch key {
+		case "wap":
+			wapFS.ServeHTTP(w, r)
+		case "admin":
+			adminFS.ServeHTTP(w, r)
+		default:
+			wwwFS.ServeHTTP(w, r)
+		}
+	})
 	go web.HandleSignal()
 	xlog.Infof("start harvester service on %v", conf.Str("/server/listen"))
 	err = web.ListenAndServe(conf.Str("/server/listen"))
