@@ -1,9 +1,9 @@
 
 case $1 in
 loc)
-    docker rm -f gex-loc
-    docker run --name gex-loc -p 3831:3831 -d \
+    srv_ver=`git rev-parse --abbrev-ref HEAD`
+    docker run --rm --name gex-loc -p 3831:3831 -it \
         --link postgres:psql.loc --link redis:redis.loc \
-        gex.loc/gexservice:v1.0.0 /app/gexservice/conf/local.properties
+        gexservice:$srv_ver /app/gexservice/conf/local.properties
 ;;
 esac
