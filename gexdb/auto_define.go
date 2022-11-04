@@ -106,13 +106,13 @@ package gexdb
  * @apiSuccess (Order) {Decimal} Order.out_filled the out balance filled amount
  * @apiSuccess (Order) {String} Order.fee_balance the fee balance asset key
  * @apiSuccess (Order) {Decimal} Order.fee_filled the fee amount
+ * @apiSuccess (Order) {Decimal} Order.fee_rate the order fee rate
  * @apiSuccess (Order) {OrderTransaction} Order.transaction the order transaction info
  * @apiSuccess (Order) {Int} Order.fee_settled_status the order transaction detail
  * @apiSuccess (Order) {Time} Order.fee_settled_next the fee settled time
  * @apiSuccess (Order) {Time} Order.update_time the order update time
  * @apiSuccess (Order) {Time} Order.create_time the order create time
  * @apiSuccess (Order) {OrderStatus} Order.status the order status, all suported is <a href="#metadata-Order">OrderStatusAll</a>
- * @apiSuccess (Order) {Decimal} Order.fee_rate the order fee rate
  */
 
 /**
