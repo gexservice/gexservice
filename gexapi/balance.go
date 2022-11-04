@@ -21,55 +21,28 @@ import (
  * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>
  * @apiSuccess (Success) {Object} total_value the user total estimated value by quote
  * @apiSuccess (Success) {Array} area_values the user all area estimated value
- * @apiSuccess (Success) {Array} area_values.area the blalance area, all type supported is <a href="#metadata-Balance">BalanceAreaAll</a>
- * @apiSuccess (Success) {Array} area_values.value the blalance area area estimated value
+ * @apiSuccess (Success) {BalanceArea} area_values.area the blalance area, all type supported is <a href="#metadata-Balance">BalanceAreaAll</a>
+ * @apiSuccess (Success) {Decimal} area_values.value the blalance area area estimated value
  *
  * @apiSuccessExample {type} Success-Response:
  * {
- *     "balances": {
- *         "MMK": {
- *             "asset": "MMK",
- *             "create_time": 1632661193389,
- *             "free": "100",
- *             "locked": "0",
- *             "status": 100,
- *             "tid": 1005,
- *             "update_time": 1632661193391,
- *             "user_id": 100002
+ *     "area_values": [
+ *         {
+ *             "area": 100,
+ *             "value": "0"
  *         },
- *         "YWE": {
- *             "asset": "YWE",
- *             "create_time": 1632661193389,
- *             "free": "100",
- *             "locked": "0",
- *             "status": 100,
- *             "tid": 1004,
- *             "update_time": 1632661193390,
- *             "user_id": 100002
+ *         {
+ *             "area": 200,
+ *             "value": "2000"
+ *         },
+ *         {
+ *             "area": 300,
+ *             "value": "0"
  *         }
- *     },
+ *     ],
  *     "code": 0,
- *     "estimated": {
- *         "all_balance": "MMK",
- *         "all_daily": "0",
- *         "all_free": "10100"
- *     },
- *     "user": {
- *         "account": "abc0",
- *         "broker_id": 0,
- *         "create_time": 1632661193387,
- *         "external": {},
- *         "image": "abc0_image",
- *         "name": "abc0_name",
- *         "phone": "abc0_123",
- *         "role": 100,
- *         "status": 100,
- *         "tid": 100002,
- *         "type": 100,
- *         "update_time": 1632661193387
- *     }
+ *     "total_value": "2000"
  * }
- *
  */
 func LoadBalanceOverviewH(s *web.Session) web.Result {
 	userID := s.Value("user_id").(int64)
@@ -103,50 +76,39 @@ func LoadBalanceOverviewH(s *web.Session) web.Result {
  *
  * @apiSuccessExample {type} Success-Response:
  * {
- *     "balances": {
- *         "MMK": {
- *             "asset": "MMK",
- *             "create_time": 1632661193389,
- *             "free": "100",
+ *     "balances": [
+ *         {
+ *             "area": 200,
+ *             "asset": "USDT",
+ *             "create_time": 1667547245486,
+ *             "free": "1000",
  *             "locked": "0",
+ *             "margin": "0",
  *             "status": 100,
  *             "tid": 1005,
- *             "update_time": 1632661193391,
+ *             "update_time": 1667547245498,
  *             "user_id": 100002
  *         },
- *         "YWE": {
+ *         {
+ *             "area": 200,
  *             "asset": "YWE",
- *             "create_time": 1632661193389,
- *             "free": "100",
- *             "locked": "0",
+ *             "create_time": 1667547245486,
+ *             "free": "999",
+ *             "locked": "1",
+ *             "margin": "0",
  *             "status": 100,
  *             "tid": 1004,
- *             "update_time": 1632661193390,
+ *             "update_time": 1667547245506,
  *             "user_id": 100002
  *         }
- *     },
+ *     ],
  *     "code": 0,
- *     "estimated": {
- *         "all_balance": "MMK",
- *         "all_daily": "0",
- *         "all_free": "10100"
- *     },
- *     "user": {
- *         "account": "abc0",
- *         "broker_id": 0,
- *         "create_time": 1632661193387,
- *         "external": {},
- *         "image": "abc0_image",
- *         "name": "abc0_name",
- *         "phone": "abc0_123",
- *         "role": 100,
- *         "status": 100,
- *         "tid": 100002,
- *         "type": 100,
- *         "update_time": 1632661193387
+ *     "total_value": "2000",
+ *     "values": {
+ *         "USDT": "1000",
+ *         "YWE": "0"
  *     }
  * }
- *
  */
 func ListBalanceH(s *web.Session) web.Result {
 	var area gexdb.BalanceArea

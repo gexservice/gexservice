@@ -34,22 +34,22 @@ import (
  * @apiUse OrderObject
  *
  * @apiParamExample  {Query} Market Buy By Total:
- * type=OrderTypeTrade&symbol=YWKUSDT&side=buy&total_price=10
+ * type=OrderTypeTrade&symbol=YWKUSDT&side=OrderSideBuy&total_price=10
  *
  * @apiParamExample  {Query} Market Buy By Quantity:
- * type=OrderTypeTrade&symbol=YWKUSDT&side=buy&quantity=1
+ * type=OrderTypeTrade&symbol=YWKUSDT&side=OrderSideBuy&quantity=1
  *
  * @apiParamExample  {Query} Limit Buy:
- * type=OrderTypeTrade&symbol=YWKUSDT&side=buy&quantity=1&price=100
+ * type=OrderTypeTrade&symbol=YWKUSDT&side=OrderSideBuy&quantity=1&price=100
  *
  * @apiParamExample  {Query} Market Sell:
- * symbol=YWKUSDT&side=sell&quantity=1
+ * symbol=YWKUSDT&side=OrderSideSell&quantity=1
  *
  * @apiParamExample  {Query} Limit Sell:
- * symbol=YWKUSDT&side=sell&quantity=1&price=100
+ * symbol=YWKUSDT&side=OrderSideSell&quantity=1&price=100
  *
  * @apiParamExample  {Query} Trigger Limit Sell:
- * symbol=YWKUSDT&side=sell&quantity=1&price=100
+ * symbol=YWKUSDT&side=OrderSideSell&quantity=1&price=100
  *
  * @apiSuccessExample {JSON} Success-Response:
  * {

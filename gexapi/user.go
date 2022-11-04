@@ -55,19 +55,10 @@ func AdminAccess(s *web.Session) bool {
  *
  * @apiParam  {String} [username] the login name, it can be account/phone
  * @apiParam  {String} [password] the login password
- * @apiParam  {String} [kbz_token] the kbz mp kbz_token
  *
  * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>
- * @apiSuccess (Success) {Number} user.tid the user id
- * @apiSuccess (Success) {Number} user.type the user type, all type supported is <a href="#metadata-User">UserTypeAll</a>
- * @apiSuccess (Success) {Number} user.role the user role, all role supported is <a href="#metadata-User">UserRoleAll</a>
- * @apiSuccess (Success) {String} user.account the user account
- * @apiSuccess (Success) {String} user.name the user nickname
- * @apiSuccess (Success) {String} user.phone the user phone
- * @apiSuccess (Success) {Object} user.external the user external info
- * @apiSuccess (Success) {Number} user.create_time the user create time
- * @apiSuccess (Success) {Number} user.update_time the user update time
- * @apiSuccess (Success) {Number} user.status the user status
+ * @apiSuccess (User) {Object} user the user info
+ * @apiUse UserObject
  *
  * @apiParamExample  {form} AccountPassword-Example(form):
  * username=abc&password=123
@@ -163,22 +154,13 @@ func LogoutH(hs *web.Session) web.Result {
  *
  *
  * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>
- * @apiSuccess (Success) {Object} user the user info
- * @apiSuccess (Success) {Number} user.tid the user id
- * @apiSuccess (Success) {Number} user.type the user type, all type supported is <a href="#metadata-User">UserTypeAll</a>
- * @apiSuccess (Success) {Number} user.role the user role, all role supported is <a href="#metadata-User">UserRoleAll</a>
- * @apiSuccess (Success) {String} user.account the user account
- * @apiSuccess (Success) {String} user.name the user nickname
- * @apiSuccess (Success) {String} user.phone the user phone
- * @apiSuccess (Success) {Object} user.external the user external info
- * @apiSuccess (Success) {Number} user.create_time the user create time
- * @apiSuccess (Success) {Number} user.update_time the user update time
- * @apiSuccess (Success) {Number} user.status the user status, all status supported is <a href="#metadata-User">UserStatusAll</a>
- * @apiSuccess (Success) {Object} user the user info
  * @apiSuccess (Success) {Number} trade_pass_setted if user trade pass setted, 1 is setted
- * @apiSuccess (Success) {String} config.goldbar_address the goldbar withdraw address.
- * @apiSuccess (Success) {String} config.welcom_message the welcom message
- * @apiSuccess (Success) {String} config.withdraw_max the withdraw max
+ * @apiSuccess (Config) {Object} config the golbal config info
+ * @apiSuccess (Config) {String} config.goldbar_address the goldbar withdraw address.
+ * @apiSuccess (Config) {String} config.welcom_message the welcom message
+ * @apiSuccess (Config) {String} config.withdraw_max the withdraw max
+ * @apiSuccess (User) {Object} user the user info
+ * @apiUse UserObject
  *
  *
  * @apiSuccessExample {type} Success-Response:
@@ -447,20 +429,8 @@ func SearchUserH(s *web.Session) web.Result {
  * user_id=000
  *
  * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>
- * @apiSuccess (Success) {Number} user.tid the user id
- * @apiSuccess (Success) {Number} user.type the user type, all type supported is <a href="#metadata-User">UserTypeAll</a>
- * @apiSuccess (Success) {Number} user.role the user role, all role supported is <a href="#metadata-User">UserRoleAll</a>
- * @apiSuccess (Success) {String} user.account the user account
- * @apiSuccess (Success) {String} user.name the user nickname
- * @apiSuccess (Success) {String} user.phone the user phone
- * @apiSuccess (Success) {Object} user.external the user external info
- * @apiSuccess (Success) {Number} user.create_time the user create time
- * @apiSuccess (Success) {Number} user.update_time the user update time
- * @apiSuccess (Success) {Number} user.status the user status, all status supported is <a href="#metadata-User">UserStatusAll</a>
- * @apiSuccess (Success) {Object} balances the user balances info, mapping by balance asset as key.
- * @apiSuccess (Success) {String} balances.asset the user balances asset key
- * @apiSuccess (Success) {String} balances.free the user balances free amount
- * @apiSuccess (Success) {String} balances.locked the user balances locked amount
+ * @apiSuccess (User) {Object} user the user info
+ * @apiUse UserObject
  *
  * @apiSuccessExample {type} Success-Response:
  * {

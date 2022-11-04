@@ -18,17 +18,14 @@ import (
  * @apiGroup Market
  *
  * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>
- * @apiSuccess (Success) {Array} symbols the symbol info list
- * @apiSuccess (Success) {String} symbols.base the symbol base asset
- * @apiSuccess (Success) {String} symbols.quote the symbol quote asset
- * @apiSuccess (Success) {String} symbols.fee the symbol trade fee
- * @apiSuccess (Success) {String} symbols.precision_price the symbol price percision
- * @apiSuccess (Success) {String} symbols.precision_quantity the symbol quantity percision
+ * @apiSuccess (Symbols) {Array} symbols the symbol info list
+ * @apiSuccess (Symbols) {String} symbols.base the symbol base asset
+ * @apiSuccess (Symbols) {String} symbols.quote the symbol quote asset
+ * @apiSuccess (Symbols) {String} symbols.fee the symbol trade fee
+ * @apiSuccess (Symbols) {String} symbols.precision_price the symbol price percision
+ * @apiSuccess (Symbols) {String} symbols.precision_quantity the symbol quantity percision
  * @apiSuccess (KLine) {Object} days the symbol day change line, mapping by key is symbol
  * @apiUse KLineObject
- *
- * @apiParamExample  {Query} QueryOrder:
- * interval=100&start_time=100&end_time=1632578100000
  *
  *
  * @apiSuccessExample {JSON} Success-Response:
@@ -93,17 +90,17 @@ func ListSymbolH(s *web.Session) web.Result {
  * @apiParam  {String} symbol the symbol
  *
  * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>
- * @apiSuccess (Success) {Object} symbol the symbol info
- * @apiSuccess (Success) {String} symbol.base the symbol base asset
- * @apiSuccess (Success) {String} symbol.quote the symbol quote asset
- * @apiSuccess (Success) {String} symbol.fee the symbol trade fee
- * @apiSuccess (Success) {String} symbol.precision_price the symbol price percision
- * @apiSuccess (Success) {String} symbol.precision_quantity the symbol quantity percision
+ * @apiSuccess (Symbol) {Object} symbol the symbol info
+ * @apiSuccess (Symbol) {String} symbol.base the symbol base asset
+ * @apiSuccess (Symbol) {String} symbol.quote the symbol quote asset
+ * @apiSuccess (Symbol) {String} symbol.fee the symbol trade fee
+ * @apiSuccess (Symbol) {String} symbol.precision_price the symbol price percision
+ * @apiSuccess (Symbol) {String} symbol.precision_quantity the symbol quantity percision
  * @apiSuccess (KLine) {Object} day the symbol day change line
  * @apiUse KLineObject
  *
  * @apiParamExample  {Query} QueryOrder:
- * interval=100&start_time=100&end_time=1632578100000
+ * symbol=spot.YWEUSDT
  *
  *
  * @apiSuccessExample {JSON} Success-Response:
@@ -152,17 +149,21 @@ func LoadSymbolH(s *web.Session) web.Result {
  * @apiGroup Market
  *
  * @apiParam  {String} action subscribe action, supported is "sub.kline"/"sub.depth"/"sub.ticker"
- * @apiParam  {String} symbol the market symbol
- * @apiParam  {Arrasy} [interval] the kline interval, only for "sub.kline", supported is "5min"/"30min"/"1hour"/"4hour"/"day"/"week"/"mon"
- * @apiParam  {Number} [max] the depth max size
+ * @apiParam  {Array} symbols the symbol to sub
+ * @apiParam  {String} symbols.symbol the market symbol
+ * @apiParam  {Arrasy} [symbols.interval] the kline interval, only for "sub.kline", supported is "5min"/"30min"/"1hour"/"4hour"/"day"/"week"/"mon"
+ * @apiParam  {Number} [symbols.max] the depth max size
  *
  * @apiSuccess (Success) {Number} code the response code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>
- * @apiSuccess (Success) {Number} tid the int order id
  * @apiSuccess (Success) {String} action the received action, supported is "sub.kline"/"sub.depth"/"notify.kline"/"notify.depth"
- * @apiSuccess (Success) {Object} depth the received depth data, only for "notify.depth"
- * @apiSuccess (Success) {String} depth.symbol the received depth symbol
- * @apiSuccess (Success) {Array} depth.bids the received depth bids data, the inner data is ["price","quantity"]
- * @apiSuccess (Success) {Array} depth.asks the received depth asks data, the inner data is ["price","quantity"]
+ * @apiSuccess (Ticker) {Object} ticker the received ticker data, only for "notify.ticker"
+ * @apiSuccess (Ticker) {Array} ticker.ask the received ticker best ask, the inner data is ["price","quantity"]
+ * @apiSuccess (Ticker) {Array} ticker.bid the received ticker best bid, the inner data is ["price","quantity"]
+ * @apiSuccess (Ticker) {Decimal} ticker.close the received ticker latest cose price
+ * @apiSuccess (Depth) {Object} depth the received depth data, only for "notify.depth"
+ * @apiSuccess (Depth) {String} depth.symbol the received depth symbol
+ * @apiSuccess (Depth) {Array} depth.bids the received depth bids data, the inner data is ["price","quantity"]
+ * @apiSuccess (Depth) {Array} depth.asks the received depth asks data, the inner data is ["price","quantity"]
  * @apiSuccess (KLine) {Object} kline the received kline data, only for "notify.kline"
  * @apiUse KLineObject
  *
@@ -277,6 +278,7 @@ var MarketOnline *OnlineHander
  * @apiName ListKLine
  * @apiGroup Market
  *
+ * @apiParam  {String} symbol the kline symbol
  * @apiParam  {String} interval the kline interval, supported is "5min"/"30min"/"1hour"/"4hour"/"1day"/"1week"/"1mon"
  * @apiParam  {Number} start_time filter kline kline.start_time>=start_time
  * @apiParam  {Number} end_time filter kline kline.start_time<end_time
@@ -286,7 +288,7 @@ var MarketOnline *OnlineHander
  * @apiUse KLineObject
  *
  * @apiParamExample  {Query} QueryOrder:
- * interval=100&start_time=100&end_time=1632578100000
+ * symbol=spot.YWEUSDT&interval=100&start_time=100&end_time=1632578100000
  *
  *
  * @apiSuccessExample {JSON} Success-Response:
