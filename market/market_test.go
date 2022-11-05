@@ -47,7 +47,7 @@ margin_add=0.01
 `
 
 func init() {
-	_, err := pgx.Bootstrap("postgresql://dev:123@psql.loc:5432/exservice")
+	_, err := pgx.Bootstrap("postgresql://dev:123@psql.loc:5432/gexservice")
 	if err != nil {
 		panic(err)
 	}
