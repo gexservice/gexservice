@@ -747,8 +747,8 @@ func (m *Market) ListKLine(ctx context.Context, symbol, interval string, startTi
 			return
 		}
 		if len(cache.Lines) > 0 {
-			cache.Latest = cache.Lines[0].StartTime.AsTime()
-			cache.Oldest = cache.Lines[len(cache.Lines)-1].StartTime.AsTime()
+			cache.Oldest = cache.Lines[0].StartTime.AsTime()
+			cache.Latest = cache.Lines[len(cache.Lines)-1].StartTime.AsTime()
 			m.klineCache[key] = cache
 		}
 		if latest != nil && latest.StartTime.AsTime().Before(endTime) {

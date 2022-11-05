@@ -74,7 +74,7 @@ func ListKLine(ctx context.Context, symbol, interval string, startTime, endTime 
 	err = crud.QueryWheref(
 		Pool, ctx, &KLine{}, "#all",
 		"symbol=$%v,interv=$%v,start_time>=$%v,start_time<=$%v", []interface{}{symbol, interval, startTime, endTime},
-		" order by start_time desc", 0, 0, &lines,
+		" order by start_time asc", 0, 0, &lines,
 	)
 	return
 }
