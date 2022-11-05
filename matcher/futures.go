@@ -1065,6 +1065,7 @@ func (f *FuturesMatcher) partBookOrder(tx *pgx.Tx, ctx context.Context, changed 
 		err = NewErrMatcher(err, "[partBookOrder] update order by %v fail", converter.JSON(order))
 		return
 	}
+	changed.AddOrder(order)
 	return
 }
 

@@ -456,7 +456,7 @@ func (s *SpotMatcher) processMarketOrder(ctx context.Context, args *gexdb.Order)
 			err = s.doneBookOrder(tx, ctx, changed, order, doneOrder...)
 		}
 		if err == nil && partOrder != nil {
-			err = s.partBookOrder(tx, ctx, order, partOrder, partFilled)
+			err = s.partBookOrder(tx, ctx, changed, order, partOrder, partFilled)
 		}
 		if err != nil {
 			err = NewErrMatcher(err, "[ProcessMarket] sync book order fail")
@@ -610,7 +610,7 @@ func (s *SpotMatcher) processLimitOrder(ctx context.Context, args *gexdb.Order) 
 		err = s.doneBookOrder(tx, ctx, changed, order, refDoneOrder...)
 	}
 	if err == nil && partOrder != nil && partOrder.ID() != order.OrderID {
-		err = s.partBookOrder(tx, ctx, order, partOrder, partFilled)
+		err = s.partBookOrder(tx, ctx, changed, order, partOrder, partFilled)
 	}
 	if err != nil {
 		err = NewErrMatcher(err, "[ProcessLimit] sync order fail")
@@ -746,7 +746,7 @@ func (s *SpotMatcher) doneBookOrder(tx *pgx.Tx, ctx context.Context, changed *Ma
 	return
 }
 
-func (s *SpotMatcher) partBookOrder(tx *pgx.Tx, ctx context.Context, base *gexdb.Order, partOrder *orderbook.Order, partDone decimal.Decimal) (err error) {
+func (s *SpotMatcher) partBookOrder(tx *pgx.Tx, ctx context.Context, changed *MatcherEvent, base *gexdb.Order, partOrder *orderbook.Order, partDone decimal.Decimal) (err error) {
 	order, err := gexdb.FindOrderFilterWherefCall(tx, ctx, false, "order_id,type,user_id,side,quantity,filled,price,fee_rate,transaction#all", "order_id=$%v", partOrder.ID())
 	if err != nil {
 		err = NewErrMatcher(err, "[partBookOrder] find order by %v fail", partOrder.ID())
@@ -786,6 +786,7 @@ func (s *SpotMatcher) partBookOrder(tx *pgx.Tx, ctx context.Context, base *gexdb
 		err = NewErrMatcher(err, "[partBookOrder] update order by %v fail", converter.JSON(order))
 		return
 	}
+	changed.AddOrder(order)
 	return
 }
 
