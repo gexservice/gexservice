@@ -513,6 +513,21 @@ func TestSpotMatcherMarket(t *testing.T) {
 		assetBalanceLocked(userBase.TID, area, spotBalanceBase, decimal.NewFromFloat(0))
 	}
 	{ //arg error
+		sellOrder, err := matcher.ProcessLimit(ctx, userBase.TID, gexdb.OrderSideSell, decimal.NewFromFloat(0.5), decimal.NewFromFloat(1000))
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		assetOrderStatus(sellOrder.OrderID, gexdb.OrderStatusPending)
+		if len(matcher.BestAsk) < 1 {
+			t.Error("error")
+			return
+		}
+		_, err = matcher.ProcessMarket(ctx, userQuote.TID, gexdb.OrderSideBuy, decimal.NewFromFloat(0.01), decimal.Zero)
+		if err == nil {
+			t.Error(err)
+			return
+		}
 		_, err = matcher.ProcessMarket(ctx, 0, gexdb.OrderSideBuy, decimal.Zero, decimal.NewFromFloat(1))
 		if err == nil {
 			t.Error(err)
@@ -1567,6 +1582,8 @@ func TestSpotMatcherParallel(t *testing.T) {
 	matcher := NewSpotMatcher(spotBalanceSymbol, spotBalanceBase, spotBalanceQuote, MatcherMonitorF(func(ctx context.Context, event *MatcherEvent) {
 	}))
 	matcher.Timeout = time.Hour
+	matcher.PrecisionPrice = 8
+	matcher.PrecisionQuantity = 8
 	elapsed, avg := ParallelTest(100, 5, func(i int64) {
 		switch i % 9 {
 		case 0:
@@ -1626,6 +1643,8 @@ func BenchmarkSpotMatcher(b *testing.B) {
 	})
 	matcher := NewSpotMatcher(spotBalanceSymbol, spotBalanceBase, spotBalanceQuote, MatcherMonitorF(func(ctx context.Context, event *MatcherEvent) {
 	}))
+	matcher.PrecisionPrice = 8
+	matcher.PrecisionQuantity = 8
 	stopwatch := time.Now()
 	for i := 0; i < b.N; i++ {
 		switch i % 9 {

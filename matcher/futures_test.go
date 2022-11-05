@@ -927,7 +927,20 @@ func TestFuturesMatcherMarket(t *testing.T) {
 		//
 		env := testFuturesInit(testCount)
 		matcher := NewFuturesMatcher(futuresHoldingSymbol, futuresBalanceQuote, env.Monitor)
-		_, err := matcher.ProcessMarket(ctx, 0, gexdb.OrderSideBuy, decimal.Zero, decimal.NewFromFloat(1))
+		sellOpenOrder, err := matcher.ProcessLimit(ctx, env.Seller.TID, gexdb.OrderSideSell, decimal.NewFromFloat(1), decimal.NewFromFloat(100))
+		if err != nil {
+			t.Error(ErrStack(err))
+			return
+		}
+		fmt.Printf("sell open order %v\n", sellOpenOrder.OrderID)
+		assetOrderStatus(sellOpenOrder.OrderID, gexdb.OrderStatusPending)
+		//
+		_, err = matcher.ProcessMarket(ctx, env.Buyer.TID, gexdb.OrderSideBuy, decimal.NewFromFloat(0.01), decimal.Zero)
+		if err == nil {
+			t.Error(err)
+			return
+		}
+		_, err = matcher.ProcessMarket(ctx, 0, gexdb.OrderSideBuy, decimal.Zero, decimal.NewFromFloat(1))
 		if err == nil {
 			t.Error(err)
 			return
@@ -3414,6 +3427,8 @@ func TestFuturesMatcherParallel(t *testing.T) {
 	// clear()
 	env := testFuturesInit(0)
 	matcher := NewFuturesMatcher(futuresHoldingSymbol, futuresBalanceQuote, env.Monitor)
+	matcher.PrecisionPrice = 8
+	matcher.PrecisionQuantity = 8
 	// for _, i := range []int64{1, 0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20} {
 	elapsed, avg := ParallelTest(100, 5, func(i int64) {
 		switch i % 9 {
@@ -3463,6 +3478,8 @@ func BenchmarkFuturesMatcher(b *testing.B) {
 	clear()
 	env := testFuturesInit(0)
 	matcher := NewFuturesMatcher(futuresHoldingSymbol, futuresBalanceQuote, env.Monitor)
+	matcher.PrecisionPrice = 8
+	matcher.PrecisionQuantity = 8
 	stopwatch := time.Now()
 	for i := 0; i < b.N; i++ {
 		switch i % 9 {

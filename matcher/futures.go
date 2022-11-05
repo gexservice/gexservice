@@ -44,6 +44,8 @@ type FuturesMatcher struct {
 	NewOrderID        func() string
 	PrepareProcess    func(ctx context.Context, matcher *FuturesMatcher, userID int64) error
 	Monitor           MatcherMonitor
+	BestAsk           []decimal.Decimal
+	BestBid           []decimal.Decimal
 	bookUser          map[int64]map[int64]int
 	bookVal           *orderbook.OrderBook
 	bookLock          sync.RWMutex
@@ -52,8 +54,8 @@ type FuturesMatcher struct {
 func NewFuturesMatcher(symbol, quote string, monitor MatcherMonitor) (matcher *FuturesMatcher) {
 	matcher = &FuturesMatcher{
 		Timeout:           5 * time.Second,
-		PrecisionQuantity: 8,
-		PrecisionPrice:    8,
+		PrecisionQuantity: 2,
+		PrecisionPrice:    2,
 		Area:              gexdb.BalanceAreaFutures,
 		Symbol:            symbol,
 		Quote:             quote,
@@ -233,7 +235,12 @@ func (f *FuturesMatcher) ProcessOrder(ctx context.Context, args *gexdb.Order) (o
 		}
 		if args.Side == gexdb.OrderSideSell && !args.Quantity.IsPositive() {
 			err = fmt.Errorf("process sell market quantity is required or too small")
-			err = NewErrMatcher(err, "[ProcessMarket] args invalid")
+			err = NewErrMatcher(err, "[ProcessOrder] args invalid")
+			return
+		}
+		if args.Side == gexdb.OrderSideBuy && args.TotalPrice.IsPositive() && len(f.BestAsk) > 0 && args.TotalPrice.DivRound(f.BestAsk[0], f.PrecisionQuantity).Sign() == 0 {
+			err = fmt.Errorf("process buy market invest is too small")
+			err = NewErrMatcher(err, "[ProcessOrder] args invalid")
 			return
 		}
 		args.FeeRate, err = f.Fee.LoadFee(ctx, args.UserID, f.Symbol)
@@ -273,6 +280,7 @@ func (f *FuturesMatcher) processCancelOrder(ctx context.Context, args *gexdb.Ord
 		}
 		cancel()
 		changed.Depth = f.bookVal.Depth(30)
+		f.BestAsk, f.BestBid = bestPrice(changed.Depth)
 		f.bookLock.Unlock()
 
 		//monitor
@@ -377,6 +385,7 @@ func (f *FuturesMatcher) processMarketOrder(ctx context.Context, args *gexdb.Ord
 		}
 		cancel()
 		changed.Depth = f.bookVal.Depth(30)
+		f.BestAsk, f.BestBid = bestPrice(changed.Depth)
 		f.bookLock.Unlock()
 
 		//monitor
@@ -558,6 +567,7 @@ func (f *FuturesMatcher) processLimitOrder(ctx context.Context, args *gexdb.Orde
 		}
 		cancel()
 		changed.Depth = f.bookVal.Depth(30)
+		f.BestAsk, f.BestBid = bestPrice(changed.Depth)
 		f.bookLock.Unlock()
 
 		//montiro

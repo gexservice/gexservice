@@ -229,3 +229,20 @@ func ProcessOrder(ctx context.Context, args *gexdb.Order) (order *gexdb.Order, e
 	order, err = Shared.ProcessOrder(ctx, args)
 	return
 }
+
+func bestPrice(depth *orderbook.Depth) (ask, bid []decimal.Decimal) {
+	if depth == nil {
+		return
+	}
+	if len(depth.Asks) > 0 {
+		ask = depth.Asks[0]
+	} else {
+		ask = nil
+	}
+	if len(depth.Bids) > 0 {
+		bid = depth.Bids[0]
+	} else {
+		bid = nil
+	}
+	return
+}

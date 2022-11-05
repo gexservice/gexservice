@@ -225,3 +225,7 @@ func TestShared(t *testing.T) {
 	ProcessMarket(ctx, 0, "", gexdb.OrderSideBuy, decimal.Zero, decimal.Zero)
 	ProcessOrder(ctx, &gexdb.Order{})
 }
+
+func TestSome(t *testing.T) {
+	bestPrice(nil)
+}

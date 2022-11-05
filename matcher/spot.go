@@ -29,6 +29,8 @@ type SpotMatcher struct {
 	NewOrderID        func() string
 	PrepareProcess    func(ctx context.Context, matcher *SpotMatcher, userID int64) error
 	Monitor           MatcherMonitor
+	BestAsk           []decimal.Decimal
+	BestBid           []decimal.Decimal
 	bookVal           *orderbook.OrderBook
 	bookLock          sync.RWMutex
 }
@@ -36,8 +38,8 @@ type SpotMatcher struct {
 func NewSpotMatcher(symbol, base, quote string, monitor MatcherMonitor) (matcher *SpotMatcher) {
 	matcher = &SpotMatcher{
 		Timeout:           5 * time.Second,
-		PrecisionQuantity: 8,
-		PrecisionPrice:    8,
+		PrecisionQuantity: 2,
+		PrecisionPrice:    2,
 		Area:              gexdb.BalanceAreaSpot,
 		Symbol:            symbol,
 		Base:              base,
@@ -214,6 +216,11 @@ func (s *SpotMatcher) ProcessOrder(ctx context.Context, args *gexdb.Order) (orde
 			err = NewErrMatcher(err, "[ProcessOrder] args invalid")
 			return
 		}
+		if args.Side == gexdb.OrderSideBuy && args.TotalPrice.IsPositive() && len(s.BestAsk) > 0 && args.TotalPrice.DivRound(s.BestAsk[0], s.PrecisionQuantity).Sign() == 0 {
+			err = fmt.Errorf("process buy market invest is too small")
+			err = NewErrMatcher(err, "[ProcessOrder] args invalid")
+			return
+		}
 		args.FeeRate, err = s.Fee.LoadFee(ctx, args.UserID, s.Symbol)
 		if err == nil {
 			order, err = s.processMarketOrder(ctx, args)
@@ -246,6 +253,7 @@ func (s *SpotMatcher) processCancelOrder(ctx context.Context, args *gexdb.Order)
 		}
 		cancel()
 		changed.Depth = s.bookVal.Depth(30)
+		s.BestAsk, s.BestBid = bestPrice(changed.Depth)
 		s.bookLock.Unlock()
 
 		//monitor
@@ -333,6 +341,7 @@ func (s *SpotMatcher) processMarketOrder(ctx context.Context, args *gexdb.Order)
 		}
 		cancel()
 		changed.Depth = s.bookVal.Depth(30)
+		s.BestAsk, s.BestBid = bestPrice(changed.Depth)
 		s.bookLock.Unlock()
 
 		//monitor
@@ -498,6 +507,7 @@ func (s *SpotMatcher) processLimitOrder(ctx context.Context, args *gexdb.Order) 
 		}
 		cancel()
 		changed.Depth = s.bookVal.Depth(30)
+		s.BestAsk, s.BestBid = bestPrice(changed.Depth)
 		s.bookLock.Unlock()
 
 		//montiro
