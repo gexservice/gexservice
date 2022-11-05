@@ -23,6 +23,7 @@ func Handle(pre string, mux *web.SessionMux) {
 	mux.Handle("^"+pre+"/conf/rule(\\?.*)?$", ConfRuleH)
 	mux.Handle("^"+pre+"/conf/goldbar(\\?.*)?$", ConfGoldbarH)
 	mux.FilterFunc("^"+pre+"/usr/.*$", LoginAccessF)
+	mux.FilterFunc("^"+pre+"/admin/.*$", AdminAccessF)
 	baseapi.Handle(pre, mux)
 	//index
 	mux.HandleFunc("^"+pre+"/pub/index(\\?.*)?$", IndexH)
@@ -60,6 +61,11 @@ func Handle(pre string, mux *web.SessionMux) {
 	mux.HandleFunc("^"+pre+"/pub/listKLine(\\?.*)?$", ListKLineH)
 	mux.HandleFunc("^"+pre+"/pub/loadDepth(\\?.*)?$", LoadDepthH)
 	// mux.HandleFunc("^"+pre+"/pub/listMarketOrder(\\?.*)?$", ListMarketOrderH)
+	//maker
+	mux.HandleFunc("^"+pre+"/admin/loadSymbolMaker", LoadSymbolMakerH)
+	mux.HandleFunc("^"+pre+"/admin/updateSymbolMaker", UpdateSymbolMakerH)
+	mux.HandleFunc("^"+pre+"/admin/startSymbolMaker", StartSymbolMakerH)
+	mux.HandleFunc("^"+pre+"/admin/stopSymbolMaker", StopSymbolMakerH)
 }
 
 func RecvValidJSON(s *web.Session, valider gexdb.Validable) (err error) {

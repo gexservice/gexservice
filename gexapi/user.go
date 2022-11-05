@@ -20,10 +20,10 @@ import (
 var LoginAccessRedirect string
 
 //LoginAccessF is the normal user login access filter
-func LoginAccessF(hs *web.Session) web.Result {
-	userID, ok := hs.Value("user_id").(int64)
+func LoginAccessF(s *web.Session) web.Result {
+	userID, ok := s.Value("user_id").(int64)
 	if !ok || userID < 1 {
-		return hs.SendJSON(xmap.M{
+		return s.SendJSON(xmap.M{
 			"code":     define.Redirect,
 			"redirect": LoginAccessRedirect,
 			"message":  "not login",
@@ -43,6 +43,17 @@ func AdminAccess(s *web.Session) bool {
 		return false
 	}
 	return user.Type == gexdb.UserTypeAdmin
+}
+
+//AdminAccessF is the admin user login access filter
+func AdminAccessF(s *web.Session) web.Result {
+	if !AdminAccess(s) {
+		return s.SendJSON(xmap.M{
+			"code":    define.NotAccess,
+			"message": define.ErrNotAccess.String(),
+		})
+	}
+	return web.Continue
 }
 
 //LoginH is http handler to login by username and password
