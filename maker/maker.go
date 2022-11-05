@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/centny/orderbook"
+	"github.com/codingeasygo/crud/pgx"
 	"github.com/codingeasygo/util/converter"
 	"github.com/codingeasygo/util/xtime"
 	"github.com/gexservice/gexservice/base/basedb"
@@ -29,6 +30,21 @@ var Verbose = false
 
 var makerAll = map[string]*Maker{}
 var makerLock = sync.RWMutex{}
+
+func Bootstrap(ctx context.Context) (err error) {
+	var config *Config
+	for _, symbol := range matcher.Shared.Symbols {
+		config, err = LoadConfig(ctx, symbol.Symbol)
+		if err == nil && config.ON > 0 {
+			err = Start(ctx, config.Symbol)
+		}
+		if err != nil && err != pgx.ErrNoRows {
+			break
+		}
+		err = nil
+	}
+	return
+}
 
 func Start(ctx context.Context, symbol string) (err error) {
 	makerLock.Lock()
@@ -299,6 +315,10 @@ func NewMaker(config *Config) (maker *Maker) {
 func (m *Maker) Start(ctx context.Context) (err error) {
 	m.close = m.Config.Open
 	m.symbol = matcher.Shared.Symbols[m.Config.Symbol]
+	if m.symbol == nil {
+		err = fmt.Errorf("symbol %v is not found on matcher", m.Config.Symbol)
+		return
+	}
 	if strings.HasPrefix(m.symbol.Symbol, "spot.") {
 		_, err = gexdb.TouchBalance(ctx, gexdb.BalanceAreaSpot, []string{m.symbol.Base, m.symbol.Quote}, m.Config.UserID)
 		if err != nil {

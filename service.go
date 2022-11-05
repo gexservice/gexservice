@@ -22,6 +22,7 @@ import (
 	"github.com/gexservice/gexservice/base/xlog"
 	"github.com/gexservice/gexservice/gexapi"
 	"github.com/gexservice/gexservice/gexdb"
+	"github.com/gexservice/gexservice/maker"
 	"github.com/gexservice/gexservice/market"
 	"github.com/gexservice/gexservice/matcher"
 )
@@ -114,6 +115,10 @@ func main() {
 	// }
 	//
 	err = matcher.Bootstrap(conf)
+	if err != nil {
+		panic(err)
+	}
+	err = maker.Bootstrap(context.Background())
 	if err != nil {
 		panic(err)
 	}

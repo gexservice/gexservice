@@ -174,7 +174,7 @@ func TestControl(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	err = Start(ctx, config.Symbol)
+	err = Bootstrap(ctx)
 	if err != nil {
 		t.Error(err)
 		return
@@ -214,7 +214,19 @@ func TestControl(t *testing.T) {
 		t.Error(err)
 		return
 	}
+	maker.Config.Symbol = "xx"
+	err = maker.Start(ctx)
+	if err == nil {
+		t.Error(err)
+		return
+	}
+
 	pgx.MockerClear()
+
+	pgx.MockerSetCall("Rows.Scan", 1).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
+		err = Bootstrap(ctx)
+		return
+	})
 
 	pgx.MockerSetCall("Rows.Scan", 1).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
 		err = Start(ctx, config.Symbol)
@@ -228,7 +240,7 @@ func TestControl(t *testing.T) {
 }
 
 func TestConfig(t *testing.T) {
-	config := Config{}
+	config := &Config{}
 	config.Open = decimal.NewFromFloat(1000)
 	config.Close.Min = decimal.NewFromFloat(-0.01)
 	config.Close.Max = decimal.NewFromFloat(0.01)
@@ -248,6 +260,10 @@ func TestConfig(t *testing.T) {
 			break
 		}
 	}
+	config.Value()
+	config.Scan(t)
+	config = nil
+	config.Value()
 }
 
 const (
