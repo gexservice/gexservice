@@ -758,6 +758,9 @@ func (m *Market) ListKLine(ctx context.Context, symbol, interval string, startTi
 	if err != nil {
 		return
 	}
+	if endTime.Sub(startTime) > 100*interv {
+		startTime = endTime.Add(-100 * interv)
+	}
 	startTime = xtime.TimeUnix((xtime.Timestamp(startTime) / interv.Milliseconds()) * interv.Milliseconds())
 	m.klineLock.Lock()
 	defer m.klineLock.Unlock()
@@ -774,7 +777,7 @@ func (m *Market) ListKLine(ctx context.Context, symbol, interval string, startTi
 			cache.Latest = cache.Lines[len(cache.Lines)-1].StartTime.AsTime()
 			m.klineCache[key] = cache
 		}
-		if latest != nil && latest.StartTime.AsTime().Before(endTime) {
+		if latest != nil && (xtime.Timestamp(endTime) < 1 || latest.StartTime.AsTime().Before(endTime)) {
 			lines = append(lines, latest)
 		}
 		lines = append(lines, cache.Lines...)
@@ -792,7 +795,7 @@ func (m *Market) ListKLine(ctx context.Context, symbol, interval string, startTi
 		lines = append(lines, latest)
 	}
 	for _, line := range cache.Lines {
-		if (line.StartTime.AsTime().After(startTime) || line.StartTime.AsTime().Equal(startTime)) && line.StartTime.AsTime().Before(endTime) {
+		if (line.StartTime.AsTime().After(startTime) || line.StartTime.AsTime().Equal(startTime)) && (xtime.Timestamp(endTime) < 1 || line.StartTime.AsTime().Before(endTime)) {
 			lines = append(lines, line)
 		}
 	}
