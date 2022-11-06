@@ -119,15 +119,16 @@ func ListBalanceH(s *web.Session) web.Result {
 		return util.ReturnCodeLocalErr(s, define.ArgsInvalid, "arg-err", err)
 	}
 	userID := s.Value("user_id").(int64)
-	totalValue, balances, values, err := market.CalcBalanceTotalValue(s.R.Context(), userID, area)
+	totalValue, todayWinned, balances, values, err := market.CalcBalanceTotalValue(s.R.Context(), userID, area)
 	if err != nil {
 		xlog.Errorf("ListBalanceH calc user %v %v balance overview fail with %v", userID, area, err)
 		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
 	}
 	return s.SendJSON(xmap.M{
-		"code":        0,
-		"total_value": totalValue,
-		"balances":    balances,
-		"values":      values,
+		"code":         0,
+		"total_value":  totalValue,
+		"today_winned": todayWinned,
+		"balances":     balances,
+		"values":       values,
 	})
 }

@@ -35,6 +35,19 @@ const (
 // 	BalanceAssetAll = []string{BalanceAssetYWE, BalanceAssetMMK}
 // )
 
+func (b BalanceArea) Prefix() string {
+	switch b {
+	case BalanceAreaSpot:
+		return "spot."
+	case BalanceAreaFutures:
+		return "futures."
+	case BalanceAreaFunds:
+		return "funds."
+	default:
+		return fmt.Sprintf("%v.", int(b))
+	}
+}
+
 func (b BalanceArea) String() string {
 	switch b {
 	case BalanceAreaSpot:
@@ -145,6 +158,12 @@ func (o *Order) Info() string {
 		"tid:%v,order_id:%v,type:%v,side:%v,qty:%v,filled:%v,price:%v,total_price:%v,holding:%v,fee:%v%v,status:%v",
 		o.TID, o.OrderID, o.Type, o.Side, o.Quantity, o.Filled, o.Price, o.TotalPrice, o.Holding, o.FeeFilled, o.FeeBalance, o.Status,
 	)
+}
+
+type Ticker struct {
+	Symbol string            `json:"symbol"`
+	Ask    []decimal.Decimal `json:"ask"`
+	Bid    []decimal.Decimal `json:"bid"`
 }
 
 /***** metadata:ExReturnCode *****/

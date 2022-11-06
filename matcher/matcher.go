@@ -10,6 +10,8 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+var Quote string = "USDT"
+
 type FeeCache interface {
 	LoadFee(ctx context.Context, userID int64, symbol string) (fee decimal.Decimal, err error)
 }

@@ -125,9 +125,10 @@ func testAddUser(userRole gexdb.UserRole, account string) (user *gexdb.User) {
 }
 
 const (
-	spotBalanceBase   = "YWE"
-	spotBalanceQuote  = "USDT"
-	spotBalanceSymbol = "spot.YWEUSDT"
+	spotBalanceBase     = "YWE"
+	spotBalanceQuote    = "USDT"
+	spotBalanceSymbol   = "spot.YWEUSDT"
+	futuresBalanceQuote = "USDT"
 )
 
 var spotBalanceAll = []string{spotBalanceBase, spotBalanceQuote}
@@ -149,10 +150,18 @@ func initdata() {
 	userabc2 = testAddUser(gexdb.UserRoleNormal, "abc2")
 	userabc3 = testAddUser(gexdb.UserRoleNormal, "abc3")
 	gexdb.TouchBalance(ctx, gexdb.BalanceAreaSpot, spotBalanceAll, userx0.TID, userx1.TID, userabc0.TID, userabc1.TID, userabc2.TID, userabc3.TID)
+	gexdb.TouchBalance(ctx, gexdb.BalanceAreaFutures, []string{futuresBalanceQuote}, userx0.TID, userx1.TID, userabc0.TID, userabc1.TID, userabc2.TID, userabc3.TID)
 	gexdb.IncreaseBalanceCall(gexdb.Pool(), ctx, &gexdb.Balance{
 		UserID: userabc0.TID,
 		Area:   gexdb.BalanceAreaSpot,
 		Asset:  spotBalanceBase,
+		Free:   decimal.NewFromFloat(1000),
+		Status: gexdb.BalanceStatusNormal,
+	})
+	gexdb.IncreaseBalanceCall(gexdb.Pool(), ctx, &gexdb.Balance{
+		UserID: userabc0.TID,
+		Area:   gexdb.BalanceAreaFutures,
+		Asset:  futuresBalanceQuote,
 		Free:   decimal.NewFromFloat(1000),
 		Status: gexdb.BalanceStatusNormal,
 	})
@@ -174,6 +183,13 @@ func initdata() {
 		UserID: userabc2.TID,
 		Area:   gexdb.BalanceAreaSpot,
 		Asset:  spotBalanceQuote,
+		Free:   decimal.NewFromFloat(1000),
+		Status: gexdb.BalanceStatusNormal,
+	})
+	gexdb.IncreaseBalanceCall(gexdb.Pool(), ctx, &gexdb.Balance{
+		UserID: userabc2.TID,
+		Area:   gexdb.BalanceAreaFutures,
+		Asset:  futuresBalanceQuote,
 		Free:   decimal.NewFromFloat(1000),
 		Status: gexdb.BalanceStatusNormal,
 	})
@@ -188,24 +204,44 @@ func initMarket() {
 		panic(err)
 	}
 	market.Bootstrap()
-	//
-	symbol := "spot.YWEUSDT"
-	sellOpenOrder, err := matcher.ProcessLimit(ctx, userabc0.TID, symbol, gexdb.OrderSideSell, decimal.NewFromFloat(1), decimal.NewFromFloat(100))
-	if err != nil {
-		panic(err)
-	}
-	fmt.Printf("sell open order %v\n", sellOpenOrder.OrderID)
+	{ //spot
+		symbol := "spot.YWEUSDT"
+		sellOpenOrder, err := matcher.ProcessLimit(ctx, userabc0.TID, symbol, gexdb.OrderSideSell, decimal.NewFromFloat(1), decimal.NewFromFloat(100))
+		if err != nil {
+			panic(err)
+		}
+		fmt.Printf("sell open order %v\n", sellOpenOrder.OrderID)
 
-	buyOpenOrder1, err := matcher.ProcessMarket(ctx, userabc2.TID, symbol, gexdb.OrderSideBuy, decimal.Zero, decimal.NewFromFloat(0.5))
-	if err != nil {
-		panic(err)
+		buyOpenOrder1, err := matcher.ProcessMarket(ctx, userabc2.TID, symbol, gexdb.OrderSideBuy, decimal.Zero, decimal.NewFromFloat(0.5))
+		if err != nil {
+			panic(err)
+		}
+		fmt.Printf("buy open order %v\n", buyOpenOrder1.OrderID)
+		buyOpenOrder2, err := matcher.ProcessLimit(ctx, userabc2.TID, symbol, gexdb.OrderSideBuy, decimal.NewFromFloat(0.5), decimal.NewFromFloat(90))
+		if err != nil {
+			panic(err)
+		}
+		fmt.Printf("buy open order %v\n", buyOpenOrder2.OrderID)
 	}
-	fmt.Printf("buy open order %v\n", buyOpenOrder1.OrderID)
-	buyOpenOrder2, err := matcher.ProcessLimit(ctx, userabc2.TID, symbol, gexdb.OrderSideBuy, decimal.NewFromFloat(0.5), decimal.NewFromFloat(90))
-	if err != nil {
-		panic(err)
+	{ //futures
+		symbol := "futures.YWEUSDT"
+		sellOpenOrder, err := matcher.ProcessLimit(ctx, userabc0.TID, symbol, gexdb.OrderSideSell, decimal.NewFromFloat(1), decimal.NewFromFloat(100))
+		if err != nil {
+			panic(err)
+		}
+		fmt.Printf("sell open order %v\n", sellOpenOrder.OrderID)
+
+		buyOpenOrder1, err := matcher.ProcessMarket(ctx, userabc2.TID, symbol, gexdb.OrderSideBuy, decimal.Zero, decimal.NewFromFloat(0.5))
+		if err != nil {
+			panic(err)
+		}
+		fmt.Printf("buy open order %v\n", buyOpenOrder1.OrderID)
+		buyOpenOrder2, err := matcher.ProcessLimit(ctx, userabc2.TID, symbol, gexdb.OrderSideBuy, decimal.NewFromFloat(0.5), decimal.NewFromFloat(90))
+		if err != nil {
+			panic(err)
+		}
+		fmt.Printf("buy open order %v\n", buyOpenOrder2.OrderID)
 	}
-	fmt.Printf("buy open order %v\n", buyOpenOrder2.OrderID)
 	time.Sleep(300 * time.Millisecond)
 }
 

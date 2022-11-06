@@ -17,6 +17,8 @@ import (
  * @apiName ListSymbol
  * @apiGroup Market
  *
+ * @apiParam  {String} type the symbol type, supported in spot/futures
+ *
  * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>
  * @apiSuccess (Symbols) {Array} symbols the symbol info list
  * @apiSuccess (Symbols) {String} symbols.base the symbol base asset
@@ -72,7 +74,7 @@ import (
  *
  */
 func ListSymbolH(s *web.Session) web.Result {
-	symbols, days := market.ListSymbol()
+	symbols, days := market.ListSymbol(s.Argument("type"))
 	return s.SendJSON(xmap.M{
 		"code":    0,
 		"symbols": symbols,

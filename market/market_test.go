@@ -151,16 +151,43 @@ func TestShared(t *testing.T) {
 		return
 	}
 	fmt.Printf("sell open order %v\n", sellOpenOrder.OrderID)
-
 	buyOpenOrder, err := matcher.ProcessMarket(ctx, userQuote.TID, symbol, gexdb.OrderSideBuy, decimal.Zero, decimal.NewFromFloat(0.5))
 	if err != nil {
 		t.Error(err)
 		return
 	}
 	fmt.Printf("buy open order %v\n", buyOpenOrder.OrderID)
+	sellOpenOrder1, err := matcher.ProcessLimit(ctx, userBase.TID, symbol, gexdb.OrderSideSell, decimal.NewFromFloat(0.5), decimal.NewFromFloat(100.01))
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	fmt.Printf("sell open order %v\n", sellOpenOrder1.OrderID)
+	buyOpenOrder1, err := matcher.ProcessMarket(ctx, userQuote.TID, symbol, gexdb.OrderSideBuy, decimal.Zero, decimal.NewFromFloat(0.5))
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	fmt.Printf("buy open order %v\n", buyOpenOrder1.OrderID)
+	sellOpenOrder2, err := matcher.ProcessLimit(ctx, userBase.TID, symbol, gexdb.OrderSideSell, decimal.NewFromFloat(0.5), decimal.NewFromFloat(101))
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	fmt.Printf("sell open order %v\n", sellOpenOrder2.OrderID)
+	buyOpenOrder2, err := matcher.ProcessLimit(ctx, userQuote.TID, symbol, gexdb.OrderSideBuy, decimal.NewFromFloat(0.5), decimal.NewFromFloat(100))
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	fmt.Printf("buy open order %v\n", buyOpenOrder2.OrderID)
 
 	time.Sleep(300 * time.Millisecond)
-	if symbols, _ := ListSymbol(); len(symbols) != 2 {
+	if symbols, _ := ListSymbol(""); len(symbols) != 2 {
+		t.Error("error")
+		return
+	}
+	if symbols, _ := ListSymbol("spot"); len(symbols) != 1 {
 		t.Error("error")
 		return
 	}
@@ -180,7 +207,24 @@ func TestShared(t *testing.T) {
 		t.Error("error")
 		return
 	}
+	if LoadTicker(symbol) == nil {
+		t.Error("error")
+		return
+	}
+	if len(ListTicker()) < 1 {
+		t.Error("error")
+		return
+	}
+	if len(ListTicker(symbol)) < 1 {
+		t.Error("error")
+		return
+	}
 	kline := LoadKLine(symbol, "5min")
+	if kline == nil {
+		t.Error("error")
+		return
+	}
+	kline = LoadKLine(symbol, "1day")
 	if kline == nil {
 		t.Error("error")
 		return
@@ -197,6 +241,34 @@ func TestShared(t *testing.T) {
 		t.Error(err)
 		return
 	}
+	fmt.Printf("totalValue--->%v\n", totalValue)
+	fmt.Printf("totalValue--->%v\n", converter.JSON(areaValues))
+	unprofits, tickers := CalcHoldingUnprofit(ctx, &gexdb.Holding{
+		Symbol: symbol,
+		Open:   decimal.NewFromFloat(100),
+		Amount: decimal.NewFromFloat(-1),
+	})
+	if unprofits["total"].Sign() == 0 || len(unprofits) < 1 || len(tickers) < 1 {
+		fmt.Printf("unprofits--->%v\n", converter.JSON(unprofits))
+		fmt.Printf("tickers--->%v\n", converter.JSON(tickers))
+		t.Error(err)
+		return
+	}
+	fmt.Printf("unprofits--->%v\n", converter.JSON(unprofits))
+	fmt.Printf("tickers--->%v\n", converter.JSON(tickers))
+	unprofits, tickers = CalcHoldingUnprofit(ctx, &gexdb.Holding{
+		Symbol: symbol,
+		Open:   decimal.NewFromFloat(110),
+		Amount: decimal.NewFromFloat(1),
+	})
+	if unprofits["total"].Sign() == 0 || len(unprofits) < 1 || len(tickers) < 1 {
+		fmt.Printf("unprofits--->%v\n", converter.JSON(unprofits))
+		fmt.Printf("tickers--->%v\n", converter.JSON(tickers))
+		t.Error(err)
+		return
+	}
+	fmt.Printf("unprofits--->%v\n", converter.JSON(unprofits))
+	fmt.Printf("tickers--->%v\n", converter.JSON(tickers))
 	pgx.MockerStart()
 	pgx.MockerClear()
 	pgx.MockerSetCall("Rows.Scan", 1).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
@@ -213,7 +285,7 @@ func TestShared(t *testing.T) {
 			Close: decimal.NewFromFloat(1),
 		}
 	}
-	if symbols, _ := ListSymbol(); len(symbols) != 2 {
+	if symbols, _ := ListSymbol(""); len(symbols) != 2 {
 		t.Error("error")
 		return
 	}
@@ -224,10 +296,12 @@ func TestShared(t *testing.T) {
 			Close: decimal.NewFromFloat(1),
 		}
 	}
-	if symbols, _ := ListSymbol(); len(symbols) != 2 {
+	if symbols, _ := ListSymbol(""); len(symbols) != 2 {
 		t.Error("error")
 		return
 	}
+	matcher.ProcessCancel(ctx, userBase.TID, sellOpenOrder2.Symbol, sellOpenOrder2.OrderID)
+	matcher.ProcessCancel(ctx, userQuote.TID, buyOpenOrder2.Symbol, buyOpenOrder2.OrderID)
 }
 
 func TestMarketConn(t *testing.T) {

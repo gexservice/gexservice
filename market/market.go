@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"strings"
 	"sync"
 	"time"
 
@@ -23,7 +24,6 @@ import (
 )
 
 var Shared *Market
-var Quote string = "USDT"
 
 func Bootstrap() {
 	Shared = NewMarket(matcher.Shared.Symbols)
@@ -31,9 +31,12 @@ func Bootstrap() {
 	Shared.Start()
 }
 
-func ListSymbol() (symbols []*matcher.SymbolInfo, lines map[string]*gexdb.KLine) {
+func ListSymbol(prefix string) (symbols []*matcher.SymbolInfo, lines map[string]*gexdb.KLine) {
 	lines = map[string]*gexdb.KLine{}
 	for _, symbol := range Shared.Symbols {
+		if len(prefix) > 0 && !strings.HasPrefix(symbol.Symbol, prefix) {
+			continue
+		}
 		symbols = append(symbols, symbol)
 		line := LoadKLine(symbol.Symbol, "1day")
 		if line == nil {
@@ -84,6 +87,16 @@ func ListLatestPrice(symbols ...string) (prices map[string]decimal.Decimal) {
 
 func LoadDepth(symbol string, max int) (depth *DepthCache) {
 	depth = Shared.LoadDepth(symbol, max)
+	return
+}
+
+func ListTicker(symbols ...string) (tickers map[string]*gexdb.Ticker) {
+	tickers = Shared.ListTicker(symbols...)
+	return
+}
+
+func LoadTicker(symbol string) (ticker *gexdb.Ticker) {
+	ticker = Shared.LoadTicker(symbol)
 	return
 }
 
@@ -204,6 +217,17 @@ func (d *DepthCache) Slice(max int) (depth *DepthCache) {
 	}
 	if len(depth.Bids) > max {
 		depth.Bids = depth.Bids[0:max]
+	}
+	return
+}
+
+func (d *DepthCache) AsTicker() (ticker *gexdb.Ticker) {
+	ticker = &gexdb.Ticker{}
+	if len(d.Asks) > 0 {
+		ticker.Ask = d.Asks[0]
+	}
+	if len(d.Bids) > 0 {
+		ticker.Bid = d.Bids[0]
 	}
 	return
 }
@@ -816,8 +840,16 @@ func (m *Market) ListLatestPrice(symbols ...string) (prices map[string]decimal.D
 	m.klineLock.RLock()
 	defer m.klineLock.RUnlock()
 	prices = map[string]decimal.Decimal{}
-	for _, symbol := range symbols {
-		prices[symbol] = m.avgPrice[symbol]
+	if len(symbols) > 0 {
+		for _, symbol := range symbols {
+			if price, ok := m.avgPrice[symbol]; ok {
+				prices[symbol] = price
+			}
+		}
+	} else {
+		for symbol, price := range m.avgPrice {
+			prices[symbol] = price
+		}
 	}
 	return
 }
@@ -828,6 +860,35 @@ func (m *Market) LoadDepth(symbol string, max int) (depth *DepthCache) {
 	depth = m.depthVal[symbol]
 	if depth != nil {
 		depth = depth.Slice(max)
+	}
+	return
+}
+
+func (m *Market) ListTicker(symbols ...string) (tickers map[string]*gexdb.Ticker) {
+	m.depthLock.RLock()
+	defer m.depthLock.RUnlock()
+	tickers = map[string]*gexdb.Ticker{}
+	if len(symbols) > 0 {
+		for _, symbol := range symbols {
+			depth := m.depthVal[symbol]
+			if depth != nil {
+				tickers[symbol] = depth.AsTicker()
+			}
+		}
+	} else {
+		for _, depth := range m.depthVal {
+			tickers[depth.Symbol] = depth.AsTicker()
+		}
+	}
+	return
+}
+
+func (m *Market) LoadTicker(symbol string) (ticker *gexdb.Ticker) {
+	m.depthLock.RLock()
+	defer m.depthLock.RUnlock()
+	depth := m.depthVal[symbol]
+	if depth != nil {
+		ticker = depth.AsTicker()
 	}
 	return
 }

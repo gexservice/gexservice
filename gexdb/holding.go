@@ -45,6 +45,18 @@ func FindHoldlingBySymbolCall(caller crud.Queryer, ctx context.Context, userID i
 	return
 }
 
+func ListUserHolding(ctx context.Context, userID int64) (holdings []*Holding, err error) {
+	holdings, err = ListUserHoldingCall(Pool(), ctx, userID)
+	return
+}
+
+func ListUserHoldingCall(caller crud.Queryer, ctx context.Context, userID int64) (holdings []*Holding, err error) {
+	sql := crud.QuerySQL(&Holding{}, "#all")
+	sql, args := crud.JoinWheref(sql, nil, "user_id=$%v", userID)
+	err = crud.Query(caller, ctx, &Holding{}, "#all", sql, args, &holdings)
+	return
+}
+
 func ListHoldingForBlowupOverCall(caller crud.Queryer, ctx context.Context, symbol string, ask, bid decimal.Decimal) (holdings []*Holding, err error) {
 	querySQL := crud.QuerySQL(&Holding{}, "#all")
 	var args []interface{}

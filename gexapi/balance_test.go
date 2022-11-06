@@ -73,11 +73,7 @@ import (
 
 func TestBalance(t *testing.T) {
 	clearCookie()
-	login, err := ts.GetMap("/pub/login?username=%v&password=%v", "abc0", "123")
-	if err != nil || login.Int64("code") != 0 {
-		t.Errorf("err:%v,code:%v", err, login)
-		return
-	}
+	ts.Should(t, "code", define.Success).GetMap("/pub/login?username=%v&password=%v", "abc0", "123")
 	//
 	loadBalanceOverview, _ := ts.Should(t, "code", define.Success, "total_value", xmap.ShouldIsNoZero).GetMap("/usr/loadBalanceOverview")
 	fmt.Printf("loadBalanceOverview--->%v\n", converter.JSON(loadBalanceOverview))
