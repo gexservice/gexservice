@@ -565,11 +565,6 @@ func TestMarket(t *testing.T) {
 			t.Errorf("%v,%v", err, converter.JSON(lines))
 			return
 		}
-		lines, err = market.ListKLine(ctx, symbol, "5min", time.Now().Add(-1000*time.Minute), time.Now())
-		if err != nil || len(lines) != 5 { //load more from db
-			t.Errorf("%v,%v", err, converter.JSON(lines))
-			return
-		}
 		pgx.MockerSetCall("Pool.Query", 1).Call(func(trigger int) (res xmap.M, err error) { //should not error, using cache
 			_, err = market.ListKLine(ctx, symbol, "5min", time.Now().Add(-1000*time.Minute), time.Now())
 			return
