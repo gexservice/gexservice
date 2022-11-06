@@ -28,6 +28,10 @@ type SymbolInfo struct {
 	MarginAdd         decimal.Decimal   `json:"margin_add"`
 }
 
+func (s *SymbolInfo) String() string {
+	return s.Symbol
+}
+
 type MatcherFeeCache struct {
 	Default   map[string]decimal.Decimal
 	cacheMax  int
@@ -195,8 +199,8 @@ func BootstrapMatcherCenterByConfig(config *xprop.Config) (center *MatcherCenter
 			continue
 		}
 		info := &SymbolInfo{
-			PrecisionQuantity: 8,
-			PrecisionPrice:    8,
+			PrecisionQuantity: 2,
+			PrecisionPrice:    2,
 			Fee:               decimal.NewFromFloat(0.002),
 			MarginMax:         decimal.NewFromFloat(0.99),
 			MarginAdd:         decimal.NewFromFloat(0.01),
