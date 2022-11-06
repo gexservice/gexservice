@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"sync"
 	"time"
 
@@ -228,6 +229,7 @@ type Market struct {
 	klineVal         map[string]*gexdb.KLine
 	klineCache       map[string]*KLineCache
 	klineQueue       chan *klineQueueItem
+	klineLast        time.Time
 	klineLock        sync.RWMutex
 	depthVal         map[string]*DepthCache
 	depthQueue       chan *depthQueueItem
@@ -294,6 +296,7 @@ func (m *Market) loopEvent() {
 	ticker := time.NewTicker(m.KLineGenDelay)
 	defer ticker.Stop()
 	running := true
+	xlog.Infof("Market event loop is starting")
 	for running {
 		select {
 		case <-m.exiter:
@@ -310,6 +313,9 @@ func (m *Market) loopEvent() {
 
 func (m *Market) listCurrentKLine(symbol string) (lines []*gexdb.KLine) {
 	now := time.Now()
+
+	startMin1 := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), 0, 0, now.Location())
+	lines = append(lines, &gexdb.KLine{Symbol: symbol, StartTime: xsql.Time(startMin1), Interv: "1min", UpdateTime: xsql.TimeNow()})
 
 	startMin5 := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), (now.Minute()/5)*5, 0, 0, now.Location())
 	lines = append(lines, &gexdb.KLine{Symbol: symbol, StartTime: xsql.Time(startMin5), Interv: "5min", UpdateTime: xsql.TimeNow()})
@@ -341,15 +347,29 @@ func (m *Market) procGenKLine(event *matcher.MatcherEvent) (err error) {
 			err = fmt.Errorf("%v", err)
 		}
 	}()
-
 	var saveLine []*gexdb.KLine
 	if event != nil {
-		if len(event.Orders) < 1 || event.Orders[0].Filled.Sign() <= 0 {
+		symbol := m.Symbols[event.Symbol]
+		if symbol == nil {
 			return
 		}
-		order := event.Orders[0]
-		avgPrice := order.AvgPrice
-
+		var avgPrice, totalPrice, totalFilled decimal.Decimal
+		for _, order := range event.Orders {
+			if order.Filled.IsPositive() {
+				totalPrice = totalPrice.Add(order.TotalPrice)
+				totalFilled = totalFilled.Add(order.Filled)
+			}
+		}
+		if totalFilled.IsPositive() && totalPrice.IsPositive() {
+			avgPrice = totalPrice.DivRound(totalFilled, symbol.PrecisionPrice)
+		} else if event.Depth != nil && len(event.Depth.Asks) > 0 && len(event.Depth.Bids) > 0 && time.Since(m.klineLast).Milliseconds() > 1000+rand.Int63n(29000) {
+			avgPrice = event.Depth.Asks[0][0].Add(event.Depth.Bids[0][0]).DivRound(decimal.NewFromFloat(2), symbol.PrecisionPrice)
+			totalFilled = event.Depth.Bids[0][1]
+			totalPrice = totalFilled.Mul(avgPrice)
+		}
+		if avgPrice.Sign() <= 0 {
+			return
+		}
 		m.klineLock.Lock()
 		m.avgPrice[event.Symbol] = avgPrice
 		for _, line := range m.listCurrentKLine(event.Symbol) {
@@ -371,8 +391,8 @@ func (m *Market) procGenKLine(event *matcher.MatcherEvent) (err error) {
 				having.UpdateTime = xsql.TimeNow()
 				delete(m.klineCache, key)
 			}
-			having.Amount = having.Amount.Add(order.Filled)
-			having.Volume = having.Volume.Add(order.TotalPrice)
+			having.Amount = having.Amount.Add(totalFilled)
+			having.Volume = having.Volume.Add(totalPrice)
 			having.Count++
 			having.Close = avgPrice
 			if having.Low.Sign() <= 0 || having.Low.GreaterThan(avgPrice) {
@@ -458,6 +478,7 @@ func (m *Market) loopTriggerKLine() {
 	ticker := time.NewTicker(m.KLineNotifyDelay)
 	defer ticker.Stop()
 	running := true
+	xlog.Infof("Market kline trigger is starting")
 	for running {
 		select {
 		case <-m.exiter:
@@ -466,7 +487,7 @@ func (m *Market) loopTriggerKLine() {
 			m.procTriggerKLine()
 		}
 	}
-	xlog.Infof("Market notify loop is stopped")
+	xlog.Infof("Market kline trigger is stopped")
 }
 
 func (m *Market) procTriggerKLine() (err error) {
@@ -514,6 +535,7 @@ func (m *Market) procTriggerKLine() (err error) {
 func (m *Market) loopNotify() {
 	defer m.waiter.Done()
 	running := true
+	xlog.Infof("Market notify runner is starting")
 	for running {
 		select {
 		case <-m.exiter:
@@ -525,6 +547,7 @@ func (m *Market) loopNotify() {
 			m.procNotifyTicker(item.Conn, item.Symbol)
 		}
 	}
+	xlog.Infof("Market notify runner is stopped")
 }
 
 func (m *Market) procNotifyKLine(conn *MarketConn) (err error) {

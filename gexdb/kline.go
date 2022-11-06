@@ -11,6 +11,8 @@ import (
 
 func StringInterv(str string) (interval time.Duration, err error) {
 	switch str {
+	case "1min":
+		interval = time.Minute
 	case "5min":
 		interval = 5 * time.Minute
 	case "30min":
@@ -33,6 +35,8 @@ func StringInterv(str string) (interval time.Duration, err error) {
 
 func IntervString(interval time.Duration) (str string, err error) {
 	switch interval {
+	case time.Minute:
+		str = "1min"
 	case 5 * time.Minute:
 		str = "5min"
 	case 30 * time.Minute:
