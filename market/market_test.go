@@ -644,6 +644,16 @@ func TestMarket(t *testing.T) {
 				},
 			},
 		})
+		market.procGenKLine(&matcher.MatcherEvent{
+			Symbol: "xx",
+			Orders: []*gexdb.Order{
+				{
+					Filled:     decimal.NewFromFloat(1),
+					AvgPrice:   decimal.NewFromFloat(100),
+					TotalPrice: decimal.NewFromFloat(100),
+				},
+			},
+		})
 		market.procNotifyKLine(&MarketConn{
 			KLines: map[string]int{
 				klineKey(symbol, "5min"): 1,
