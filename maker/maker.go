@@ -301,6 +301,8 @@ type Maker struct {
 	tickerExiter chan int
 	tickerWaiter sync.WaitGroup
 	clearLast    time.Time
+	clearRemoved int64
+	clearShow    time.Time
 	waiter       sync.WaitGroup
 }
 
@@ -354,6 +356,8 @@ func (m *Maker) Start(ctx context.Context) (err error) {
 			return
 		}
 	}
+	m.nextShow = time.Now()
+	m.clearShow = time.Now()
 	m.waiter.Add(1)
 	go m.loopMake()
 	m.waiter.Add(1)
@@ -511,7 +515,8 @@ func (m *Maker) randomNext() {
 	m.nextBid = m.next.Sub(diff).RoundDown(m.symbol.PrecisionPrice)
 	m.nextGen++
 	if time.Since(m.nextShow) > time.Minute {
-		xlog.Infof("Maker(%v) random to next:%v,ask:%v,bid:%v in past %v", m.symbol, m.next, m.nextAsk, m.nextBid, time.Since(m.nextShow))
+		xlog.Infof("Maker(%v) random gen %v price in past %v, latest next:%v,ask:%v,bid:%v", m.symbol, m.nextGen, time.Since(m.nextShow), m.next, m.nextAsk, m.nextBid)
+		m.nextGen = 0
 		m.nextShow = time.Now()
 	}
 }
@@ -642,5 +647,10 @@ func (m *Maker) procClear(ctx context.Context) {
 		xlog.Warnf("Maker(%v) clear canceled order fail with %v", m.symbol, err)
 		return
 	}
-	xlog.Infof("Maker(%v) clear %v canceled order", m.symbol, cleared)
+	m.clearRemoved = cleared
+	if time.Since(m.clearShow) > time.Minute {
+		xlog.Infof("Maker(%v) clear %v canceled order in past %v", m.symbol, m.clearRemoved, time.Since(m.clearShow))
+		m.clearRemoved = 0
+		m.clearShow = time.Now()
+	}
 }
