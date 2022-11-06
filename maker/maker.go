@@ -64,6 +64,7 @@ func Start(ctx context.Context, symbol string) (err error) {
 	err = maker.Start(ctx)
 	if err == nil {
 		makerAll[symbol] = maker
+		matcher.Shared.AddMonitor(symbol, maker)
 	}
 	return
 }
@@ -78,6 +79,7 @@ func Stop(ctx context.Context, symbol string) (err error) {
 	}
 	maker.Stop()
 	delete(makerAll, symbol)
+	matcher.Shared.RemoveMonitor(symbol, maker)
 	return
 }
 
@@ -173,7 +175,7 @@ type Config struct {
 func (c *Config) Valid() (err error) {
 	if c == nil ||
 		c.UserID < 1 || len(c.Symbol) < 1 ||
-		c.Delay < 1 || c.Delay > time.Second.Milliseconds() ||
+		c.Delay < 1 || c.Delay > 10*time.Second.Milliseconds() ||
 		c.Open.Sign() <= 0 ||
 		c.Close.Max.LessThanOrEqual(c.Close.Min) || c.Close.Min.LessThan(decimal.NewFromFloat(-1)) ||
 		c.Vib.Max.LessThanOrEqual(c.Vib.Min) || c.Vib.Min.LessThan(decimal.NewFromFloat(-1)) || c.Vib.Count < 1 ||
@@ -184,7 +186,8 @@ func (c *Config) Valid() (err error) {
 		c.Depth.Max < 4 {
 		err = fmt.Errorf("config must be \n" +
 			"user_id/symbol is valid\n" +
-			"0<delay<1s open >0\n" +
+			"0<delay<10s\n" +
+			"open >0\n" +
 			"close.max>close.min>-1\n" +
 			"vib.max>vib.min\n" +
 			"vib.count>0\n" +
@@ -279,6 +282,7 @@ func (c *Config) Random(past time.Duration, close decimal.Decimal) (next decimal
 type Maker struct {
 	Config       *Config
 	Verbose      bool
+	Clear        time.Duration
 	symbol       *matcher.SymbolInfo
 	depth        *orderbook.Depth
 	makingAll    map[string]decimal.Decimal
@@ -290,21 +294,25 @@ type Maker struct {
 	next         decimal.Decimal
 	nextAsk      decimal.Decimal
 	nextBid      decimal.Decimal
+	nextGen      int64
+	nextShow     time.Time
 	locker       sync.RWMutex
-	eventQueue   chan int
+	makerQueue   chan int
 	tickerExiter chan int
 	tickerWaiter sync.WaitGroup
+	clearLast    time.Time
 	waiter       sync.WaitGroup
 }
 
 func NewMaker(config *Config) (maker *Maker) {
 	maker = &Maker{
 		Config:       config,
+		Clear:        5 * time.Second,
 		makingAll:    map[string]decimal.Decimal{},
 		makingOrder:  map[string]*gexdb.Order{},
 		balances:     map[string]*gexdb.Balance{},
 		locker:       sync.RWMutex{},
-		eventQueue:   make(chan int, 1),
+		makerQueue:   make(chan int, 1),
 		tickerExiter: make(chan int, 1),
 		tickerWaiter: sync.WaitGroup{},
 		waiter:       sync.WaitGroup{},
@@ -357,7 +365,7 @@ func (m *Maker) Start(ctx context.Context) (err error) {
 func (m *Maker) Stop() {
 	m.tickerExiter <- 0
 	m.tickerWaiter.Wait()
-	m.eventQueue <- 0
+	m.makerQueue <- 0
 	m.waiter.Wait()
 }
 
@@ -412,13 +420,17 @@ func (m *Maker) OnMatched(ctx context.Context, event *matcher.MatcherEvent) {
 		}
 		m.holding = holding
 	}
+	oldDepth := m.depth
 	m.depth = event.Depth
 	if len(m.depth.Asks) > 0 && len(m.depth.Bids) > 0 {
 		m.close = m.depth.Asks[0][0].Add(m.depth.Bids[0][0]).DivRound(decimal.NewFromFloat(2), m.symbol.PrecisionPrice)
 	}
-	select {
-	case m.eventQueue <- 1:
-	default:
+	if (oldDepth != nil && m.depth != nil && len(oldDepth.Asks) > 0 && len(m.depth.Asks) > 0 && !oldDepth.Asks[0][0].Equal(m.depth.Asks[0][0]) && !m.depth.Asks[0][0].Equal(m.nextAsk)) ||
+		(oldDepth != nil && m.depth != nil && len(oldDepth.Bids) > 0 && len(m.depth.Bids) > 0 && !oldDepth.Bids[0][0].Equal(m.depth.Bids[0][0]) && !m.depth.Bids[0][0].Equal(m.nextBid)) { //only ask/bid changed
+		select {
+		case m.makerQueue <- 1:
+		default:
+		}
 	}
 }
 
@@ -430,31 +442,31 @@ func (m *Maker) loopTicker() {
 		m.waiter.Done()
 	}()
 	running := true
-	xlog.Infof("Maker running is starting")
+	xlog.Infof("Maker(%v) ticker runner is starting", m.symbol)
 	for running {
 		select {
 		case <-m.tickerExiter:
 			running = false
 		case <-ticker.C:
-			m.procMake(true)
+			m.makerQueue <- 2
 		}
 	}
-	xlog.Infof("Maker running is stopped")
+	xlog.Infof("Maker(%v) ticker runner is stopped", m.symbol)
 }
 
 func (m *Maker) loopMake() {
 	defer m.waiter.Done()
 	running := true
-	xlog.Infof("Maker running is starting")
+	xlog.Infof("Maker(%v) maker runner is starting", m.symbol)
 	for running {
-		v := <-m.eventQueue
+		v := <-m.makerQueue
 		if v < 1 {
 			running = false
 		} else {
-			m.procMake(false)
+			m.procMake(v > 1)
 		}
 	}
-	xlog.Infof("Maker running is stopped")
+	xlog.Infof("Maker(%v) maker runner is stopped", m.symbol)
 }
 
 func (m *Maker) procMake(next bool) (err error) {
@@ -483,6 +495,9 @@ func (m *Maker) procMake(next bool) (err error) {
 	}
 	m.procPlace(ctx, gexdb.OrderSideBuy, m.nextBid)
 	m.procPlace(ctx, gexdb.OrderSideSell, m.nextAsk)
+
+	//clear
+	m.procClear(ctx)
 	return
 }
 
@@ -490,16 +505,24 @@ func (m *Maker) randomNext() {
 	if time.Since(m.startTime).Milliseconds() >= m.Config.Interval {
 		m.startTime = time.Now().Add(-time.Second)
 	}
-	m.next = m.Config.Random(time.Since(m.startTime), m.close)
+	m.next = m.Config.Random(time.Since(m.startTime), m.close).Round(m.symbol.PrecisionPrice)
 	diff := randomRateValue(m.Config.Depth.DiffMin, m.Config.Depth.DiffMax).Div(decimal.NewFromFloat(2))
 	m.nextAsk = m.next.Add(diff).RoundUp(m.symbol.PrecisionPrice)
 	m.nextBid = m.next.Sub(diff).RoundDown(m.symbol.PrecisionPrice)
+	m.nextGen++
+	if time.Since(m.nextShow) > time.Minute {
+		xlog.Infof("Maker(%v) random to next:%v,ask:%v,bid:%v in past %v", m.symbol, m.next, m.nextAsk, m.nextBid, time.Since(m.nextShow))
+		m.nextShow = time.Now()
+	}
 }
 
 func (m *Maker) checkOrder(ask, bid decimal.Decimal) (cancel, all []string) {
 	m.locker.RLock()
 	defer m.locker.RUnlock()
 	for _, order := range m.makingOrder {
+		if order.Status == gexdb.OrderStatusCanceled {
+			continue
+		}
 		if order.Side == gexdb.OrderSideSell && order.Price.LessThan(ask) {
 			cancel = append(cancel, order.OrderID)
 		} else if order.Side == gexdb.OrderSideBuy && order.Price.GreaterThan(bid) {
@@ -511,26 +534,52 @@ func (m *Maker) checkOrder(ask, bid decimal.Decimal) (cancel, all []string) {
 	return
 }
 
-func (m *Maker) canPlace(side gexdb.OrderSide, qty, price decimal.Decimal) bool {
+func (m *Maker) markOrderCanceled(orderIDs map[string]gexdb.OrderStatus) {
 	m.locker.RLock()
 	defer m.locker.RUnlock()
+	for orderID, status := range orderIDs {
+		order := m.makingOrder[orderID]
+		if order != nil {
+			order.Status = status
+		}
+	}
+}
+
+func (m *Maker) willPlace(side gexdb.OrderSide, qty, price decimal.Decimal) bool {
+	m.locker.RLock()
+	defer m.locker.RUnlock()
+	making := m.makingAll[price.String()]
+	if making.Add(qty).GreaterThan(m.Config.Depth.QtyMax) {
+		return false
+	}
 	//check can place
 	if strings.HasPrefix(m.symbol.Symbol, "spot.") {
 		if side == gexdb.OrderSideBuy {
 			balance := m.balances[m.symbol.Quote]
-			return balance != nil && balance.Free.GreaterThan(qty.Mul(price))
+			if balance != nil && balance.Free.GreaterThanOrEqual(qty.Mul(price)) {
+				balance.Free = balance.Free.Sub(qty.Mul(price))
+				return true
+			}
 		} else {
 			balance := m.balances[m.symbol.Base]
-			return balance != nil && balance.Free.GreaterThan(qty)
+			if balance != nil && balance.Free.GreaterThanOrEqual(qty) {
+				balance.Free = balance.Free.Sub(qty)
+				return true
+			}
 		}
-	} else {
-		balance := m.balances[m.symbol.Quote]
-		if side == gexdb.OrderSideBuy {
-			return (m.holding != nil && m.holding.Amount.LessThanOrEqual(decimal.Zero.Sub(qty))) || (balance != nil && balance.Free.GreaterThan(qty.Mul(price)))
-		} else {
-			return (m.holding != nil && m.holding.Amount.GreaterThanOrEqual(qty)) || (balance != nil && balance.Free.GreaterThan(qty.Mul(price)))
-		}
+		return false
 	}
+	if m.holding != nil && side == gexdb.OrderSideBuy && m.holding.Amount.LessThanOrEqual(decimal.Zero.Sub(qty)) {
+		m.holding.Amount = m.holding.Amount.Add(qty)
+		return true
+	} else if m.holding != nil && side == gexdb.OrderSideSell && m.holding.Amount.GreaterThanOrEqual(qty) {
+		m.holding.Amount = m.holding.Amount.Sub(qty)
+		return true
+	} else if balance := m.balances[m.symbol.Quote]; balance != nil && balance.Free.GreaterThan(qty.Mul(price)) {
+		balance.Free = balance.Free.Sub(qty.Mul(price))
+		return true
+	}
+	return false
 }
 
 func (m *Maker) procCancle(ctx context.Context, ask, bid decimal.Decimal) {
@@ -545,9 +594,10 @@ func (m *Maker) procCancle(ctx context.Context, ask, bid decimal.Decimal) {
 			}
 		}
 	}
-	if len(cancelIDs) > 0 {
-		xlog.Infof("Maker start cancle %v order by new ask:%v,bid:%v, all order is %v", len(cancelIDs), ask, bid, cancelIDs)
+	if m.Verbose && len(cancelIDs) > 0 {
+		xlog.Infof("Maker start cancle %v/%v order by new ask:%v,bid:%v", len(cancelIDs), len(allIDs), ask, bid)
 	}
+	canceledIDs := map[string]gexdb.OrderStatus{}
 	for _, orderID := range cancelIDs {
 		order, err := matcher.ProcessCancel(ctx, m.Config.UserID, m.symbol.Symbol, orderID)
 		if err != nil {
@@ -557,13 +607,19 @@ func (m *Maker) procCancle(ctx context.Context, ask, bid decimal.Decimal) {
 		if m.Verbose {
 			xlog.Infof("Maker cancle order is done with %v", order.Info())
 		}
+		if order.Status != gexdb.OrderStatusPartialled && order.Status != gexdb.OrderStatusPending {
+			canceledIDs[orderID] = order.Status
+		}
+	}
+	if len(canceledIDs) > 0 {
+		m.markOrderCanceled(canceledIDs)
 	}
 }
 
 func (m *Maker) procPlace(ctx context.Context, side gexdb.OrderSide, price decimal.Decimal) {
 	qtyStep := decimal.New(1, -m.symbol.PrecisionQuantity)
 	qty := randomRateValue(qtyStep, m.Config.Depth.QtyMax.Sub(qtyStep)).RoundUp(m.symbol.PrecisionQuantity)
-	if !m.canPlace(side, qty, price) {
+	if !m.willPlace(side, qty, price) {
 		return
 	}
 	order, err := matcher.ProcessLimit(ctx, m.Config.UserID, m.symbol.Symbol, side, qty, price)
@@ -574,4 +630,17 @@ func (m *Maker) procPlace(ctx context.Context, side gexdb.OrderSide, price decim
 	if m.Verbose {
 		xlog.Infof("Maker place order is done with %v", order.Info())
 	}
+}
+
+func (m *Maker) procClear(ctx context.Context) {
+	if time.Since(m.clearLast) < m.Clear {
+		return
+	}
+	m.clearLast = time.Now()
+	cleared, err := gexdb.ClearCanceledOrder(ctx, m.Config.UserID, m.symbol.Symbol, time.Now())
+	if err != nil {
+		xlog.Warnf("Maker(%v) clear canceled order fail with %v", m.symbol, err)
+		return
+	}
+	xlog.Infof("Maker(%v) clear %v canceled order", m.symbol, cleared)
 }

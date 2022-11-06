@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/centny/orderbook"
 	"github.com/codingeasygo/crud/pgx"
 	"github.com/codingeasygo/util/converter"
 	"github.com/codingeasygo/util/xmap"
@@ -149,7 +150,7 @@ func TestControl(t *testing.T) {
 	}
 	config.ON = 1
 	config.Symbol = spotSymbol
-	config.Delay = 20
+	config.Delay = 500
 	config.UserID = userMaker.TID
 	config.Open = decimal.NewFromFloat(1000)
 	config.Close.Min = decimal.NewFromFloat(-0.01)
@@ -328,6 +329,44 @@ func TestMakerSpot(t *testing.T) {
 	config.Depth.DiffMin = decimal.NewFromFloat(0.02)
 	config.Depth.Max = 15
 	maker := NewMaker(&config)
+	{ //test willPlace
+		maker.symbol = matcher.Shared.Symbols[config.Symbol]
+		maker.balances = map[string]*gexdb.Balance{}
+		maker.balances[maker.symbol.Quote] = &gexdb.Balance{}
+		maker.makingAll = map[string]decimal.Decimal{}
+		if maker.willPlace(gexdb.OrderSideBuy, decimal.NewFromFloat(1), decimal.NewFromFloat(100)) {
+			t.Error("error")
+			return
+		}
+		maker.balances[maker.symbol.Quote] = &gexdb.Balance{Asset: maker.symbol.Quote, Free: decimal.NewFromFloat(101)}
+		if !maker.willPlace(gexdb.OrderSideBuy, decimal.NewFromFloat(1), decimal.NewFromFloat(100)) {
+			t.Error("error")
+			return
+		}
+		if maker.willPlace(gexdb.OrderSideBuy, decimal.NewFromFloat(1), decimal.NewFromFloat(100)) {
+			t.Error("error")
+			return
+		}
+		if maker.willPlace(gexdb.OrderSideSell, decimal.NewFromFloat(1), decimal.NewFromFloat(100)) {
+			t.Error("error")
+			return
+		}
+		maker.balances[maker.symbol.Base] = &gexdb.Balance{Asset: maker.symbol.Quote, Free: decimal.NewFromFloat(1)}
+		if !maker.willPlace(gexdb.OrderSideSell, decimal.NewFromFloat(1), decimal.NewFromFloat(100)) {
+			t.Error("error")
+			return
+		}
+		if maker.willPlace(gexdb.OrderSideSell, decimal.NewFromFloat(1), decimal.NewFromFloat(100)) {
+			t.Error("error")
+			return
+		}
+		maker.makingAll["100"] = decimal.NewFromFloat(100000)
+		maker.balances[maker.symbol.Quote] = &gexdb.Balance{Asset: maker.symbol.Quote, Free: decimal.NewFromFloat(1000)}
+		if maker.willPlace(gexdb.OrderSideBuy, decimal.NewFromFloat(1), decimal.NewFromFloat(100)) {
+			t.Error("error")
+			return
+		}
+	}
 	maker.Verbose = true
 	matcher.Shared.AddMonitor(config.Symbol, maker)
 	err = maker.Start(ctx)
@@ -335,7 +374,7 @@ func TestMakerSpot(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(1000 * time.Millisecond)
 	order, err := matcher.ProcessMarket(ctx, userTaker.TID, config.Symbol, gexdb.OrderSideBuy, decimal.NewFromFloat(10), decimal.Zero)
 	if err != nil || order.Status == gexdb.OrderStatusCanceled {
 		t.Error(err)
@@ -359,6 +398,23 @@ func TestMakerSpot(t *testing.T) {
 	pgx.MockerClear()
 	pgx.MockerSetCall("Pool.Exec", 1, "Rows.Scan", 1).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
 		err = maker.Start(ctx)
+		return
+	})
+
+	//
+	maker.makerQueue = make(chan int, 1)
+	maker.depth = &orderbook.Depth{Asks: [][]decimal.Decimal{{decimal.NewFromFloat(3), decimal.NewFromFloat(1)}}, Bids: [][]decimal.Decimal{{decimal.NewFromFloat(2), decimal.NewFromFloat(1)}}}
+	maker.OnMatched(ctx, &matcher.MatcherEvent{
+		Depth: &orderbook.Depth{Asks: [][]decimal.Decimal{{decimal.NewFromFloat(2), decimal.NewFromFloat(1)}}, Bids: [][]decimal.Decimal{{decimal.NewFromFloat(1), decimal.NewFromFloat(1)}}},
+	})
+	//
+	maker.makingOrder["xx"] = &gexdb.Order{Status: gexdb.OrderStatusCanceled}
+	maker.checkOrder(decimal.NewFromFloat(1), decimal.NewFromFloat(1))
+	//
+	maker.clearLast = time.Time{}
+	pgx.MockerClear()
+	pgx.MockerSetCall("Pool.Exec", 1).Call(func(trigger int) (res xmap.M, err error) {
+		maker.procClear(ctx)
 		return
 	})
 }
@@ -407,6 +463,50 @@ func TestMakerFutures(t *testing.T) {
 	config.Depth.DiffMin = decimal.NewFromFloat(0.02)
 	config.Depth.Max = 15
 	maker := NewMaker(&config)
+	{ //test willPlace
+		maker.holding = nil
+		maker.symbol = matcher.Shared.Symbols[config.Symbol]
+		maker.balances = map[string]*gexdb.Balance{}
+		maker.balances[maker.symbol.Quote] = &gexdb.Balance{}
+		maker.makingAll = map[string]decimal.Decimal{}
+		if maker.willPlace(gexdb.OrderSideBuy, decimal.NewFromFloat(1), decimal.NewFromFloat(100)) {
+			t.Error("error")
+			return
+		}
+		maker.balances[maker.symbol.Quote] = &gexdb.Balance{Asset: maker.symbol.Quote, Free: decimal.NewFromFloat(101)}
+		if !maker.willPlace(gexdb.OrderSideBuy, decimal.NewFromFloat(1), decimal.NewFromFloat(100)) {
+			t.Error("error")
+			return
+		}
+		if maker.willPlace(gexdb.OrderSideBuy, decimal.NewFromFloat(1), decimal.NewFromFloat(100)) {
+			t.Error("error")
+			return
+		}
+		maker.holding = &gexdb.Holding{Amount: decimal.NewFromFloat(1)}
+		if !maker.willPlace(gexdb.OrderSideSell, decimal.NewFromFloat(1), decimal.NewFromFloat(100)) {
+			t.Error("error")
+			return
+		}
+		if maker.willPlace(gexdb.OrderSideSell, decimal.NewFromFloat(1), decimal.NewFromFloat(100)) {
+			t.Error("error")
+			return
+		}
+		maker.holding = &gexdb.Holding{Amount: decimal.NewFromFloat(-1)}
+		if !maker.willPlace(gexdb.OrderSideBuy, decimal.NewFromFloat(1), decimal.NewFromFloat(100)) {
+			t.Error("error")
+			return
+		}
+		if maker.willPlace(gexdb.OrderSideBuy, decimal.NewFromFloat(1), decimal.NewFromFloat(100)) {
+			t.Error("error")
+			return
+		}
+		maker.makingAll["100"] = decimal.NewFromFloat(100000)
+		maker.balances[maker.symbol.Quote] = &gexdb.Balance{Asset: maker.symbol.Quote, Free: decimal.NewFromFloat(1000)}
+		if maker.willPlace(gexdb.OrderSideBuy, decimal.NewFromFloat(1), decimal.NewFromFloat(100)) {
+			t.Error("error")
+			return
+		}
+	}
 	maker.Verbose = true
 	matcher.Shared.AddMonitor(config.Symbol, maker)
 	err = maker.Start(ctx)

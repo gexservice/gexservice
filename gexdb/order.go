@@ -41,6 +41,13 @@ func FindOrderByOrderIDCall(caller crud.Queryer, ctx context.Context, orderID st
 	return
 }
 
+func ClearCanceledOrder(ctx context.Context, userID int64, symbol string, before time.Time) (removed int64, err error) {
+	sql := `delete from gex_order`
+	sql, args := crud.JoinWheref(sql, nil, "user_id=$%v,symbol=$%v,create_time<$%v,status=$%v", userID, symbol, before, OrderStatusCanceled)
+	_, removed, err = Pool().Exec(ctx, sql, args...)
+	return
+}
+
 func CountOrderFee(ctx context.Context, start, end time.Time) (fee map[string]decimal.Decimal, err error) {
 	//not using sql sum for percision loss
 	fee = map[string]decimal.Decimal{}

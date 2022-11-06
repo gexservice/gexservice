@@ -54,6 +54,11 @@ func TestOrder(t *testing.T) {
 		t.Error("error")
 		return
 	}
+	_, err = ClearCancelOrder(ctx, order.UserID, order.Symbol, time.Now())
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	//
 	//test error
