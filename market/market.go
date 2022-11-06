@@ -366,6 +366,7 @@ func (m *Market) procGenKLine(event *matcher.MatcherEvent) (err error) {
 			avgPrice = event.Depth.Asks[0][0].Add(event.Depth.Bids[0][0]).DivRound(decimal.NewFromFloat(2), symbol.PrecisionPrice)
 			totalFilled = event.Depth.Bids[0][1]
 			totalPrice = totalFilled.Mul(avgPrice)
+			m.klineLast = time.Now()
 		}
 		if avgPrice.Sign() <= 0 {
 			return
