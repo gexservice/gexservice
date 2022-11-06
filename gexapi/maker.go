@@ -49,8 +49,8 @@ import (
  * @apiSuccess (MakerConfig) {String} maker.depth.max the depth max count, must depth.max>3
  * @apiSuccess (BalanceObject) {Object} balances the maker balance info, mapping by asset
  * @apiUse BalanceObject
- * @apiSuccess (Holdingbject) {Object} holding the maker holding info
- * @apiUse Holdingbject
+ * @apiSuccess (HoldingObject) {Object} holding the maker holding info
+ * @apiUse HoldingObject
  *
  *
  * @apiSuccessExample {JSON} Success-Response:
