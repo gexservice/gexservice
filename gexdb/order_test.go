@@ -17,6 +17,7 @@ func TestOrder(t *testing.T) {
 		Type:       OrderTypeTrade,
 		UserID:     user.TID,
 		Creator:    user.TID,
+		Symbol:     "test",
 		OrderID:    NewOrderID(),
 		FeeBalance: "test",
 		FeeFilled:  decimal.NewFromFloat(1),
@@ -39,6 +40,7 @@ func TestOrder(t *testing.T) {
 	}
 	searcher := &OrderUnifySearcher{}
 	searcher.Where.UserID = xsql.Int64Array{order.UserID}
+	searcher.Where.Symbol = order.Symbol
 	searcher.Where.Key = order.OrderID
 	err = searcher.Apply(ctx)
 	if err != nil || searcher.Count.Total != 1 || len(searcher.Query.Orders) != 1 {

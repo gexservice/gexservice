@@ -114,6 +114,7 @@ func ListOrderForTriggerCall(caller crud.Queryer, ctx context.Context, symbol st
  * @apiDefine OrderUnifySearcher
  * @apiParam  {String} [side] the side filter, multi with comma, all type supported is <a href="#metadata-Order">OrderSideAll</a>
  * @apiParam  {Number} [type] the type filter, multi with comma, all type supported is <a href="#metadata-Order">OrderTypeAll</a>
+ * @apiParam  {String} [symbol] the symbol filter
  * @apiParam  {Number} [start_time] the time filter
  * @apiParam  {Number} [end_time] the time filter
  * @apiParam  {Number} [status] the status filter, multi with comma, all status supported is <a href="#metadata-Order">OrderStatusAll</a>
@@ -126,6 +127,7 @@ type OrderUnifySearcher struct {
 	Where struct {
 		UserID    xsql.Int64Array  `json:"user_id" cmp:"user_id=any($%v)" valid:"user_id,o|i,r:0;"`
 		Creator   xsql.Int64Array  `json:"creator" cmp:"creator=any($%v)" valid:"creator,o|i,r:0;"`
+		Symbol    string           `json:"symbol" cmp:"symbol=$%v"  valid:"symbol,o|s,l:0;"`
 		Side      OrderSideArray   `json:"side" cmp:"side=any($%v)" valid:"side,o|s,e:0;"`
 		Type      OrderTypeArray   `json:"type" cmp:"type=any($%v)" valid:"type,o|i,e:;"`
 		StartTime xsql.Time        `json:"start_time" cmp:"update_time>=$%v" valid:"start_time,o|i,r:-1;"`
