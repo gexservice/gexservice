@@ -106,12 +106,17 @@ type ErrNotCancelable string
 
 func (e ErrNotCancelable) Error() string { return string(e) }
 
+type ErrOrderPending string
+
+func (e ErrOrderPending) Error() string { return string(e) }
+
 type ErrStackable interface {
 	error
 	Stack() string
 	IsBalanceNotEnought() bool
 	IsBalanceNotFound() bool
 	IsNotCancelable() bool
+	IsOrderPending() bool
 }
 
 type ErrMatcher struct {
@@ -158,6 +163,10 @@ func (e *ErrMatcher) IsNotCancelable() bool {
 	return IsErrNotCancelable(e.Base)
 }
 
+func (e *ErrMatcher) IsOrderPending() bool {
+	return IsErrOrderPending(e.Base)
+}
+
 func ErrStack(err error) string {
 	if v, ok := err.(ErrStackable); ok {
 		return v.Stack()
@@ -191,6 +200,31 @@ func IsErrNotCancelable(err error) bool {
 		_, ok := err.(ErrNotCancelable)
 		return ok
 	}
+}
+
+func IsErrOrderPending(err error) bool {
+	if v, ok := err.(ErrStackable); ok {
+		return v.IsOrderPending()
+	} else {
+		_, ok := err.(ErrOrderPending)
+		return ok
+	}
+}
+
+func IsErrCode(err error) (code int, ok bool) {
+	if err == nil {
+		return
+	}
+	if IsErrBalanceNotEnought(err) {
+		code, ok = gexdb.CodeBalanceNotEnought, true
+	} else if IsErrBalanceNotFound(err) {
+		code, ok = gexdb.CodeBalanceNotFound, true
+	} else if IsErrNotCancelable(err) {
+		code, ok = gexdb.CodeOrderNotCancelable, true
+	} else if IsErrOrderPending(err) {
+		code, ok = gexdb.CodeOrderPending, true
+	}
+	return
 }
 
 type Matcher interface {

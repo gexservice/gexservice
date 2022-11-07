@@ -61,6 +61,10 @@ func TestOrder(t *testing.T) {
 		t.Error(err)
 		return
 	}
+	having, err := CountPendingOrderCall(Pool(), ctx, order.UserID, order.Symbol)
+	if err != nil || having > 0 {
+		t.Error(err)
+	}
 
 	//
 	//test error

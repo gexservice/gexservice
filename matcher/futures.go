@@ -1347,6 +1347,15 @@ func (f *FuturesMatcher) ChangeLever(ctx context.Context, userID int64, lever in
 		err = NewErrMatcher(err, "[ChangeLever] find holding by %v,%v fail", userID, f.Symbol)
 		return
 	}
+	having, err := gexdb.CountPendingOrderCall(tx, ctx, userID, f.Symbol)
+	if err != nil {
+		err = NewErrMatcher(err, "[ChangeLever] count pending order by %v,%v fail", userID, f.Symbol)
+		return
+	}
+	if having > 0 {
+		err = NewErrMatcher(ErrOrderPending("having order running"), "[ChangeLever] check peding order by %v,%v fail", userID, f.Symbol)
+		return
+	}
 	holding.Lever = lever
 	newMargin := holding.CalcMargin(f.PrecisionPrice)
 	changeMargin := newMargin.Sub(holding.MarginUsed)

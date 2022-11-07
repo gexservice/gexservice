@@ -232,4 +232,9 @@ func TestShared(t *testing.T) {
 
 func TestSome(t *testing.T) {
 	bestPrice(nil)
+	IsErrCode(gexdb.ErrBalanceNotFound("none"))
+	IsErrCode(gexdb.ErrBalanceNotEnought("none"))
+	IsErrCode(ErrNotCancelable("none"))
+	IsErrCode(ErrOrderPending("none"))
+	IsErrCode(nil)
 }

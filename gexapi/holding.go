@@ -112,7 +112,7 @@ func ListHoldingH(s *web.Session) web.Result {
  * @apiParam  {String} symbol the symbol to change lever
  * @apiParam  {Number} lever the new lever to change, must be 0<lever<100
  *
- * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>
+ * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a> or <a href="#metadata-ExReturnCode">ExReturnCode</a>
  *
  * @apiSuccessExample {type} Success-Response:
  * {
@@ -133,7 +133,11 @@ func ChangeHoldingLeverH(s *web.Session) web.Result {
 	err = matcher.ChangeLever(s.R.Context(), userID, symbol, lever)
 	if err != nil {
 		xlog.Errorf("ChangeHoldingLeverH change holding lever by %v,%v,%v fail with %v", userID, symbol, lever, err)
-		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
+		code, ok := matcher.IsErrCode(err)
+		if !ok {
+			code = define.ServerError
+		}
+		return util.ReturnCodeLocalErr(s, code, "srv-err", err)
 	}
 	return s.SendJSON(xmap.M{
 		"code": define.Success,

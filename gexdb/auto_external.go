@@ -172,5 +172,6 @@ const (
 	CodeBalanceNotEnought  = 7100
 	CodeBalanceNotFound    = 7110
 	CodeOrderNotCancelable = 7200
+	CodeOrderPending       = 7210
 	CodeOldPasswordInvalid = 7300
 )

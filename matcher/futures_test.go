@@ -2378,7 +2378,21 @@ func TestFuturesMatcherChangeLever(t *testing.T) {
 		assetBalanceFree(env.Seller.TID, env.Area, futuresBalanceQuote, decimal.NewFromFloat(9979.8))
 		assetHoldingAmount(env.Buyer.TID, futuresHoldingSymbol, decimal.NewFromFloat(1))
 		assetHoldingAmount(env.Seller.TID, futuresHoldingSymbol, decimal.NewFromFloat(-1))
-
+		//
+		buyOpenOrder2, err := matcher.ProcessLimit(ctx, env.Buyer.TID, gexdb.OrderSideBuy, decimal.NewFromFloat(1), decimal.NewFromFloat(10))
+		if err != nil {
+			t.Error(ErrStack(err))
+			return
+		}
+		fmt.Printf("buy open order %v\n", buyOpenOrder2.OrderID)
+		assetOrderStatus(buyOpenOrder2.OrderID, gexdb.OrderStatusPending)
+		err = matcher.ChangeLever(ctx, env.Buyer.TID, 5)
+		if !IsErrOrderPending(err) {
+			t.Error(ErrStack(err))
+			return
+		}
+		fmt.Printf("shoud pending err ->\n%v\n", ErrStack(err))
+		matcher.ProcessCancel(ctx, env.Buyer.TID, buyOpenOrder2.OrderID)
 		//
 		pgx.MockerClear()
 		pgx.MockerSetCall("Pool.Begin", 1, "Rows.Scan", 1, 2, "Tx.Exec", 1, 2, 3).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {

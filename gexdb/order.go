@@ -110,6 +110,11 @@ func ListOrderForTriggerCall(caller crud.Queryer, ctx context.Context, symbol st
 	return
 }
 
+func CountPendingOrderCall(caller crud.Queryer, ctx context.Context, userID int64, symbol string) (having int64, err error) {
+	err = crud.CountWheref(caller, ctx, MetaWithOrder(having), "count(tid)", "user_id=$%v,symbol=$%v,status=any($%v)", []interface{}{userID, symbol, OrderStatusArray{OrderStatusWaiting, OrderStatusPending, OrderStatusPartialled}}, "", &having, "tid")
+	return
+}
+
 /**
  * @apiDefine OrderUnifySearcher
  * @apiParam  {String} [side] the side filter, multi with comma, all type supported is <a href="#metadata-Order">OrderSideAll</a>
