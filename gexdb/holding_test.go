@@ -27,12 +27,12 @@ func TestHolding(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	holdings, err := ListHoldingForBlowupOverCall(Pool(), ctx, symbol, decimal.Zero, decimal.NewFromFloat(100))
+	holdings, err := ListHoldingForBlowupOverCall(Pool(), ctx, symbol, decimal.Zero, decimal.NewFromFloat(100), true)
 	if err != nil || len(holdings) < 1 {
 		t.Error(err)
 		return
 	}
-	holdings, err = ListHoldingForBlowupFreeCall(Pool(), ctx, symbol, decimal.Zero, decimal.NewFromFloat(110))
+	holdings, err = ListHoldingForBlowupFreeCall(Pool(), ctx, symbol, decimal.Zero, decimal.NewFromFloat(110), true)
 	if err != nil || len(holdings) < 1 {
 		t.Error(err)
 		return

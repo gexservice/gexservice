@@ -57,7 +57,7 @@ func ListUserHoldingCall(caller crud.Queryer, ctx context.Context, userID int64)
 	return
 }
 
-func ListHoldingForBlowupOverCall(caller crud.Queryer, ctx context.Context, symbol string, ask, bid decimal.Decimal) (holdings []*Holding, err error) {
+func ListHoldingForBlowupOverCall(caller crud.Queryer, ctx context.Context, symbol string, ask, bid decimal.Decimal, lock bool) (holdings []*Holding, err error) {
 	querySQL := crud.QuerySQL(&Holding{}, "#all")
 	var args []interface{}
 	var and, or []string
@@ -67,11 +67,14 @@ func ListHoldingForBlowupOverCall(caller crud.Queryer, ctx context.Context, symb
 	and = append(and, "("+strings.Join(or, " or ")+")")
 	and, args = crud.AppendWhere(and, args, true, "status=$%v", HoldingStatusNormal)
 	querySQL = crud.JoinWhere(querySQL, and, " and ", "order by update_time asc")
+	if lock {
+		querySQL += " for update "
+	}
 	err = crud.Query(caller, ctx, &Holding{}, "#all", querySQL, args, &holdings)
 	return
 }
 
-func ListHoldingForBlowupFreeCall(caller crud.Queryer, ctx context.Context, symbol string, ask, bid decimal.Decimal) (holdings []*Holding, err error) {
+func ListHoldingForBlowupFreeCall(caller crud.Queryer, ctx context.Context, symbol string, ask, bid decimal.Decimal, lock bool) (holdings []*Holding, err error) {
 	querySQL := crud.QuerySQL(&Holding{}, "#all")
 	var args []interface{}
 	var and, or []string
@@ -82,6 +85,9 @@ func ListHoldingForBlowupFreeCall(caller crud.Queryer, ctx context.Context, symb
 	and = append(and, "("+strings.Join(or, " or ")+")")
 	and, args = crud.AppendWhere(and, args, true, "status=$%v", HoldingStatusNormal)
 	querySQL = crud.JoinWhere(querySQL, and, " and ", "order by update_time asc")
+	if lock {
+		querySQL += " for update "
+	}
 	err = crud.Query(caller, ctx, &Holding{}, "#all", querySQL, args, &holdings)
 	return
 }

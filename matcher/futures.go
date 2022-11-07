@@ -721,7 +721,7 @@ func (f *FuturesMatcher) checkBlowup(tx *pgx.Tx, ctx context.Context, changed *M
 	if len(depth.Asks) < 1 || len(depth.Bids) < 1 {
 		return
 	}
-	holdings, err := gexdb.ListHoldingForBlowupOverCall(tx, ctx, f.Symbol, depth.Asks[0][0], depth.Bids[0][0])
+	holdings, err := gexdb.ListHoldingForBlowupOverCall(tx, ctx, f.Symbol, depth.Asks[0][0], depth.Bids[0][0], true)
 	if err != nil {
 		err = NewErrMatcher(err, "[checkBlowup] list blowup holding by %v,%v,%v", f.Symbol, depth.Asks[0][0], depth.Bids[0][0])
 		return
@@ -766,7 +766,7 @@ func (f *FuturesMatcher) freeBlowup(tx *pgx.Tx, ctx context.Context, changed *Ma
 		return
 	}
 	ask, bid := depth.Asks[0][0], depth.Bids[0][0]
-	holdings, err := gexdb.ListHoldingForBlowupFreeCall(tx, ctx, f.Symbol, ask, bid)
+	holdings, err := gexdb.ListHoldingForBlowupFreeCall(tx, ctx, f.Symbol, ask, bid, true)
 	if err != nil {
 		err = NewErrMatcher(err, "[freeBlowup] list blowup holding by %v,%v,%v", f.Symbol, ask, bid)
 		return
