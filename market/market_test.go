@@ -183,11 +183,11 @@ func TestShared(t *testing.T) {
 	fmt.Printf("buy open order %v\n", buyOpenOrder2.OrderID)
 
 	time.Sleep(300 * time.Millisecond)
-	if symbols, _ := ListSymbol(""); len(symbols) != 2 {
+	if symbols, _ := ListSymbol("", ""); len(symbols) != 2 {
 		t.Error("error")
 		return
 	}
-	if symbols, _ := ListSymbol("spot"); len(symbols) != 1 {
+	if symbols, _ := ListSymbol("spot", ""); len(symbols) != 1 {
 		t.Error("error")
 		return
 	}
@@ -285,7 +285,7 @@ func TestShared(t *testing.T) {
 			Close: decimal.NewFromFloat(1),
 		}
 	}
-	if symbols, _ := ListSymbol(""); len(symbols) != 2 {
+	if symbols, _ := ListSymbol("", ""); len(symbols) != 2 {
 		t.Error("error")
 		return
 	}
@@ -296,10 +296,29 @@ func TestShared(t *testing.T) {
 			Close: decimal.NewFromFloat(1),
 		}
 	}
-	if symbols, _ := ListSymbol(""); len(symbols) != 2 {
+	if symbols, _ := ListSymbol("", ""); len(symbols) != 2 {
 		t.Error("error")
 		return
 	}
+
+	offset := 0
+	for _, symbol := range Shared.Symbols {
+		Shared.klineVal[klineKey(symbol.Symbol, "1day")] = &gexdb.KLine{
+			Open:   decimal.NewFromFloat(1),
+			Volume: decimal.NewFromFloat(float64(offset + 1)),
+			Close:  decimal.NewFromFloat(float64(offset + 1)),
+		}
+		offset++
+	}
+	symbols1, _ := ListSymbol("", "+rate")
+	symbols2, _ := ListSymbol("", "-rate")
+	symbols3, _ := ListSymbol("", "+volume")
+	symbols4, _ := ListSymbol("", "-volume")
+	if symbols1[0].Symbol != symbols2[1].Symbol || symbols3[0].Symbol != symbols4[1].Symbol {
+		t.Error("error")
+		return
+	}
+
 	matcher.ProcessCancel(ctx, userBase.TID, sellOpenOrder2.Symbol, sellOpenOrder2.OrderID)
 	matcher.ProcessCancel(ctx, userQuote.TID, buyOpenOrder2.Symbol, buyOpenOrder2.OrderID)
 }

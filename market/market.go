@@ -31,7 +31,7 @@ func Bootstrap() {
 	Shared.Start()
 }
 
-func ListSymbol(prefix string) (symbols []*matcher.SymbolInfo, lines map[string]*gexdb.KLine) {
+func ListSymbol(prefix string, orderby string) (symbols []*matcher.SymbolInfo, lines map[string]*gexdb.KLine) {
 	lines = map[string]*gexdb.KLine{}
 	for _, symbol := range Shared.Symbols {
 		if len(prefix) > 0 && !strings.HasPrefix(symbol.Symbol, prefix) {
@@ -49,12 +49,22 @@ func ListSymbol(prefix string) (symbols []*matcher.SymbolInfo, lines map[string]
 		if linex == nil || liney == nil {
 			return liney == nil
 		}
-		if linex.Open.Sign() <= 0 || liney.Open.Sign() <= 0 {
-			return linex.Open.Sign() >= liney.Open.Sign()
+		switch orderby {
+		case "+volume", "-volume":
+			return (linex.Volume.GreaterThan(liney.Volume) && orderby == "-volume") || (linex.Volume.LessThan(liney.Volume) && orderby == "+volume")
+		default:
+			orderby = "-rate"
+			fallthrough
+		case "+rate", "-rate":
+			var ratex, ratey decimal.Decimal
+			if linex.Open.IsPositive() {
+				ratex = linex.Close.Sub(linex.Open).Div(linex.Open)
+			}
+			if liney.Open.IsPositive() {
+				ratey = liney.Close.Sub(liney.Open).Div(liney.Open)
+			}
+			return (ratex.GreaterThan(ratey) && orderby == "-rate") || (ratex.LessThan(ratey) && orderby == "+rate")
 		}
-		ratex := linex.Close.Sub(linex.Open).Div(linex.Open)
-		ratey := liney.Close.Sub(liney.Open).Div(liney.Open)
-		return ratex.GreaterThan(ratey)
 	})
 	return
 }
