@@ -22,6 +22,7 @@
 * 列出合约钱包使用<a href="#api-Balance-ListHolding">列出持仓</a>
   * 百分计算为持仓未实现盈亏除以总保证金（已使用保证金和追加保证金），`unprofits[symbol]/(holding[symbol].margin_used+holdings[symbol].margin_added)`
   * 标记价格显示，当`holdings.amout`为多仓（正数）时为`tickers[symbol].bid[0]`, 当`holdings.amout`为空仓（负数）时为`tickers[symbol].ask[0]`
+  * 保证金率为持仓未实现盈亏除以总保证金加空闲保证金（已使用保证金+追加保证金+账号空闲余额），`unprofits[symbol]/(holding[symbol].margin_used+holdings[symbol].margin_added+balance.free)`，如果为正数显示绿色，负数显示红色
 * 当用用户停在我的页面时，前端需要定时（5s)刷新我的钱包信息
 
 ## 关于交易
@@ -29,8 +30,8 @@
   * 交易对的计价和计量都有对应的精度，小数点位数，在交易对信息接口中返回，<a href="#api-Market-ListSymbol">列出交易对接口</a>或<a href="#api-Market-LoadSymbol">获取交易对信息</a>
   * 提交订单前，前端需要根据交易对的精度、交易的币等信息检查计算下单的价格与数量，价格与数量的步进即为对应精度的最小量
   * 本系统中所有说价格的均以引用币做为单位
-  * 交易订单类型有充值、提现、交易、提取、修改等类型，对应`OrderTypeTopup, OrderTypeWithdraw, OrderTypeTrade, OrderTypeGoldbar, OrderTypeChangeYWE, OrderTypeChangeMMK`
-  * 交易订单状态有可能存在进行中、部分完成（交易中，已经完成部分）、完成、部分取消（交易完成了，只交易了一部分）、取消等状态，对应`OrderStatusPending, OrderStatusPartialled, OrderStatusDone, OrderStatusPartcanceled, OrderStatusCanceled`
+  * 交易订单类型有交易、触发（止盈止损）、爆仓等类型，对应`OrderTypeTrade, OrderTypeTrigger, OrderTypeBlowup`
+  * 交易订单状态有可能存在进行中、部分完成（交易中，已经完成部分）、完成、部分取消（交易完成了，只交易了一部分）、取消等状态，对应`OrderStatusWaiting, OrderStatusPending, OrderStatusPartialled, OrderStatusDone, OrderStatusPartcanceled, OrderStatusCanceled`
   * 列出订单，根据可以根据订单类型与订单方向判断、过滤数据，详情请查看<a href="#api-Order-SearchOrder">列出订单接口</a>的样例说明
   * 交易如果正进行中，系统会锁住对应的钱包的交易量
 * 买入卖出统一调用<a href="#api-Order-PlaceOrder">下单接口</a>，支持市价和限价两种模式

@@ -43,13 +43,13 @@ import (
  * type=OrderTypeTrade&symbol=YWKUSDT&side=OrderSideBuy&quantity=1&price=100
  *
  * @apiParamExample  {Query} Market Sell:
- * symbol=YWKUSDT&side=OrderSideSell&quantity=1
+ * type=OrderTypeTrade&symbol=YWKUSDT&side=OrderSideSell&quantity=1
  *
  * @apiParamExample  {Query} Limit Sell:
- * symbol=YWKUSDT&side=OrderSideSell&quantity=1&price=100
+ * type=OrderTypeTrade&symbol=YWKUSDT&side=OrderSideSell&quantity=1&price=100
  *
  * @apiParamExample  {Query} Trigger Limit Sell:
- * symbol=YWKUSDT&side=OrderSideSell&quantity=1&price=100
+ * type=OrderTypeTrigger&symbol=YWKUSDT&side=OrderSideSell&quantity=1&price=100&trigger_type=OrderTriggerTypeStopProfit&trigger_price=100
  *
  * @apiSuccessExample {JSON} Success-Response:
  * {
