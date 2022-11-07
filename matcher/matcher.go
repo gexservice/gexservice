@@ -199,6 +199,7 @@ type Matcher interface {
 	ProcessMarket(ctx context.Context, userID int64, side gexdb.OrderSide, total, quantity decimal.Decimal) (order *gexdb.Order, err error)
 	ProcessLimit(ctx context.Context, userID int64, side gexdb.OrderSide, quantity, price decimal.Decimal) (order *gexdb.Order, err error)
 	ProcessOrder(ctx context.Context, args *gexdb.Order) (order *gexdb.Order, err error)
+	ChangeLever(ctx context.Context, userID int64, lever int) (err error)
 	Depth(max int) (depth *orderbook.Depth)
 }
 
@@ -229,6 +230,11 @@ func ProcessLimit(ctx context.Context, userID int64, symbol string, side gexdb.O
 
 func ProcessOrder(ctx context.Context, args *gexdb.Order) (order *gexdb.Order, err error) {
 	order, err = Shared.ProcessOrder(ctx, args)
+	return
+}
+
+func ChangeLever(ctx context.Context, userID int64, symbol string, lever int) (err error) {
+	err = Shared.ChangeLever(ctx, userID, symbol, lever)
 	return
 }
 

@@ -1509,6 +1509,13 @@ func TestSpotMatcherError(t *testing.T) {
 			return
 		}
 	}
+	{ //other error
+		err = matcher.ChangeLever(ctx, 100, 1)
+		if err == nil {
+			t.Error(err)
+			return
+		}
+	}
 }
 
 func TestSpotMatcherDepth(t *testing.T) {

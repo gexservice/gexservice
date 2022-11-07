@@ -861,6 +861,11 @@ func (s *SpotMatcher) syncBalanceByOrderDone(tx *pgx.Tx, ctx context.Context, ch
 	return
 }
 
+func (s *SpotMatcher) ChangeLever(ctx context.Context, userID int64, lever int) (err error) {
+	err = fmt.Errorf("not supported")
+	return
+}
+
 func (s *SpotMatcher) Depth(max int) (depth *orderbook.Depth) {
 	s.bookLock.RLock()
 	defer s.bookLock.RUnlock()

@@ -1319,6 +1319,61 @@ func (f *FuturesMatcher) listUserOrder(caller crud.Queryer, ctx context.Context,
 	return
 }
 
+func (f *FuturesMatcher) ChangeLever(ctx context.Context, userID int64, lever int) (err error) {
+	if lever < 1 || lever > 99 {
+		err = fmt.Errorf("change lever, must be 100>lever>0")
+		err = NewErrMatcher(err, "[ChangeLever] args invalid")
+		return
+	}
+	tx, err := gexdb.Pool().Begin(ctx)
+	if err != nil {
+		err = NewErrMatcher(err, "[ChangeLever] begin tx fail")
+		return
+	}
+	defer func() {
+		if err == nil {
+			err = tx.Commit(ctx)
+		} else {
+			tx.Rollback(ctx)
+		}
+	}()
+	_, err = gexdb.TouchHoldingCall(tx, ctx, []string{f.Symbol}, userID)
+	if err != nil {
+		err = NewErrMatcher(err, "[ChangeLever] touch holding by %v,%v fail", userID, f.Symbol)
+		return
+	}
+	holding, err := gexdb.FindHoldlingBySymbolCall(tx, ctx, userID, f.Symbol, true)
+	if err != nil {
+		err = NewErrMatcher(err, "[ChangeLever] find holding by %v,%v fail", userID, f.Symbol)
+		return
+	}
+	holding.Lever = lever
+	newMargin := holding.CalcMargin(f.PrecisionPrice)
+	changeMargin := newMargin.Sub(holding.MarginUsed)
+	if changeMargin.Sign() != 0 {
+		balance := &gexdb.Balance{
+			UserID: userID,
+			Area:   f.Area,
+			Asset:  f.Quote,
+			Free:   decimal.Zero.Sub(changeMargin),
+			Locked: changeMargin,
+			Margin: changeMargin,
+		}
+		err = gexdb.IncreaseBalanceCall(tx, ctx, balance)
+		if err != nil {
+			err = NewErrMatcher(err, "[ChangeLever] increase balance by %v fail", converter.JSON(balance))
+			return
+		}
+	}
+	holding.MarginUsed = newMargin
+	err = holding.UpdateFilter(tx, ctx, "lever,margin_used#all")
+	if err != nil {
+		err = NewErrMatcher(err, "[ChangeLever] update holding by %v fail", converter.JSON(holding))
+		return
+	}
+	return
+}
+
 func (f *FuturesMatcher) Depth(max int) (depth *orderbook.Depth) {
 	f.bookLock.RLock()
 	defer f.bookLock.RUnlock()

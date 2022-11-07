@@ -494,6 +494,16 @@ func TestMatcherCenter(t *testing.T) {
 			t.Error(ErrStack(err))
 			return
 		}
+		err = center.ChangeLever(ctx, 1, "xx", 1)
+		if err == nil {
+			t.Error(ErrStack(err))
+			return
+		}
+		err = center.ChangeLever(ctx, 1, "spot.YWEUSDT", 1)
+		if err == nil {
+			t.Error(ErrStack(err))
+			return
+		}
 	}
 	if testCount++; enabled[0] || enabled[testCount] {
 		fmt.Printf("\n\n==>start case %v: error\n", testCount)

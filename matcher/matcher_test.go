@@ -224,6 +224,7 @@ func TestShared(t *testing.T) {
 	ProcessLimit(ctx, 0, "", gexdb.OrderSideBuy, decimal.Zero, decimal.Zero)
 	ProcessMarket(ctx, 0, "", gexdb.OrderSideBuy, decimal.Zero, decimal.Zero)
 	ProcessOrder(ctx, &gexdb.Order{})
+	ChangeLever(ctx, 0, "", 1)
 	for _, symobl := range Shared.Symbols {
 		fmt.Printf("--->%v\n", symobl)
 	}

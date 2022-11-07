@@ -503,3 +503,13 @@ func (m *MatcherCenter) ProcessOrder(ctx context.Context, args *gexdb.Order) (or
 	order, err = matcher.ProcessOrder(ctx, args)
 	return
 }
+
+func (m *MatcherCenter) ChangeLever(ctx context.Context, userID int64, symbol string, lever int) (err error) {
+	matcher := m.FindMatcher(symbol)
+	if matcher == nil {
+		err = fmt.Errorf("symbol %v is not supported", symbol)
+		return
+	}
+	err = matcher.ChangeLever(ctx, userID, lever)
+	return
+}

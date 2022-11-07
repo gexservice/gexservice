@@ -2326,6 +2326,72 @@ func TestFuturesMatcherBlewup(t *testing.T) {
 	}
 }
 
+func TestFuturesMatcherChangeLever(t *testing.T) {
+	pgx.MockerStart()
+	defer pgx.MockerStop()
+	clear()
+	enabled := map[int]bool{
+		0: true,
+		2: true,
+	}
+	testCount := 0
+	if testCount++; enabled[0] || enabled[testCount] {
+		fmt.Printf("\n\n==>start case %v: change lever\n", testCount)
+		//
+		env := testFuturesInit(testCount)
+		matcher := NewFuturesMatcher(futuresHoldingSymbol, futuresBalanceQuote, env.Monitor)
+		//
+		sellOpenOrder, err := matcher.ProcessLimit(ctx, env.Seller.TID, gexdb.OrderSideSell, decimal.NewFromFloat(1), decimal.NewFromFloat(100))
+		if err != nil {
+			t.Error(ErrStack(err))
+			return
+		}
+		fmt.Printf("sell open order %v\n", sellOpenOrder.OrderID)
+		buyOpenOrder, err := matcher.ProcessLimit(ctx, env.Buyer.TID, gexdb.OrderSideBuy, decimal.NewFromFloat(1), decimal.NewFromFloat(100))
+		if err != nil {
+			t.Error(ErrStack(err))
+			return
+		}
+		fmt.Printf("buy open order %v\n", buyOpenOrder.OrderID)
+		assetOrderStatus(buyOpenOrder.OrderID, gexdb.OrderStatusDone)
+		assetOrderStatus(sellOpenOrder.OrderID, gexdb.OrderStatusDone)
+		//
+		assetBalanceMargin(env.Buyer.TID, env.Area, futuresBalanceQuote, decimal.NewFromFloat(10))
+		assetBalanceMargin(env.Seller.TID, env.Area, futuresBalanceQuote, decimal.NewFromFloat(20))
+		assetBalanceLocked(env.Buyer.TID, env.Area, futuresBalanceQuote, decimal.NewFromFloat(10))
+		assetBalanceLocked(env.Seller.TID, env.Area, futuresBalanceQuote, decimal.NewFromFloat(20))
+		assetBalanceFree(env.Buyer.TID, env.Area, futuresBalanceQuote, decimal.NewFromFloat(9989.8))
+		assetBalanceFree(env.Seller.TID, env.Area, futuresBalanceQuote, decimal.NewFromFloat(9979.8))
+		assetHoldingAmount(env.Buyer.TID, futuresHoldingSymbol, decimal.NewFromFloat(1))
+		assetHoldingAmount(env.Seller.TID, futuresHoldingSymbol, decimal.NewFromFloat(-1))
+		//
+		err = matcher.ChangeLever(ctx, env.Buyer.TID, 5)
+		if err != nil {
+			t.Error(ErrStack(err))
+			return
+		}
+		assetBalanceMargin(env.Buyer.TID, env.Area, futuresBalanceQuote, decimal.NewFromFloat(20))
+		assetBalanceMargin(env.Seller.TID, env.Area, futuresBalanceQuote, decimal.NewFromFloat(20))
+		assetBalanceLocked(env.Buyer.TID, env.Area, futuresBalanceQuote, decimal.NewFromFloat(20))
+		assetBalanceLocked(env.Seller.TID, env.Area, futuresBalanceQuote, decimal.NewFromFloat(20))
+		assetBalanceFree(env.Buyer.TID, env.Area, futuresBalanceQuote, decimal.NewFromFloat(9979.8))
+		assetBalanceFree(env.Seller.TID, env.Area, futuresBalanceQuote, decimal.NewFromFloat(9979.8))
+		assetHoldingAmount(env.Buyer.TID, futuresHoldingSymbol, decimal.NewFromFloat(1))
+		assetHoldingAmount(env.Seller.TID, futuresHoldingSymbol, decimal.NewFromFloat(-1))
+
+		//
+		pgx.MockerClear()
+		pgx.MockerSetCall("Pool.Begin", 1, "Rows.Scan", 1, 2, "Tx.Exec", 1, 2, 3).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
+			err = matcher.ChangeLever(ctx, env.Buyer.TID, 1)
+			return
+		})
+		pgx.ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
+			err = matcher.ChangeLever(ctx, env.Buyer.TID, 0)
+			return
+		})
+	}
+}
+
 func TestFuturesMatcherError(t *testing.T) {
 	clear()
 	pgx.MockerStart()
