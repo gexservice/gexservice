@@ -83,7 +83,7 @@ func IsErrBalanceNotFound(err error) bool {
 }
 
 type UserFavorites struct {
-	Symbols []string
+	Symbols []string `json:"symbols,omitempty"`
 }
 
 //Scan is sql.Sanner
