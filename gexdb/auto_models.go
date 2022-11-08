@@ -359,13 +359,14 @@ type UserRoleArray []UserRole
 const (
 	UserRoleNormal UserRole = 100 //is normal
 	UserRoleStaff  UserRole = 200 //is staff
+	UserRoleMaker  UserRole = 300 //is maker
 )
 
 //UserRoleAll is ther user role
-var UserRoleAll = UserRoleArray{UserRoleNormal, UserRoleStaff}
+var UserRoleAll = UserRoleArray{UserRoleNormal, UserRoleStaff, UserRoleMaker}
 
 //UserRoleShow is ther user role
-var UserRoleShow = UserRoleArray{UserRoleNormal, UserRoleStaff}
+var UserRoleShow = UserRoleArray{UserRoleNormal, UserRoleStaff, UserRoleMaker}
 
 type UserStatus int
 type UserStatusArray []UserStatus
@@ -393,7 +394,7 @@ type User struct {
 	T          string        `json:"-" table:"gex_user"`                                 /* the table name tag */
 	TID        int64         `json:"tid,omitempty" valid:"tid,r|i,r:0;"`                 /* the primary key */
 	Type       UserType      `json:"type,omitempty" valid:"type,r|i,e:0;"`               /* the user type,Admin=10:is admin user, Normal=100:is normal user */
-	Role       UserRole      `json:"role,omitempty" valid:"role,o|i,e:0;"`               /* ther user role, Normal=100:is normal, Staff=200:is staff */
+	Role       UserRole      `json:"role,omitempty" valid:"role,o|i,e:0;"`               /* ther user role, Normal=100:is normal, Staff=200:is staff, Maker=300:is maker */
 	Name       *string       `json:"name,omitempty" valid:"name,o|s,l:0;"`               /* the user name */
 	Account    *string       `json:"account,omitempty" valid:"account,o|s,l:0;"`         /* the user account to login */
 	Phone      *string       `json:"phone,omitempty" valid:"phone,o|s,p:^\\d{11}$;"`     /* the user phone number to login */

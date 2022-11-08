@@ -1017,7 +1017,7 @@ COMMENT ON COLUMN gex_user.type IS 'the user type,Admin=10:is admin user, Normal
 -- Name: COLUMN gex_user.role; Type: COMMENT; Schema: public;
 --
 
-COMMENT ON COLUMN gex_user.role IS 'ther user role, Normal=100:is normal, Staff=200:is staff';
+COMMENT ON COLUMN gex_user.role IS 'ther user role, Normal=100:is normal, Staff=200:is staff, Maker=300:is maker';
 
 
 --
