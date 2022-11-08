@@ -254,6 +254,7 @@ CREATE TABLE gex_balance_record (
     creator bigint NOT NULL,
     balance_id bigint NOT NULL,
     type integer NOT NULL,
+    target integer DEFAULT 0 NOT NULL,
     changed double precision NOT NULL,
     update_time timestamp(6) with time zone NOT NULL,
     create_time timestamp(6) with time zone NOT NULL,
@@ -287,6 +288,13 @@ COMMENT ON COLUMN gex_balance_record.balance_id IS 'the balance id';
 --
 
 COMMENT ON COLUMN gex_balance_record.type IS 'the balance record type, Trade=100: is trade type, TradeFee=110:is trade fee, Profit=200:is close profit, Blowup=210:is blowup, Transfer=300:is transfer, Change=400: is manual change type';
+
+
+--
+-- Name: COLUMN gex_balance_record.target; Type: COMMENT; Schema: public;
+--
+
+COMMENT ON COLUMN gex_balance_record.target IS 'the balance target type';
 
 
 --

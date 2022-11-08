@@ -117,7 +117,7 @@ var BalanceRecordStatusShow = BalanceRecordStatusArray{BalanceRecordStatusNormal
 
 /*
  * BalanceRecord  represents gex_balance_record
- * BalanceRecord Fields:tid,creator,balance_id,type,changed,update_time,create_time,status,
+ * BalanceRecord Fields:tid,creator,balance_id,type,target,changed,update_time,create_time,status,
  */
 type BalanceRecord struct {
 	T          string              `json:"-" table:"gex_balance_record"`                       /* the table name tag */
@@ -125,6 +125,7 @@ type BalanceRecord struct {
 	Creator    int64               `json:"creator,omitempty" valid:"creator,r|i,r:0;"`         /* the balance creator */
 	BalanceID  int64               `json:"balance_id,omitempty" valid:"balance_id,r|i,r:0;"`   /* the balance id */
 	Type       BalanceRecordType   `json:"type,omitempty" valid:"type,r|i,e:0;"`               /* the balance record type, Trade=100: is trade type, TradeFee=110:is trade fee, Profit=200:is close profit, Blowup=210:is blowup, Transfer=300:is transfer, Change=400: is manual change type */
+	Target     int                 `json:"target,omitempty" valid:"target,r|i,r:0;"`           /* the balance target type */
 	Changed    decimal.Decimal     `json:"changed,omitempty" valid:"changed,r|f,r:0;"`         /* the balance change value */
 	UpdateTime xsql.Time           `json:"update_time,omitempty" valid:"update_time,r|i,r:1;"` /* the balance last update time */
 	CreateTime xsql.Time           `json:"create_time,omitempty" valid:"create_time,r|i,r:1;"` /* the balance create time */

@@ -175,12 +175,14 @@ func TransferChangeCall(caller crud.Queryer, ctx context.Context, creator, userI
 			Creator:   creator,
 			BalanceID: fromBalance.TID,
 			Type:      BalanceRecordTypeChange,
+			Target:    int(to),
 			Changed:   decimal.Zero.Sub(value),
 		},
 		&BalanceRecord{
 			Creator:   creator,
 			BalanceID: toBalance.TID,
 			Type:      BalanceRecordTypeChange,
+			Target:    int(from),
 			Changed:   value,
 		},
 	)
@@ -275,7 +277,7 @@ type BalanceRecordUnifySearcher struct {
 	} `json:"page" valid:"inline"`
 	Query struct {
 		Records []*BalanceRecordItem `json:"records"`
-	} `json:"query" filter:"b.asset#all|r.type,changed,update_time#all"`
+	} `json:"query" filter:"b.asset#all|r.type,target,changed,update_time#all"`
 	Count struct {
 		Total int64 `json:"total" scan:"tid"`
 	} `json:"count" filter:"r.count(tid)#all"`
