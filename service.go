@@ -61,18 +61,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	// if len(os.Args) > 2 {
-	// 	switch os.Args[2] {
-	// 	case "testdata":
-	// 		xlog.Warnf("generate test data is starting")
-	// 		err = GenerateTestData()
-	// 		if err != nil {
-	// 			panic(err)
-	// 		}
-	// 		xlog.Warnf("generate test data is done")
-	// 		return
-	// 	}
-	// }
 	gob.Register(xmap.M{})
 	sb := session.NewDbSessionBuilder()
 	sb.Redis = rediscache.C
@@ -109,12 +97,12 @@ func main() {
 	{ //mp config
 		conf.Range("admin", func(key string, val interface{}) { gexapi.ConfAdminH[key] = val })
 	}
-	// if conf.StrDef("", "mock/enabled") == "1" { //mock
-	// 	xlog.Warnf("mock is enabled")
-	// 	web.Shared.HandleFunc("^/mock/payTopupOrder(\\?.*)?$", gexapi.MockPayTopupOrderH)
-	// }
-	//
+	maker.Verbose = conf.IntDef(0, "/maker/verbose") == 1
 	err = matcher.Bootstrap(conf)
+	if err != nil {
+		panic(err)
+	}
+	err = BootstrapTest(context.Background())
 	if err != nil {
 		panic(err)
 	}
