@@ -180,6 +180,11 @@ func TestControl(t *testing.T) {
 		t.Error(err)
 		return
 	}
+	err = Bootstrap(ctx)
+	if err == nil {
+		t.Error(err)
+		return
+	}
 	err = Start(ctx, config.Symbol)
 	if err == nil {
 		t.Error(err)
@@ -374,6 +379,8 @@ func TestMakerSpot(t *testing.T) {
 		t.Error(err)
 		return
 	}
+	maker.clearShow = time.Time{}
+	maker.nextShow = time.Time{}
 	time.Sleep(1000 * time.Millisecond)
 	order, err := matcher.ProcessMarket(ctx, userTaker.TID, config.Symbol, gexdb.OrderSideBuy, decimal.NewFromFloat(10), decimal.Zero)
 	if err != nil || order.Status == gexdb.OrderStatusCanceled {
@@ -514,6 +521,8 @@ func TestMakerFutures(t *testing.T) {
 		t.Error(err)
 		return
 	}
+	maker.clearShow = time.Time{}
+	maker.nextShow = time.Time{}
 	time.Sleep(500 * time.Millisecond)
 	order, err := matcher.ProcessMarket(ctx, userTaker.TID, config.Symbol, gexdb.OrderSideBuy, decimal.NewFromFloat(10), decimal.Zero)
 	if err != nil || order.Status == gexdb.OrderStatusCanceled {

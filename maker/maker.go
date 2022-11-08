@@ -35,13 +35,19 @@ func Bootstrap(ctx context.Context) (err error) {
 	var config *Config
 	for _, symbol := range matcher.Shared.Symbols {
 		config, err = LoadConfig(ctx, symbol.Symbol)
-		if err == nil && config.ON > 0 {
-			err = Start(ctx, config.Symbol)
-		}
 		if err != nil && err != pgx.ErrNoRows {
 			break
 		}
-		err = nil
+		if err == pgx.ErrNoRows || config.ON < 1 {
+			err = nil
+			continue
+		}
+		err = Start(ctx, config.Symbol)
+		if err != nil {
+			xlog.Errorf("Bootstrap start %v maker fail with %v", symbol, err)
+			break
+		}
+		xlog.Infof("Bootstrap start %v maker is success", symbol)
 	}
 	return
 }
@@ -363,6 +369,7 @@ func (m *Maker) Start(ctx context.Context) (err error) {
 	m.waiter.Add(1)
 	m.tickerWaiter.Add(1)
 	go m.loopTicker()
+	xlog.Infof("Maker(%v) the maker is started", m.symbol)
 	return
 }
 
@@ -439,14 +446,15 @@ func (m *Maker) OnMatched(ctx context.Context, event *matcher.MatcherEvent) {
 }
 
 func (m *Maker) loopTicker() {
-	ticker := time.NewTicker(time.Duration(m.Config.Delay) * time.Millisecond)
+	delay := time.Duration(m.Config.Delay) * time.Millisecond
+	ticker := time.NewTicker(delay)
 	defer func() {
 		ticker.Stop()
 		m.tickerWaiter.Done()
 		m.waiter.Done()
 	}()
 	running := true
-	xlog.Infof("Maker(%v) ticker runner is starting", m.symbol)
+	xlog.Infof("Maker(%v) ticker runner is starting by %v", m.symbol, delay)
 	for running {
 		select {
 		case <-m.tickerExiter:
