@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/codingeasygo/crud"
+	"github.com/codingeasygo/util/xsql"
 	"github.com/gexservice/gexservice/base/define"
 	"github.com/shopspring/decimal"
 )
@@ -17,7 +18,7 @@ func FindWithdrawByOrderIDCall(caller crud.Queryer, ctx context.Context, orderID
 	if lock {
 		querySQL += " for update "
 	}
-	err = crud.QueryRow(caller, ctx, &Order{}, "#all", querySQL, args, &withdraw)
+	err = crud.QueryRow(caller, ctx, &Withdraw{}, "#all", querySQL, args, &withdraw)
 	return
 }
 
@@ -35,6 +36,7 @@ func CreateWithdraw(ctx context.Context, userID int64, asset string, quantity de
 	}()
 	balance := &Balance{
 		UserID: userID,
+		Area:   BalanceAreaSpot,
 		Asset:  asset,
 		Free:   decimal.Zero.Sub(quantity),
 		Locked: quantity,
@@ -88,6 +90,7 @@ func CancelWithdraw(ctx context.Context, userID int64, orderID string) (withdraw
 	free := withdraw.Quantity
 	balance := &Balance{
 		UserID: withdraw.UserID,
+		Area:   BalanceAreaSpot,
 		Asset:  withdraw.Asset,
 		Free:   free,
 		Locked: decimal.Zero.Sub(free),
@@ -100,86 +103,39 @@ func CancelWithdraw(ctx context.Context, userID int64, orderID string) (withdraw
 	return
 }
 
-// const (
-// 	WithdrawVerifyPending  = 100
-// 	WithdrawVerifyFail     = 200
-// 	WithdrawVerifyNotFound = 210
-// 	WithdrawVerifyDone     = 300
-// )
+/**
+ * @apiDefine WithdrawUnifySearcher
+ * @apiParam  {Number} [type] the withdraw type filter, multi with comma, all type supported is <a href="#metadata-Withdraw">WithdrawTypeAll</a>
+ * @apiParam  {Number} [asset] the balance asset filter, multi with comma
+ * @apiParam  {Number} [start_time] the time filter
+ * @apiParam  {Number} [end_time] the time filter
+ * @apiParam  {Number} [skip] page skip
+ * @apiParam  {Number} [limit] page limit
+ */
+type WithdrawUnifySearcher struct {
+	Model Withdraw `json:"model"`
+	Where struct {
+		UserID    int64             `json:"user_id" cmp:"user_id=$%v" valid:"user_id,o|i,r:0;"`
+		Type      WithdrawTypeArray `json:"type" cmp:"type=any($%v)" valid:"type,o|i,e:;"`
+		Asset     []string          `json:"asset" cmp:"asset=any($%v)" valid:"asset,o|s,l:0;"`
+		StartTime xsql.Time         `json:"start_time" cmp:"update_time>=$%v" valid:"start_time,o|i,r:-1;"`
+		EndTime   xsql.Time         `json:"end_time" cmp:"update_time<$%v" valid:"end_time,o|i,r:-1;"`
+	} `json:"where" join:"and" valid:"inline"`
+	Page struct {
+		Order string `json:"order" default:"order by update_time desc" valid:"order,o|s,l:0;"`
+		Skip  int    `json:"skip" valid:"skip,o|i,r:-1;"`
+		Limit int    `json:"limit" valid:"limit,o|i,r:0;"`
+	} `json:"page" valid:"inline"`
+	Query struct {
+		Withdraws []*Withdraw `json:"withdraws"`
+	} `json:"query" filter:"#all"`
+	Count struct {
+		Total int64 `json:"total" scan:"tid"`
+	} `json:"count" filter:"r.count(tid)#all"`
+}
 
-// var WithdrawVerifyOrder = func(orderID string) (result int, info xmap.M, err error) {
-// 	panic("not impl")
-// }
-
-// var WithdrawApplyOrder = func(user *User, order *Order) (result int, info xmap.M, err error) {
-// 	panic("not impl")
-// }
-
-// var ProcWithdrawApplyDelay = 5 * time.Minute
-
-// func ProcWithdrawApply() (err error) {
-// 	defer func() {
-// 		if perr := recover(); perr != nil {
-// 			xlog.Errorf("ProcWithdrawApply proc withdraw apply is panic with %v, callstatck is \n%v", perr, debug.CallStatck())
-// 		}
-// 		if err != nil && err != pgx.ErrNoRows {
-// 			xlog.Errorf("ProcWithdrawApply proc withdraw apply fail with %v", err)
-// 		}
-// 	}()
-// 	var orderID string
-// 	var oldStatus int
-// 	updateSQL := `
-// 		update gex_order set withdraw_status=$5,withdraw_next=$6,status=$7
-// 		from (select tid,order_id,status from gex_order where type=$1 and status=any($2) and withdraw_status=any($3) and withdraw_next<$4 order by update_time asc limit 1) o
-// 		where gex_order.tid=o.tid
-// 		returning o.order_id,o.status
-// 	`
-// 	err = Pool().QueryRow(
-// 		updateSQL,
-// 		OrderTypeWithdraw, xsql.IntArray([]int{OrderStatusPending, OrderStatusApply}).DbArray(), xsql.IntArray([]int{OrderWithdrawStatusPending, OrderWithdrawStatusApply}).DbArray(), time.Now(),
-// 		OrderWithdrawStatusApply, time.Now().Add(ProcWithdrawApplyDelay), OrderStatusApply,
-// 	).Scan(&orderID, &oldStatus)
-// 	if err != nil {
-// 		if err != pgx.ErrNoRows {
-// 			xlog.Errorf("ProcWithdrawApply query withdraw order fail with %v", err)
-// 		}
-// 		return
-// 	}
-// 	order, err := FindOrderByOrderID(orderID)
-// 	if err != nil {
-// 		err = fmt.Errorf("find order fail with %v", err)
-// 		return
-// 	}
-// 	user, err := FindUser(order.UserID)
-// 	if err != nil {
-// 		err = fmt.Errorf("find user fail with %v", err)
-// 		return
-// 	}
-// 	var result int
-// 	var info xmap.M
-// 	if oldStatus == OrderStatusApply {
-// 		xlog.Infof("ProcWithdrawApply start verify withdraw order by %v", orderID)
-// 		result, info, err = WithdrawVerifyOrder(orderID)
-// 	} else {
-// 		xlog.Infof("ProcWithdrawApply start apply withdraw order by %v", converter.JSON(order))
-// 		result, info, err = WithdrawApplyOrder(user, order)
-// 	}
-// 	if err != nil {
-// 		xlog.Errorf("ProcWithdrawApply call server fail with err:%v,result:%v,info:%v", err, result, converter.JSON(info))
-// 		return
-// 	}
-// 	switch result {
-// 	case WithdrawVerifyPending:
-// 		xlog.Infof("ProcWithdrawApply apply order(%v) is pending by result:%v,info:%v", orderID, result, converter.JSON(info))
-// 		err = UpdateOrderPrepay(order.TID, xsql.M(info))
-// 	case WithdrawVerifyFail, WithdrawVerifyNotFound:
-// 		xlog.Warnf("ProcWithdrawApply apply order(%v) is fail by result:%v,info:%v, will retry next time", orderID, result, converter.JSON(info))
-// 		err = Pool().ExecRow(`update gex_order set withdraw_status=$2,withdraw_next=$3,status=$4 where tid=$1`, order.TID, OrderWithdrawStatusPending, time.Now().Add(time.Minute), OrderStatusPending)
-// 	case WithdrawVerifyDone:
-// 		xlog.Infof("ProcWithdrawApply apply order(%v) is done by result:%v,info:%v", orderID, result, converter.JSON(info))
-// 		err = Pool().ExecRow(`update gex_order set filled=quantity,out_filled=quantity,withdraw_status=$2,notify_result=$3,status=$4 where tid=$1`, order.TID, OrderWithdrawStatusDone, xsql.M(info), OrderStatusDone)
-// 	default:
-// 		err = fmt.Errorf("unknow result code(%v)", result)
-// 	}
-// 	return
-// }
+func (w *WithdrawUnifySearcher) Apply(ctx context.Context) (err error) {
+	w.Page.Order = ""
+	err = crud.ApplyUnify(Pool(), ctx, w)
+	return
+}

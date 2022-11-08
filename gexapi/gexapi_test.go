@@ -81,8 +81,6 @@ func init() {
 	initMarket()
 	ts = httptest.NewMuxServer()
 	pgx.Client = ts.Client
-	ts.Mux.HandleFunc("^/usr/mockPayTopupOrder(\\?.*)?$", MockPayTopupOrderH)
-	// EnterIntentionVerifyPhoneH = NewVerifyPhone(PhoneCodeTypeVerify, "user", -1)
 	Handle("", ts.Mux)
 	ts.Mux.HandleNormal("^.*$", http.FileServer(http.Dir("www")))
 	SrvAddr = func() string {

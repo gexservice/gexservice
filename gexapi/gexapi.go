@@ -42,17 +42,14 @@ func Handle(pre string, mux *web.SessionMux) {
 	mux.HandleFunc("^"+pre+"/usr/listBalance(\\?.*)?$", ListBalanceH)
 	mux.HandleFunc("^"+pre+"/usr/transferBalance(\\?.*)?$", TransferBalanceH)
 	mux.HandleFunc("^"+pre+"/usr/listBalanceRecord(\\?.*)?$", ListBalanceRecordH)
+	//withdraw
+	mux.HandleFunc("^"+pre+"/usr/createWithdraw(\\?.*)?$", CreateWithdrawH)
+	mux.HandleFunc("^"+pre+"/usr/cancelWithdraw(\\?.*)?$", CancelWithdrawH)
+	mux.HandleFunc("^"+pre+"/usr/listWithdraw(\\?.*)?$", ListWithdrawH)
 	//holding
 	mux.HandleFunc("^"+pre+"/usr/listHolding(\\?.*)?$", ListHoldingH)
 	mux.HandleFunc("^"+pre+"/usr/changeHoldingLever(\\?.*)?$", ChangeHoldingLeverH)
 	//order
-	mux.HandleFunc("^"+pre+"/usr/createWithdrawOrder(\\?.*)?$", CreateWithdrawOrderH)
-	mux.HandleFunc("^"+pre+"/usr/cancelWithdrawOrder(\\?.*)?$", CancelWithdrawOrderH)
-	// mux.HandleFunc("^"+pre+"/usr/createGoldbarOrder(\\?.*)?$", CreateGoldbarOrderH)
-	// mux.HandleFunc("^"+pre+"/usr/cancelGoldbarOrder(\\?.*)?$", CancelGoldbarOrderH)
-	// mux.HandleFunc("^"+pre+"/usr/verifyGoldbarOrder(\\?.*)?$", VerifyGoldbarOrderH)
-	mux.HandleFunc("^"+pre+"/usr/createTopupOrder(\\?.*)?$", CreateTopupOrderH)
-	// mux.HandleFunc("^"+pre+"/usr/searchMyUserOrder(\\?.*)?$", SearchMyUserOrderH)
 	mux.HandleFunc("^"+pre+"/usr/placeOrder", PlaceOrderH)
 	mux.HandleFunc("^"+pre+"/usr/cancelOrder", CancelOrderH)
 	mux.HandleFunc("^"+pre+"/usr/searchOrder(\\?.*)?$", SearchOrderH)
