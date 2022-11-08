@@ -269,6 +269,9 @@ func (m *MatcherCenter) Stop() {
 func (m *MatcherCenter) AddMatcher(symbol *SymbolInfo, matcher Matcher) {
 	m.matcherLock.Lock()
 	defer m.matcherLock.Unlock()
+	if m.matcherAll[symbol.Symbol] != nil {
+		panic(fmt.Sprintf("matcher %v exists", symbol.Symbol))
+	}
 	m.Symbols[symbol.Symbol] = symbol
 	m.matcherAll[symbol.Symbol] = matcher
 }

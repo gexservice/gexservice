@@ -542,6 +542,13 @@ func TestMatcherCenter(t *testing.T) {
 		center.procMatcherEvent(&MatcherEvent{Symbol: "xx"})
 		center.OnMatched(context.Background(), &MatcherEvent{Symbol: "xx"})
 		center.OnMatched(context.Background(), &MatcherEvent{Symbol: "xx"})
+		func() {
+			defer func() {
+				recover()
+			}()
+			symbo := center.Symbols["spot.YWEUSDT"]
+			center.AddMatcher(symbo, &SpotMatcher{})
+		}()
 
 		config1 := xprop.NewConfig()
 		config1.LoadPropString(`
