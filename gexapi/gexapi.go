@@ -65,6 +65,11 @@ func Handle(pre string, mux *web.SessionMux) {
 	mux.Handle("^"+pre+"/ws/market(\\?.*)?$", MarketOnline)
 	mux.HandleFunc("^"+pre+"/pub/listKLine(\\?.*)?$", ListKLineH)
 	mux.HandleFunc("^"+pre+"/pub/loadDepth(\\?.*)?$", LoadDepthH)
+	//market favorites
+	mux.HandleFunc("^"+pre+"/usr/listFavoritesSymbol(\\?.*)?$", ListFavoritesSymbolH)
+	mux.HandleFunc("^"+pre+"/usr/addFavoritesSymbol(\\?.*)?$", AddFavoritesSymbolH)
+	mux.HandleFunc("^"+pre+"/usr/removeFavoritesSymbol(\\?.*)?$", RemoveFavoritesSymbolH)
+	mux.HandleFunc("^"+pre+"/usr/switchFavoritesSymbol(\\?.*)?$", SwitchFavoritesSymbolH)
 	// mux.HandleFunc("^"+pre+"/pub/listMarketOrder(\\?.*)?$", ListMarketOrderH)
 	//maker
 	mux.HandleFunc("^"+pre+"/admin/loadSymbolMaker", LoadSymbolMakerH)

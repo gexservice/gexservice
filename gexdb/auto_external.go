@@ -82,6 +82,56 @@ func IsErrBalanceNotFound(err error) bool {
 	return ok
 }
 
+type UserFavorites struct {
+	Symbols []string
+}
+
+//Scan is sql.Sanner
+func (u *UserFavorites) Scan(src interface{}) (err error) {
+	if src != nil {
+		if jsonSrc, ok := src.(string); ok {
+			err = json.Unmarshal([]byte(jsonSrc), u)
+		} else {
+			err = fmt.Errorf("the %v,%v is not string", reflect.TypeOf(src), src)
+		}
+	}
+	return
+}
+
+//Value will parse to json value
+func (u *UserFavorites) Value() (driver.Value, error) {
+	if u == nil {
+		return "{}", nil
+	}
+	bys, err := json.Marshal(u)
+	return string(bys), err
+}
+
+func (u *UserFavorites) TopSymbol(symbol string) {
+	symbols := []string{symbol}
+	for _, s := range u.Symbols {
+		if s == symbol {
+			continue
+		}
+		symbols = append(symbols, s)
+	}
+	u.Symbols = symbols
+}
+
+func (u *UserFavorites) SwitchSymbol(a, b string) {
+	ia, ib := -1, -1
+	for i, s := range u.Symbols {
+		if s == a {
+			ia = i
+		} else if s == b {
+			ib = i
+		}
+	}
+	if ia > -1 && ib > -1 {
+		u.Symbols[ia], u.Symbols[ib] = u.Symbols[ib], u.Symbols[ia]
+	}
+}
+
 type OrderTransactionItem struct {
 	OrderID    string          `json:"order_id,omitempty"`
 	Filled     decimal.Decimal `json:"filled,omitempty"`

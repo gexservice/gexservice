@@ -26,7 +26,7 @@ func init() {
 	}
 	crud.Default.ErrNoRows = pgx.ErrNoRows
 	crud.Default.NameConv = func(on, name string, field reflect.StructField) string {
-		if on == "query" && strings.HasSuffix(field.Type.String(), "OrderTransaction") {
+		if on == "query" && (strings.HasSuffix(field.Type.String(), "OrderTransaction") || strings.HasSuffix(field.Type.String(), "UserFavorites")) {
 			return name + "::text"
 		}
 		return gen.NameConvPG(on, name, field)

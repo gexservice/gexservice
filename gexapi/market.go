@@ -7,7 +7,9 @@ import (
 	"github.com/gexservice/gexservice/base/define"
 	"github.com/gexservice/gexservice/base/util"
 	"github.com/gexservice/gexservice/base/xlog"
+	"github.com/gexservice/gexservice/gexdb"
 	"github.com/gexservice/gexservice/market"
+	"github.com/gexservice/gexservice/matcher"
 )
 
 //ListSymbolH is http handler
@@ -75,7 +77,7 @@ import (
  *
  */
 func ListSymbolH(s *web.Session) web.Result {
-	symbols, days := market.ListSymbol(s.Argument("type"), s.Argument("orderby"))
+	symbols, days := market.ListSymbol(s.Argument("type"), nil, s.Argument("orderby"))
 	return s.SendJSON(xmap.M{
 		"code":    0,
 		"symbols": symbols,
@@ -392,5 +394,227 @@ func LoadDepthH(s *web.Session) web.Result {
 	return s.SendJSON(xmap.M{
 		"code":  0,
 		"depth": depth,
+	})
+}
+
+//ListFavoritesSymbolH is http handler
+/**
+ *
+ * @api {GET} /usr/listFavoritesSymbol List Favorites Symbol
+ * @apiName ListFavoritesSymbol
+ * @apiGroup Market
+ *
+ * @apiParam  {String} type the symbol type, supported in spot/futures
+ * @apiParam  {String} orderby the symbol orderby, supported in +rate/-rate/+volume/-volume
+ *
+ * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>
+ * @apiSuccess (Symbols) {Array} symbols the symbol info list
+ * @apiSuccess (Symbols) {String} symbols.base the symbol base asset
+ * @apiSuccess (Symbols) {String} symbols.quote the symbol quote asset
+ * @apiSuccess (Symbols) {String} symbols.fee the symbol trade fee
+ * @apiSuccess (Symbols) {String} symbols.precision_price the symbol price percision
+ * @apiSuccess (Symbols) {String} symbols.precision_quantity the symbol quantity percision
+ * @apiSuccess (KLine) {Object} days the symbol day change line, mapping by key is symbol
+ * @apiUse KLineObject
+ *
+ *
+ * @apiSuccessExample {JSON} Success-Response:
+ * {
+ *     "code": 0,
+ *     "days": {
+ *         "spot.YWEUSDT": {
+ *             "amount": "0.5",
+ *             "close": "100",
+ *             "count": 1,
+ *             "high": "100",
+ *             "interv": "1day",
+ *             "low": "100",
+ *             "open": "100",
+ *             "start_time": 1667404800000,
+ *             "symbol": "spot.YWEUSDT",
+ *             "update_time": 1667486761280,
+ *             "volume": "50"
+ *         }
+ *     },
+ *     "symbols": [
+ *         {
+ *             "base": "YWE",
+ *             "fee": "0.002",
+ *             "margin_add": "0.01",
+ *             "margin_max": "0.99",
+ *             "precision_price": 8,
+ *             "precision_quantity": 8,
+ *             "quote": "USDT",
+ *             "symbol": "spot.YWEUSDT"
+ *         },
+ *         {
+ *             "base": "YWE",
+ *             "fee": "0.002",
+ *             "margin_add": "0.01",
+ *             "margin_max": "0.99",
+ *             "precision_price": 8,
+ *             "precision_quantity": 8,
+ *             "quote": "USDT",
+ *             "symbol": "futures.YWEUSDT"
+ *         }
+ *     ]
+ * }
+ *
+ */
+func ListFavoritesSymbolH(s *web.Session) web.Result {
+	userID := s.Value("user_id").(int64)
+	favorites, err := gexdb.LoadUserFavorites(s.R.Context(), userID)
+	if err != nil {
+		xlog.Errorf("ListFavoritesSymbolH load user favorites fail with %v", err)
+		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
+	}
+	var symbols []*matcher.SymbolInfo
+	var days map[string]*gexdb.KLine
+	if favorites != nil && len(favorites.Symbols) > 0 {
+		symbols, days = market.ListSymbol(s.Argument("type"), favorites.Symbols, s.Argument("orderby"))
+	}
+	return s.SendJSON(xmap.M{
+		"code":    0,
+		"symbols": symbols,
+		"days":    days,
+	})
+}
+
+//AddFavoritesSymbolH is http handler
+/**
+ *
+ * @api {GET} /usr/addFavoritesSymbol Add Favorites Symbol
+ * @apiName AddFavoritesSymbol
+ * @apiGroup Market
+ *
+ * @apiParam  {String} symbol the symbol to add
+ *
+ * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>
+ *
+ *
+ * @apiSuccessExample {JSON} Success-Response:
+ * {
+ *     "code": 0
+ * }
+ *
+ */
+func AddFavoritesSymbolH(s *web.Session) web.Result {
+	var symbol string
+	err := s.ValidFormat(`
+		symbol,r|s,l:0;
+	`, &symbol)
+	if err != nil {
+		return util.ReturnCodeLocalErr(s, define.ArgsInvalid, "arg-err", err)
+	}
+	userID := s.Value("user_id").(int64)
+	err = gexdb.UpdateUserFavorites(s.R.Context(), userID, func(favorites *gexdb.UserFavorites) {
+		exists := false
+		for _, s := range favorites.Symbols {
+			if symbol == s {
+				exists = true
+				break
+			}
+		}
+		if !exists {
+			favorites.Symbols = append(favorites.Symbols, symbol)
+		}
+	})
+	if err != nil {
+		xlog.Errorf("AddFavoritesSymbolH update user favorites fail with %v", err)
+		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
+	}
+	return s.SendJSON(xmap.M{
+		"code": define.Success,
+	})
+}
+
+//RemoveFavoritesSymbolH is http handler
+/**
+ *
+ * @api {GET} /usr/removeFavoritesSymbol Remove Favorites Symbol
+ * @apiName RemoveFavoritesSymbol
+ * @apiGroup Market
+ *
+ * @apiParam  {String} symbol the symbol to add
+ *
+ * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>
+ *
+ *
+ * @apiSuccessExample {JSON} Success-Response:
+ * {
+ *     "code": 0
+ * }
+ *
+ */
+func RemoveFavoritesSymbolH(s *web.Session) web.Result {
+	var symbol string
+	err := s.ValidFormat(`
+		symbol,r|s,l:0;
+	`, &symbol)
+	if err != nil {
+		return util.ReturnCodeLocalErr(s, define.ArgsInvalid, "arg-err", err)
+	}
+	userID := s.Value("user_id").(int64)
+	err = gexdb.UpdateUserFavorites(s.R.Context(), userID, func(favorites *gexdb.UserFavorites) {
+		symbols := []string{}
+		for _, s := range favorites.Symbols {
+			if symbol == s {
+				continue
+			}
+			symbols = append(symbols, s)
+		}
+		favorites.Symbols = symbols
+	})
+	if err != nil {
+		xlog.Errorf("RemoveFavoritesSymbolH remove user favorites fail with %v", err)
+		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
+	}
+	return s.SendJSON(xmap.M{
+		"code": define.Success,
+	})
+}
+
+//SwitchFavoritesSymbolH is http handler
+/**
+ *
+ * @api {GET} /usr/switchFavoritesSymbol Switch Favorites Symbol
+ * @apiName SwitchFavoritesSymbol
+ * @apiGroup Market
+ *
+ * @apiParam  {String} symbol the symbol to add
+ * @apiParam  {String} [to] the symbol to swith, if empty will switch to top
+ *
+ * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>
+ *
+ *
+ * @apiSuccessExample {JSON} Success-Response:
+ * {
+ *     "code": 0
+ * }
+ *
+ */
+func SwitchFavoritesSymbolH(s *web.Session) web.Result {
+	var symbol, to string
+	err := s.ValidFormat(`
+		symbol,r|s,l:0;
+		to,o|s,l:0;
+	`, &symbol, &to)
+	if err != nil {
+		return util.ReturnCodeLocalErr(s, define.ArgsInvalid, "arg-err", err)
+	}
+	userID := s.Value("user_id").(int64)
+	err = gexdb.UpdateUserFavorites(s.R.Context(), userID, func(favorites *gexdb.UserFavorites) {
+		if len(to) > 0 {
+			favorites.SwitchSymbol(symbol, to)
+		} else {
+			favorites.TopSymbol(symbol)
+		}
+	})
+	if err != nil {
+		xlog.Errorf("SwitchFavoritesSymbolH switch favorites symbol fail with %v", err)
+		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
+	}
+	return s.SendJSON(xmap.M{
+		"code": define.Success,
 	})
 }

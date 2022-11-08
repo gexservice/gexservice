@@ -73,6 +73,35 @@ func LoadUserFeeCall(caller crud.Queryer, ctx context.Context, userID int64) (fe
 	return
 }
 
+func UpdateUserFavorites(ctx context.Context, userID int64, call func(favorites *UserFavorites)) (err error) {
+	tx, err := Pool().Begin(ctx)
+	if err != nil {
+		return
+	}
+	defer func() {
+		if err == nil {
+			err = tx.Commit(ctx)
+		} else {
+			tx.Rollback(ctx)
+		}
+	}()
+	user, err := FindUserFilterWherefCall(tx, ctx, true, "favorites#all", "tid=$%v", userID)
+	if err != nil {
+		return
+	}
+	call(&user.Favorites)
+	err = user.UpdateFilter(tx, ctx, "favorites")
+	return
+}
+
+func LoadUserFavorites(ctx context.Context, userID int64) (favorites *UserFavorites, err error) {
+	user, err := FindUserFilterWheref(ctx, "favorites#all", "tid=$%v", userID)
+	if err == nil {
+		favorites = &user.Favorites
+	}
+	return
+}
+
 /**
  * @apiDefine UserUnifySearcher
  * @apiParam  {Number} [type] the type filter, multi with comma, all type supported is <a href="#metadata-User">UserTypeAll</a>

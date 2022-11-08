@@ -386,24 +386,25 @@ const UserOrderbyAll = "account,phone,update_time,create_time"
 
 /*
  * User  represents gex_user
- * User Fields:tid,type,role,name,account,phone,password,trade_pass,image,fee,external,update_time,create_time,status,
+ * User Fields:tid,type,role,name,account,phone,password,trade_pass,image,fee,external,favorites,update_time,create_time,status,
  */
 type User struct {
-	T          string     `json:"-" table:"gex_user"`                                 /* the table name tag */
-	TID        int64      `json:"tid,omitempty" valid:"tid,r|i,r:0;"`                 /* the primary key */
-	Type       UserType   `json:"type,omitempty" valid:"type,r|i,e:0;"`               /* the user type,Admin=10:is admin user, Normal=100:is normal user */
-	Role       UserRole   `json:"role,omitempty" valid:"role,o|i,e:0;"`               /* ther user role, Normal=100:is normal, Staff=200:is staff */
-	Name       *string    `json:"name,omitempty" valid:"name,o|s,l:0;"`               /* the user name */
-	Account    *string    `json:"account,omitempty" valid:"account,o|s,l:0;"`         /* the user account to login */
-	Phone      *string    `json:"phone,omitempty" valid:"phone,o|s,p:^\\d{11}$;"`     /* the user phone number to login */
-	Password   *string    `json:"password,omitempty" valid:"password,o|s,l:0;"`       /* the user password to login */
-	TradePass  *string    `json:"trade_pass,omitempty" valid:"trade_pass,o|s,l:0;"`   /* the user trade password */
-	Image      *string    `json:"image,omitempty" valid:"image,o|s,l:0;"`             /* the user image */
-	Fee        xsql.M     `json:"fee,omitempty" valid:"fee,r|s,l:0;"`                 /* the user fee */
-	External   xsql.M     `json:"external,omitempty" valid:"external,o|s,l:0;"`       /* the user external info */
-	UpdateTime xsql.Time  `json:"update_time,omitempty" valid:"update_time,r|i,r:1;"` /* the last updat time */
-	CreateTime xsql.Time  `json:"create_time,omitempty" valid:"create_time,r|i,r:1;"` /* the craete time */
-	Status     UserStatus `json:"status,omitempty" valid:"status,o|i,e:0;"`           /* the user status, Normal=100:is normal, Locked=200:is locked, Removed=-1:is deleted */
+	T          string        `json:"-" table:"gex_user"`                                 /* the table name tag */
+	TID        int64         `json:"tid,omitempty" valid:"tid,r|i,r:0;"`                 /* the primary key */
+	Type       UserType      `json:"type,omitempty" valid:"type,r|i,e:0;"`               /* the user type,Admin=10:is admin user, Normal=100:is normal user */
+	Role       UserRole      `json:"role,omitempty" valid:"role,o|i,e:0;"`               /* ther user role, Normal=100:is normal, Staff=200:is staff */
+	Name       *string       `json:"name,omitempty" valid:"name,o|s,l:0;"`               /* the user name */
+	Account    *string       `json:"account,omitempty" valid:"account,o|s,l:0;"`         /* the user account to login */
+	Phone      *string       `json:"phone,omitempty" valid:"phone,o|s,p:^\\d{11}$;"`     /* the user phone number to login */
+	Password   *string       `json:"password,omitempty" valid:"password,o|s,l:0;"`       /* the user password to login */
+	TradePass  *string       `json:"trade_pass,omitempty" valid:"trade_pass,o|s,l:0;"`   /* the user trade password */
+	Image      *string       `json:"image,omitempty" valid:"image,o|s,l:0;"`             /* the user image */
+	Fee        xsql.M        `json:"fee,omitempty" valid:"fee,r|s,l:0;"`                 /* the user fee */
+	External   xsql.M        `json:"external,omitempty" valid:"external,o|s,l:0;"`       /* the user external info */
+	Favorites  UserFavorites `json:"favorites,omitempty" valid:"favorites,r|s,l:0;"`     /*  */
+	UpdateTime xsql.Time     `json:"update_time,omitempty" valid:"update_time,r|i,r:1;"` /* the last updat time */
+	CreateTime xsql.Time     `json:"create_time,omitempty" valid:"create_time,r|i,r:1;"` /* the craete time */
+	Status     UserStatus    `json:"status,omitempty" valid:"status,o|i,e:0;"`           /* the user status, Normal=100:is normal, Locked=200:is locked, Removed=-1:is deleted */
 }
 
 /***** metadata:Withdraw *****/

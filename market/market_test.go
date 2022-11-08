@@ -183,11 +183,11 @@ func TestShared(t *testing.T) {
 	fmt.Printf("buy open order %v\n", buyOpenOrder2.OrderID)
 
 	time.Sleep(300 * time.Millisecond)
-	if symbols, _ := ListSymbol("", ""); len(symbols) != 2 {
+	if symbols, _ := ListSymbol("", nil, ""); len(symbols) != 2 {
 		t.Error("error")
 		return
 	}
-	if symbols, _ := ListSymbol("spot", ""); len(symbols) != 1 {
+	if symbols, _ := ListSymbol("spot", nil, ""); len(symbols) != 1 {
 		t.Error("error")
 		return
 	}
@@ -285,7 +285,7 @@ func TestShared(t *testing.T) {
 			Close: decimal.NewFromFloat(1),
 		}
 	}
-	if symbols, _ := ListSymbol("", ""); len(symbols) != 2 {
+	if symbols, _ := ListSymbol("", nil, ""); len(symbols) != 2 {
 		t.Error("error")
 		return
 	}
@@ -296,7 +296,11 @@ func TestShared(t *testing.T) {
 			Close: decimal.NewFromFloat(1),
 		}
 	}
-	if symbols, _ := ListSymbol("", ""); len(symbols) != 2 {
+	if symbols, _ := ListSymbol("", nil, ""); len(symbols) != 2 {
+		t.Error("error")
+		return
+	}
+	if symbols, _ := ListSymbol("", []string{"spot.YWEUSDT"}, ""); len(symbols) != 1 {
 		t.Error("error")
 		return
 	}
@@ -310,10 +314,10 @@ func TestShared(t *testing.T) {
 		}
 		offset++
 	}
-	symbols1, _ := ListSymbol("", "+rate")
-	symbols2, _ := ListSymbol("", "-rate")
-	symbols3, _ := ListSymbol("", "+volume")
-	symbols4, _ := ListSymbol("", "-volume")
+	symbols1, _ := ListSymbol("", nil, "+rate")
+	symbols2, _ := ListSymbol("", nil, "-rate")
+	symbols3, _ := ListSymbol("", nil, "+volume")
+	symbols4, _ := ListSymbol("", nil, "-volume")
 	if symbols1[0].Symbol != symbols2[1].Symbol || symbols3[0].Symbol != symbols4[1].Symbol {
 		t.Error("error")
 		return

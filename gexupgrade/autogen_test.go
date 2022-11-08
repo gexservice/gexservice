@@ -45,6 +45,9 @@ func nameConv(isTable bool, name string) string {
 
 var PgGen = gen.AutoGen{
 	TypeField: map[string]map[string]string{
+		"gex_user": {
+			"favorites": "UserFavorites",
+		},
 		"gex_order": {
 			"transaction": "OrderTransaction",
 		},

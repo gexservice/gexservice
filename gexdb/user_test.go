@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/codingeasygo/crud/pgx"
 	"github.com/codingeasygo/util/converter"
+	"github.com/codingeasygo/util/xmap"
 	"github.com/codingeasygo/util/xsql"
 )
 
@@ -105,4 +107,49 @@ func TestUser(t *testing.T) {
 		t.Error(err)
 		return
 	}
+}
+
+func TestUserFavorites(t *testing.T) {
+	fav := &UserFavorites{}
+	fav.Symbols = append(fav.Symbols, "a", "b", "c")
+	fav.TopSymbol("c")
+	if fav.Symbols[0] != "c" {
+		t.Error("error")
+		return
+	}
+	fav.SwitchSymbol("c", "b")
+	if fav.Symbols[0] != "b" {
+		t.Error("error")
+		return
+	}
+	fav.Scan("{}")
+	fav.Scan(1)
+	fav.Value()
+	fav = nil
+	fav.Value()
+	//
+	user := testAddUser("TestUserFavorites")
+	err := UpdateUserFavorites(ctx, user.TID, func(favorites *UserFavorites) {
+		favorites.Symbols = append(favorites.Symbols, "a", "b", "c")
+	})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	fav, err = LoadUserFavorites(ctx, user.TID)
+	if err != nil || fav == nil || len(fav.Symbols) < 1 {
+		t.Error(err)
+		return
+	}
+
+	//
+	//test error
+	pgx.MockerStart()
+	defer pgx.MockerStop()
+	pgx.MockerSetCall("Pool.Begin", 1, "Rows.Scan", 1).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
+		err = UpdateUserFavorites(ctx, user.TID, func(favorites *UserFavorites) {
+			favorites.Symbols = append(favorites.Symbols, "a", "b", "c")
+		})
+		return
+	})
 }

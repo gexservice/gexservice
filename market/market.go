@@ -31,18 +31,33 @@ func Bootstrap() {
 	Shared.Start()
 }
 
-func ListSymbol(prefix string, orderby string) (symbols []*matcher.SymbolInfo, lines map[string]*gexdb.KLine) {
+func ListSymbol(prefix string, only []string, orderby string) (symbols []*matcher.SymbolInfo, lines map[string]*gexdb.KLine) {
 	lines = map[string]*gexdb.KLine{}
-	for _, symbol := range Shared.Symbols {
+	procSymbol := func(symbol *matcher.SymbolInfo) {
 		if len(prefix) > 0 && !strings.HasPrefix(symbol.Symbol, prefix) {
-			continue
+			return
 		}
 		symbols = append(symbols, symbol)
 		line := LoadKLine(symbol.Symbol, "1day")
 		if line == nil {
-			continue
+			return
 		}
 		lines[symbol.Symbol] = line
+	}
+	if len(only) > 0 {
+		for _, s := range only {
+			symbol := Shared.Symbols[s]
+			if symbol != nil {
+				procSymbol(symbol)
+			}
+		}
+		if len(orderby) < 1 {
+			return
+		}
+	} else {
+		for _, symbol := range Shared.Symbols {
+			procSymbol(symbol)
+		}
 	}
 	xsort.SortFunc(symbols, func(x, y int) bool {
 		linex, liney := lines[symbols[x].Symbol], lines[symbols[y].Symbol]

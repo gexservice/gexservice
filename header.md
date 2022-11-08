@@ -15,6 +15,11 @@
 * 深度图数据使用<a href="#api-Market-WsMarket">Websocket行情推送接口</a>订阅深度图数据来获取最新数据
   * 每次推送为全量推送
   * 可以与k线图同用一个websocket连接
+* 行情收藏
+  * 列出收藏的行情<a href="#api-Market-ListFavoritesSymbol">列出收藏交易对</a>
+  * 添加行情收藏<a href="#api-Market-AddFavoritesSymbol">添加收藏交易对</a>
+  * 删除行情收藏<a href="#api-Market-RemoveFavoritesSymbol">删除收藏交易对</a>
+  * 排序行情收藏<a href="#api-Market-SwitchFavoritesSymbol">排序收藏交易对</a>
 
 ## 关于钱包
 * 钱包总览使用<a href="#api-Balance-LoadBalanceOverview">钱包总览</a>
