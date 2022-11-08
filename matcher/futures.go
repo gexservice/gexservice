@@ -929,6 +929,7 @@ func (f *FuturesMatcher) blowupHolding(tx *pgx.Tx, ctx context.Context, changed 
 	}
 
 	marginClear := holding.MarginUsed.Add(holding.MarginAdded)
+	allClear := balance.Free.Add(marginClear)
 	balance = &gexdb.Balance{
 		UserID: holding.UserID,
 		Area:   f.Area,
@@ -940,6 +941,16 @@ func (f *FuturesMatcher) blowupHolding(tx *pgx.Tx, ctx context.Context, changed 
 	err = gexdb.IncreaseBalanceCall(tx, ctx, balance)
 	if err != nil {
 		err = NewErrMatcher(err, "[blowupHolding] blowup balance by %v fail", converter.JSON(balance))
+		return
+	}
+	record := &gexdb.BalanceRecord{
+		BalanceID: balance.TID,
+		Type:      gexdb.BalanceRecordTypeBlowup,
+		Changed:   decimal.Zero.Sub(allClear),
+	}
+	_, err = gexdb.AddBalancRecordCall(tx, ctx, record)
+	if err != nil {
+		err = NewErrMatcher(err, "[syncHoldingByPartDone] add balance record by %v fail", converter.JSON(record))
 		return
 	}
 
@@ -1265,6 +1276,28 @@ func (f *FuturesMatcher) syncHoldingByPartDone(tx *pgx.Tx, ctx context.Context, 
 	if err != nil {
 		err = NewErrMatcher(err, "[syncHoldingByPartDone] change balance %v fail", converter.JSON(balance))
 		return
+	}
+	records := []*gexdb.BalanceRecord{}
+	if profit.Sign() != 0 {
+		records = append(records, &gexdb.BalanceRecord{
+			BalanceID: balance.TID,
+			Type:      gexdb.BalanceRecordTypeProfit,
+			Changed:   profit,
+		})
+	}
+	if fee.Sign() != 0 {
+		records = append(records, &gexdb.BalanceRecord{
+			BalanceID: balance.TID,
+			Type:      gexdb.BalanceRecordTypeTradeFee,
+			Changed:   fee,
+		})
+	}
+	if len(records) > 0 {
+		_, err = gexdb.AddBalancRecordCall(tx, ctx, records...)
+		if err != nil {
+			err = NewErrMatcher(err, "[syncHoldingByPartDone] add balance record by %v fail", converter.JSON(records))
+			return
+		}
 	}
 	err = holding.UpdateFilter(tx, ctx, "amount,open,margin_used,blowup#all")
 	if err != nil {

@@ -73,12 +73,16 @@ import (
 
 func TestBalance(t *testing.T) {
 	clearCookie()
-	ts.Should(t, "code", define.Success).GetMap("/pub/login?username=%v&password=%v", "abc0", "123")
+	ts.Should(t, "code", define.Success).GetMap("/pub/login?username=%v&password=%v", "abc2", "123")
 	//
 	loadBalanceOverview, _ := ts.Should(t, "code", define.Success, "total_value", xmap.ShouldIsNoZero).GetMap("/usr/loadBalanceOverview")
 	fmt.Printf("loadBalanceOverview--->%v\n", converter.JSON(loadBalanceOverview))
 	listBalance, _ := ts.Should(t, "code", define.Success, "total_value", xmap.ShouldIsNoZero).GetMap("/usr/listBalance?area=%d", gexdb.BalanceAreaSpot)
 	fmt.Printf("listBalance--->%v\n", converter.JSON(listBalance))
+	//
+	ts.Should(t, "code", define.ArgsInvalid).GetMap("/usr/listBalanceRecord?type=xxx")
+	listBalanceRecord, _ := ts.Should(t, "code", define.Success).GetMap("/usr/listBalanceRecord")
+	fmt.Printf("listBalanceRecord--->%v\n", converter.JSON(listBalanceRecord))
 	//
 	//test error
 	pgx.MockerStart()
@@ -88,4 +92,5 @@ func TestBalance(t *testing.T) {
 	pgx.MockerSetCall("Rows.Scan", 1).Should(t, "code", define.ServerError).GetMap("/usr/loadBalanceOverview")
 	pgx.Should(t, "code", define.ArgsInvalid).GetMap("/usr/listBalance?area=%d", 1)
 	pgx.MockerSetCall("Rows.Scan", 1).Should(t, "code", define.ServerError).GetMap("/usr/listBalance?area=%d", gexdb.BalanceAreaSpot)
+	pgx.MockerSetCall("Rows.Scan", 1).Should(t, "code", define.ServerError).GetMap("/usr/listBalanceRecord")
 }

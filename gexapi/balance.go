@@ -1,6 +1,7 @@
 package gexapi
 
 import (
+	"github.com/codingeasygo/util/converter"
 	"github.com/codingeasygo/util/xmap"
 	"github.com/codingeasygo/web"
 	"github.com/gexservice/gexservice/base/define"
@@ -130,5 +131,54 @@ func ListBalanceH(s *web.Session) web.Result {
 		"today_winned": todayWinned,
 		"balances":     balances,
 		"values":       values,
+	})
+}
+
+//ListBalanceRecordH is http handler
+/**
+ *
+ * @api {GET} /usr/listBalanceRecord List Balance Record
+ * @apiName ListBalanceRecord
+ * @apiGroup Balance
+ *
+ *
+ * @apiUse BalanceRecordUnifySearcher
+ *
+ * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>
+ * @apiSuccess (BalanceRecordItem) {Array} records the balance records
+ * @apiUse BalanceRecordItemObject
+ *
+ * @apiSuccessExample {type} Success-Response:
+ * {
+ *     "code": 0,
+ *     "records": [
+ *         {
+ *             "asset": "USDT",
+ *             "changed": "0.1",
+ *             "tid": 0,
+ *             "type": 100,
+ *             "update_time": 1667873432495
+ *         }
+ *     ],
+ *     "total": 1
+ * }
+ */
+func ListBalanceRecordH(s *web.Session) web.Result {
+	searcher := &gexdb.BalanceRecordUnifySearcher{}
+	err := s.Valid(searcher, "#all")
+	if err != nil {
+		return util.ReturnCodeLocalErr(s, define.ArgsInvalid, "arg-err", err)
+	}
+	userID := s.Int64("user_id")
+	searcher.Where.UserID = userID
+	err = searcher.Apply(s.R.Context())
+	if err != nil {
+		xlog.Errorf("SearchOrderH searcher order fail with %v by %v", err, converter.JSON(searcher))
+		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
+	}
+	return s.SendJSON(xmap.M{
+		"code":    define.Success,
+		"records": searcher.Query.Records,
+		"total":   searcher.Count.Total,
 	})
 }

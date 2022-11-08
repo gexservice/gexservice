@@ -703,6 +703,358 @@ func ScanBalanceHistoryFilterWherefCall(caller interface{}, ctx context.Context,
 	return
 }
 
+//BalanceRecordFilterOptional is crud filter
+const BalanceRecordFilterOptional = ""
+
+//BalanceRecordFilterRequired is crud filter
+const BalanceRecordFilterRequired = ""
+
+//BalanceRecordFilterInsert is crud filter
+const BalanceRecordFilterInsert = ""
+
+//BalanceRecordFilterUpdate is crud filter
+const BalanceRecordFilterUpdate = "update_time"
+
+//BalanceRecordFilterFind is crud filter
+const BalanceRecordFilterFind = "#all"
+
+//BalanceRecordFilterScan is crud filter
+const BalanceRecordFilterScan = "#all"
+
+//EnumValid will valid value by BalanceRecordType
+func (o *BalanceRecordType) EnumValid(v interface{}) (err error) {
+	var target BalanceRecordType
+	targetType := reflect.TypeOf(BalanceRecordType(0))
+	targetValue := reflect.ValueOf(v)
+	if targetValue.CanConvert(targetType) {
+		target = targetValue.Convert(targetType).Interface().(BalanceRecordType)
+	}
+	for _, value := range BalanceRecordTypeAll {
+		if target == value {
+			return nil
+		}
+	}
+	return fmt.Errorf("must be in %v", BalanceRecordTypeAll)
+}
+
+//EnumValid will valid value by BalanceRecordTypeArray
+func (o *BalanceRecordTypeArray) EnumValid(v interface{}) (err error) {
+	var target BalanceRecordType
+	targetType := reflect.TypeOf(BalanceRecordType(0))
+	targetValue := reflect.ValueOf(v)
+	if targetValue.CanConvert(targetType) {
+		target = targetValue.Convert(targetType).Interface().(BalanceRecordType)
+	}
+	for _, value := range BalanceRecordTypeAll {
+		if target == value {
+			return nil
+		}
+	}
+	return fmt.Errorf("must be in %v", BalanceRecordTypeAll)
+}
+
+//DbArray will join value to database array
+func (o BalanceRecordTypeArray) DbArray() (res string) {
+	res = "{" + converter.JoinSafe(o, ",", converter.JoinPolicyDefault) + "}"
+	return
+}
+
+//InArray will join value to database array
+func (o BalanceRecordTypeArray) InArray() (res string) {
+	res = "" + converter.JoinSafe(o, ",", converter.JoinPolicyDefault) + ""
+	return
+}
+
+//EnumValid will valid value by BalanceRecordStatus
+func (o *BalanceRecordStatus) EnumValid(v interface{}) (err error) {
+	var target BalanceRecordStatus
+	targetType := reflect.TypeOf(BalanceRecordStatus(0))
+	targetValue := reflect.ValueOf(v)
+	if targetValue.CanConvert(targetType) {
+		target = targetValue.Convert(targetType).Interface().(BalanceRecordStatus)
+	}
+	for _, value := range BalanceRecordStatusAll {
+		if target == value {
+			return nil
+		}
+	}
+	return fmt.Errorf("must be in %v", BalanceRecordStatusAll)
+}
+
+//EnumValid will valid value by BalanceRecordStatusArray
+func (o *BalanceRecordStatusArray) EnumValid(v interface{}) (err error) {
+	var target BalanceRecordStatus
+	targetType := reflect.TypeOf(BalanceRecordStatus(0))
+	targetValue := reflect.ValueOf(v)
+	if targetValue.CanConvert(targetType) {
+		target = targetValue.Convert(targetType).Interface().(BalanceRecordStatus)
+	}
+	for _, value := range BalanceRecordStatusAll {
+		if target == value {
+			return nil
+		}
+	}
+	return fmt.Errorf("must be in %v", BalanceRecordStatusAll)
+}
+
+//DbArray will join value to database array
+func (o BalanceRecordStatusArray) DbArray() (res string) {
+	res = "{" + converter.JoinSafe(o, ",", converter.JoinPolicyDefault) + "}"
+	return
+}
+
+//InArray will join value to database array
+func (o BalanceRecordStatusArray) InArray() (res string) {
+	res = "" + converter.JoinSafe(o, ",", converter.JoinPolicyDefault) + ""
+	return
+}
+
+//MetaWithBalanceRecord will return gex_balance_record meta data
+func MetaWithBalanceRecord(fields ...interface{}) (v []interface{}) {
+	v = crud.MetaWith(string("gex_balance_record"), fields...)
+	return
+}
+
+//MetaWith will return gex_balance_record meta data
+func (balanceRecord *BalanceRecord) MetaWith(fields ...interface{}) (v []interface{}) {
+	v = crud.MetaWith(string("gex_balance_record"), fields...)
+	return
+}
+
+//Meta will return gex_balance_record meta data
+func (balanceRecord *BalanceRecord) Meta() (table string, fileds []string) {
+	table, fileds = crud.QueryField(balanceRecord, "#all")
+	return
+}
+
+//Valid will valid by filter
+func (balanceRecord *BalanceRecord) Valid() (err error) {
+	if reflect.ValueOf(balanceRecord.TID).IsZero() {
+		err = attrvalid.Valid(balanceRecord, BalanceRecordFilterInsert+"#all", BalanceRecordFilterOptional)
+	} else {
+		err = attrvalid.Valid(balanceRecord, BalanceRecordFilterUpdate, "")
+	}
+	return
+}
+
+//Insert will add gex_balance_record to database
+func (balanceRecord *BalanceRecord) Insert(caller interface{}, ctx context.Context) (err error) {
+
+	if balanceRecord.UpdateTime.Timestamp() < 1 {
+		balanceRecord.UpdateTime = xsql.TimeNow()
+	}
+
+	if balanceRecord.CreateTime.Timestamp() < 1 {
+		balanceRecord.CreateTime = xsql.TimeNow()
+	}
+
+	_, err = crud.InsertFilter(caller, ctx, balanceRecord, "^tid#all", "returning", "tid#all")
+	return
+}
+
+//UpdateFilter will update gex_balance_record to database
+func (balanceRecord *BalanceRecord) UpdateFilter(caller interface{}, ctx context.Context, filter string) (err error) {
+	err = balanceRecord.UpdateFilterWheref(caller, ctx, filter, "")
+	return
+}
+
+//UpdateWheref will update gex_balance_record to database
+func (balanceRecord *BalanceRecord) UpdateWheref(caller interface{}, ctx context.Context, formats string, formatArgs ...interface{}) (err error) {
+	err = balanceRecord.UpdateFilterWheref(caller, ctx, BalanceRecordFilterUpdate, formats, formatArgs...)
+	return
+}
+
+//UpdateFilterWheref will update gex_balance_record to database
+func (balanceRecord *BalanceRecord) UpdateFilterWheref(caller interface{}, ctx context.Context, filter string, formats string, formatArgs ...interface{}) (err error) {
+	balanceRecord.UpdateTime = xsql.TimeNow()
+	sql, args := crud.UpdateSQL(balanceRecord, filter, nil)
+	where, args := crud.AppendWheref(nil, args, "tid=$%v", balanceRecord.TID)
+	if len(formats) > 0 {
+		where, args = crud.AppendWheref(where, args, formats, formatArgs...)
+	}
+	err = crud.UpdateRow(caller, ctx, balanceRecord, sql, where, "and", args)
+	return
+}
+
+//UpdateBalanceRecordFilter will update gex_balance_record to database
+func UpdateBalanceRecordFilter(ctx context.Context, balanceRecord *BalanceRecord, filter string) (err error) {
+	err = UpdateBalanceRecordFilterCall(GetQueryer, ctx, balanceRecord, filter)
+	return
+}
+
+//UpdateBalanceRecordFilterCall will update gex_balance_record to database
+func UpdateBalanceRecordFilterCall(caller interface{}, ctx context.Context, balanceRecord *BalanceRecord, filter string) (err error) {
+	err = balanceRecord.UpdateFilter(caller, ctx, filter)
+	return
+}
+
+//UpdateBalanceRecordWheref will update gex_balance_record to database
+func UpdateBalanceRecordWheref(ctx context.Context, balanceRecord *BalanceRecord, formats string, formatArgs ...interface{}) (err error) {
+	err = UpdateBalanceRecordWherefCall(GetQueryer, ctx, balanceRecord, formats, formatArgs...)
+	return
+}
+
+//UpdateBalanceRecordWherefCall will update gex_balance_record to database
+func UpdateBalanceRecordWherefCall(caller interface{}, ctx context.Context, balanceRecord *BalanceRecord, formats string, formatArgs ...interface{}) (err error) {
+	err = balanceRecord.UpdateWheref(caller, ctx, formats, formatArgs...)
+	return
+}
+
+//UpdateBalanceRecordFilterWheref will update gex_balance_record to database
+func UpdateBalanceRecordFilterWheref(ctx context.Context, balanceRecord *BalanceRecord, filter string, formats string, formatArgs ...interface{}) (err error) {
+	err = UpdateBalanceRecordFilterWherefCall(GetQueryer, ctx, balanceRecord, filter, formats, formatArgs...)
+	return
+}
+
+//UpdateBalanceRecordFilterWherefCall will update gex_balance_record to database
+func UpdateBalanceRecordFilterWherefCall(caller interface{}, ctx context.Context, balanceRecord *BalanceRecord, filter string, formats string, formatArgs ...interface{}) (err error) {
+	err = balanceRecord.UpdateFilterWheref(caller, ctx, filter, formats, formatArgs...)
+	return
+}
+
+//FindBalanceRecordCall will find gex_balance_record by id from database
+func FindBalanceRecord(ctx context.Context, balanceRecordID int64) (balanceRecord *BalanceRecord, err error) {
+	balanceRecord, err = FindBalanceRecordCall(GetQueryer, ctx, balanceRecordID, false)
+	return
+}
+
+//FindBalanceRecordCall will find gex_balance_record by id from database
+func FindBalanceRecordCall(caller interface{}, ctx context.Context, balanceRecordID int64, lock bool) (balanceRecord *BalanceRecord, err error) {
+	where, args := crud.AppendWhere(nil, nil, true, "tid=$%v", balanceRecordID)
+	balanceRecord, err = FindBalanceRecordWhereCall(caller, ctx, lock, "and", where, args)
+	return
+}
+
+//FindBalanceRecordWhereCall will find gex_balance_record by where from database
+func FindBalanceRecordWhereCall(caller interface{}, ctx context.Context, lock bool, join string, where []string, args []interface{}) (balanceRecord *BalanceRecord, err error) {
+	querySQL := crud.QuerySQL(&BalanceRecord{}, "#all")
+	querySQL = crud.JoinWhere(querySQL, where, join)
+	if lock {
+		querySQL += " for update "
+	}
+	err = crud.QueryRow(caller, ctx, &BalanceRecord{}, "#all", querySQL, args, &balanceRecord)
+	return
+}
+
+//FindBalanceRecordWheref will find gex_balance_record by where from database
+func FindBalanceRecordWheref(ctx context.Context, format string, args ...interface{}) (balanceRecord *BalanceRecord, err error) {
+	balanceRecord, err = FindBalanceRecordWherefCall(GetQueryer, ctx, false, format, args...)
+	return
+}
+
+//FindBalanceRecordWherefCall will find gex_balance_record by where from database
+func FindBalanceRecordWherefCall(caller interface{}, ctx context.Context, lock bool, format string, args ...interface{}) (balanceRecord *BalanceRecord, err error) {
+	balanceRecord, err = FindBalanceRecordFilterWherefCall(GetQueryer, ctx, lock, "#all", format, args...)
+	return
+}
+
+//FindBalanceRecordFilterWheref will find gex_balance_record by where from database
+func FindBalanceRecordFilterWheref(ctx context.Context, filter string, format string, args ...interface{}) (balanceRecord *BalanceRecord, err error) {
+	balanceRecord, err = FindBalanceRecordFilterWherefCall(GetQueryer, ctx, false, filter, format, args...)
+	return
+}
+
+//FindBalanceRecordFilterWherefCall will find gex_balance_record by where from database
+func FindBalanceRecordFilterWherefCall(caller interface{}, ctx context.Context, lock bool, filter string, format string, args ...interface{}) (balanceRecord *BalanceRecord, err error) {
+	querySQL := crud.QuerySQL(&BalanceRecord{}, filter)
+	where, queryArgs := crud.AppendWheref(nil, nil, format, args...)
+	querySQL = crud.JoinWhere(querySQL, where, "and")
+	if lock {
+		querySQL += " for update "
+	}
+	err = crud.QueryRow(caller, ctx, &BalanceRecord{}, filter, querySQL, queryArgs, &balanceRecord)
+	return
+}
+
+//ListBalanceRecordByID will list gex_balance_record by id from database
+func ListBalanceRecordByID(ctx context.Context, balanceRecordIDs ...int64) (balanceRecordList []*BalanceRecord, balanceRecordMap map[int64]*BalanceRecord, err error) {
+	balanceRecordList, balanceRecordMap, err = ListBalanceRecordByIDCall(GetQueryer, ctx, balanceRecordIDs...)
+	return
+}
+
+//ListBalanceRecordByIDCall will list gex_balance_record by id from database
+func ListBalanceRecordByIDCall(caller interface{}, ctx context.Context, balanceRecordIDs ...int64) (balanceRecordList []*BalanceRecord, balanceRecordMap map[int64]*BalanceRecord, err error) {
+	if len(balanceRecordIDs) < 1 {
+		balanceRecordMap = map[int64]*BalanceRecord{}
+		return
+	}
+	err = ScanBalanceRecordByIDCall(caller, ctx, balanceRecordIDs, &balanceRecordList, &balanceRecordMap, "tid")
+	return
+}
+
+//ListBalanceRecordFilterByID will list gex_balance_record by id from database
+func ListBalanceRecordFilterByID(ctx context.Context, filter string, balanceRecordIDs ...int64) (balanceRecordList []*BalanceRecord, balanceRecordMap map[int64]*BalanceRecord, err error) {
+	balanceRecordList, balanceRecordMap, err = ListBalanceRecordFilterByIDCall(GetQueryer, ctx, filter, balanceRecordIDs...)
+	return
+}
+
+//ListBalanceRecordFilterByIDCall will list gex_balance_record by id from database
+func ListBalanceRecordFilterByIDCall(caller interface{}, ctx context.Context, filter string, balanceRecordIDs ...int64) (balanceRecordList []*BalanceRecord, balanceRecordMap map[int64]*BalanceRecord, err error) {
+	if len(balanceRecordIDs) < 1 {
+		balanceRecordMap = map[int64]*BalanceRecord{}
+		return
+	}
+	err = ScanBalanceRecordFilterByIDCall(caller, ctx, filter, balanceRecordIDs, &balanceRecordList, &balanceRecordMap, "tid")
+	return
+}
+
+//ScanBalanceRecordByID will list gex_balance_record by id from database
+func ScanBalanceRecordByID(ctx context.Context, balanceRecordIDs []int64, dest ...interface{}) (err error) {
+	err = ScanBalanceRecordByIDCall(GetQueryer, ctx, balanceRecordIDs, dest...)
+	return
+}
+
+//ScanBalanceRecordByIDCall will list gex_balance_record by id from database
+func ScanBalanceRecordByIDCall(caller interface{}, ctx context.Context, balanceRecordIDs []int64, dest ...interface{}) (err error) {
+	err = ScanBalanceRecordFilterByIDCall(caller, ctx, "#all", balanceRecordIDs, dest...)
+	return
+}
+
+//ScanBalanceRecordFilterByID will list gex_balance_record by id from database
+func ScanBalanceRecordFilterByID(ctx context.Context, filter string, balanceRecordIDs []int64, dest ...interface{}) (err error) {
+	err = ScanBalanceRecordFilterByIDCall(GetQueryer, ctx, filter, balanceRecordIDs, dest...)
+	return
+}
+
+//ScanBalanceRecordFilterByIDCall will list gex_balance_record by id from database
+func ScanBalanceRecordFilterByIDCall(caller interface{}, ctx context.Context, filter string, balanceRecordIDs []int64, dest ...interface{}) (err error) {
+	querySQL := crud.QuerySQL(&BalanceRecord{}, filter)
+	where := append([]string{}, fmt.Sprintf("tid in (%v)", xsql.Int64Array(balanceRecordIDs).InArray()))
+	querySQL = crud.JoinWhere(querySQL, where, " and ")
+	err = crud.Query(caller, ctx, &BalanceRecord{}, filter, querySQL, nil, dest...)
+	return
+}
+
+//ScanBalanceRecordWherefCall will list gex_balance_record by format from database
+func ScanBalanceRecordWheref(ctx context.Context, format string, args []interface{}, suffix string, dest ...interface{}) (err error) {
+	err = ScanBalanceRecordWherefCall(GetQueryer, ctx, format, args, suffix, dest...)
+	return
+}
+
+//ScanBalanceRecordWherefCall will list gex_balance_record by format from database
+func ScanBalanceRecordWherefCall(caller interface{}, ctx context.Context, format string, args []interface{}, suffix string, dest ...interface{}) (err error) {
+	err = ScanBalanceRecordFilterWherefCall(caller, ctx, "#all", format, args, suffix, dest...)
+	return
+}
+
+//ScanBalanceRecordFilterWheref will list gex_balance_record by format from database
+func ScanBalanceRecordFilterWheref(ctx context.Context, filter string, format string, args []interface{}, suffix string, dest ...interface{}) (err error) {
+	err = ScanBalanceRecordFilterWherefCall(GetQueryer, ctx, filter, format, args, suffix, dest...)
+	return
+}
+
+//ScanBalanceRecordFilterWherefCall will list gex_balance_record by format from database
+func ScanBalanceRecordFilterWherefCall(caller interface{}, ctx context.Context, filter string, format string, args []interface{}, suffix string, dest ...interface{}) (err error) {
+	querySQL := crud.QuerySQL(&BalanceRecord{}, filter)
+	var where []string
+	if len(format) > 0 {
+		where, args = crud.AppendWheref(nil, nil, format, args...)
+	}
+	querySQL = crud.JoinWhere(querySQL, where, " and ", suffix)
+	err = crud.Query(caller, ctx, &BalanceRecord{}, filter, querySQL, args, dest...)
+	return
+}
+
 //HoldingFilterOptional is crud filter
 const HoldingFilterOptional = ""
 

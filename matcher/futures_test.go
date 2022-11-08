@@ -2412,7 +2412,7 @@ func TestFuturesMatcherError(t *testing.T) {
 	defer pgx.MockerStop()
 	enabled := map[int]bool{
 		0: true,
-		9: true,
+		4: true,
 	}
 	testCount := 0
 	if testCount++; enabled[0] || enabled[testCount] {
@@ -2861,7 +2861,7 @@ func TestFuturesMatcherError(t *testing.T) {
 			return
 		})
 
-		pgx.MockerPanicRangeCall("Tx.Exec", 1, 7).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
+		pgx.MockerPanicRangeCall("Tx.Exec", 1, 9).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
 			_, err = matcher.ProcessLimit(ctx, env.Buyer.TID, gexdb.OrderSideBuy, decimal.NewFromFloat(1), decimal.NewFromFloat(100))
 			if err == nil {
 				return
@@ -2869,7 +2869,7 @@ func TestFuturesMatcherError(t *testing.T) {
 			assetAll()
 			return
 		})
-		pgx.MockerSetRangeCall("Tx.Exec", 1, 7).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
+		pgx.MockerSetRangeCall("Tx.Exec", 1, 9).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
 			_, err = matcher.ProcessLimit(ctx, env.Buyer.TID, gexdb.OrderSideBuy, decimal.NewFromFloat(1), decimal.NewFromFloat(100))
 			if err == nil {
 				return
@@ -3257,11 +3257,11 @@ func TestFuturesMatcherError(t *testing.T) {
 			_, err = matcher.ProcessLimit(ctx, env.Seller.TID, gexdb.OrderSideSell, decimal.NewFromFloat(1), decimal.NewFromFloat(90))
 			return
 		})
-		pgx.MockerPanicRangeCall("Tx.Exec", 1, 7).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
+		pgx.MockerPanicRangeCall("Tx.Exec", 1, 8).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
 			_, err = matcher.ProcessLimit(ctx, env.Seller.TID, gexdb.OrderSideSell, decimal.NewFromFloat(1), decimal.NewFromFloat(90))
 			return
 		})
-		pgx.MockerSetRangeCall("Tx.Exec", 1, 7).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
+		pgx.MockerSetRangeCall("Tx.Exec", 1, 9).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
 			_, err = matcher.ProcessLimit(ctx, env.Seller.TID, gexdb.OrderSideSell, decimal.NewFromFloat(1), decimal.NewFromFloat(90))
 			return
 		})

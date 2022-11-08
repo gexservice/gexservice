@@ -24,6 +24,7 @@
   * 标记价格显示，当`holdings.amout`为多仓（正数）时为`tickers[symbol].bid[0]`, 当`holdings.amout`为空仓（负数）时为`tickers[symbol].ask[0]`
   * 保证金率为持仓未实现盈亏除以总保证金加空闲保证金（已使用保证金+追加保证金+账号空闲余额），`unprofits[symbol]/(holding[symbol].margin_used+holdings[symbol].margin_added+balance.free)`，如果为正数显示绿色，负数显示红色
 * 更新杠杆使用<a href="#api-Balance-ChangeHoldingLever">更新仓位杠杆</a>, 注意检查返回`code=CodeBalanceNotEnought/CodeOrderPending`提示用户余额不足或有订单未成交
+* 列出钱包历史或资金历史使用<a href="#api-Balance-ListBalanceRecord">列出钱包记录</a>
 * 当用用户停在我的页面时，前端需要定时（5s)刷新我的钱包信息
 
 ## 关于交易

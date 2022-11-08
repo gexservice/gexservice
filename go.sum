@@ -3,14 +3,12 @@ github.com/Centny/rediscache v0.0.0-20220105111036-c599d3d485bd h1:Z3sASyL/Hlg8C
 github.com/Centny/rediscache v0.0.0-20220105111036-c599d3d485bd/go.mod h1:wZuQnW9+q1oHLzO9Qqsazp+eQJhrJQy8DZdLMkNgnY8=
 github.com/Masterminds/semver/v3 v3.1.1/go.mod h1:VPu/7SZ7ePZ3QOrcuXROw5FAcLl4a0cBrbBpGY/8hQs=
 github.com/benbjohnson/clock v1.1.0 h1:Q92kusRqC1XV2MjkWETPvjJVqKetz1OzxZB7mHJLju8=
-github.com/centny/orderbook v0.2.6-0.20211022114700-2dbcfa73285c h1:wuycJoPiS7HLZ32xzjxoSb9plJ4Nbf6Cl6X0874HtrE=
-github.com/centny/orderbook v0.2.6-0.20211022114700-2dbcfa73285c/go.mod h1:6FkJ8EnzhFvkT1PsFLRuHgcNPh3ysrSo5Mmlp5FVCqg=
 github.com/centny/orderbook v0.2.6-0.20221105030542-d65960ed84c0 h1:zIpmK4YGKaK1waCyO9eD3nuTuJzN1gAzwBflw3yAYxo=
 github.com/centny/orderbook v0.2.6-0.20221105030542-d65960ed84c0/go.mod h1:6FkJ8EnzhFvkT1PsFLRuHgcNPh3ysrSo5Mmlp5FVCqg=
 github.com/cockroachdb/apd v1.1.0 h1:3LFP3629v+1aKXU5Q37mxmRxX/pIu1nijXydLShEq5I=
 github.com/cockroachdb/apd v1.1.0/go.mod h1:8Sl8LxpKi29FqWXR16WEFZRNSz3SoPzUzeMeY4+DwBQ=
-github.com/codingeasygo/crud v0.0.0-20221103105713-b50f57069b8a h1:+6WboZDBVecwv+B983mtnuPOjA4s67O7RI5Ed7WPYdI=
-github.com/codingeasygo/crud v0.0.0-20221103105713-b50f57069b8a/go.mod h1:qi2dKB0sI6Prbeg2OaQHkz5IbtNDFXhcfTTS0wc+FIY=
+github.com/codingeasygo/crud v0.0.0-20221108014119-4368796d26b8 h1:JsIIcAOe1l9J1B4K0nUktglK2zlHGxB6lJPC2ioSR+A=
+github.com/codingeasygo/crud v0.0.0-20221108014119-4368796d26b8/go.mod h1:qi2dKB0sI6Prbeg2OaQHkz5IbtNDFXhcfTTS0wc+FIY=
 github.com/codingeasygo/util v0.0.0-20221103081314-a6c91ccf3379 h1:CXtO4LWiFw5ssnY9gM9d6PPVIn588RZUr7WRrsSPf6o=
 github.com/codingeasygo/util v0.0.0-20221103081314-a6c91ccf3379/go.mod h1:CE705pc3Xn2F3nqMKhvfaigeXeDudpdteTzbf+2jwig=
 github.com/codingeasygo/web v0.0.0-20221103094050-e9f39f8e9983 h1:wm/XAOrn4AplQqXsCCAqPOQQu6M/5jmEazDHAyDAH3Y=

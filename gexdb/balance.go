@@ -121,6 +121,66 @@ func CountBalance(ctx context.Context, area BalanceArea, start, end time.Time) (
 	return
 }
 
+func AddBalancRecordCall(caller crud.Queryer, ctx context.Context, records ...*BalanceRecord) (added int64, err error) {
+	if len(records) < 1 {
+		return
+	}
+	talbe, fileds, _, _ := crud.InsertArgs(records[0], "^tid#all", nil)
+	insertVal := []string{}
+	insertArg := []interface{}{}
+	now := xsql.TimeNow()
+	for _, record := range records {
+		record.UpdateTime = now
+		record.CreateTime = now
+		record.Status = BalanceRecordStatusNormal
+		var param []string
+		_, _, param, insertArg = crud.InsertArgs(record, "^tid#all", insertArg)
+		insertVal = append(insertVal, "("+strings.Join(param, ",")+")")
+	}
+	insertSQL := fmt.Sprintf(`insert into %v(%v) values %v`, talbe, strings.Join(fileds, ","), strings.Join(insertVal, ","))
+	_, added, err = caller.Exec(ctx, insertSQL, insertArg...)
+	return
+}
+
+/**
+ * @apiDefine BalanceRecordUnifySearcher
+ * @apiParam  {String} [area] the balance area filter, all type supported is <a href="#metadata-Balance">BalanceAreaAll</a>
+ * @apiParam  {Number} [asset] the balance asset filter, multi with comma
+ * @apiParam  {Number} [type] the balance record type filter, multi with comma, all type supported is <a href="#metadata-BalanceRecord">BalanceRecordTypeAll</a>
+ * @apiParam  {Number} [start_time] the time filter
+ * @apiParam  {Number} [end_time] the time filter
+ * @apiParam  {Number} [skip] page skip
+ * @apiParam  {Number} [limit] page limit
+ */
+type BalanceRecordUnifySearcher struct {
+	Model BalanceRecordItem `json:"model" from:"gex_balance_record r join gex_balance b on b.tid=r.balance_id"`
+	Where struct {
+		UserID    int64                  `json:"user_id" cmp:"b.user_id=$%v" valid:"user_id,o|i,r:0;"`
+		Area      BalanceArea            `json:"area" cmp:"b.area=$%v" valid:"area,o|i,e:0;"`
+		Asset     []string               `json:"asset" cmp:"b.asset=any($%v)" valid:"asset,o|s,l:0;"`
+		Type      BalanceRecordTypeArray `json:"type" cmp:"r.type=any($%v)" valid:"type,o|i,e:;"`
+		StartTime xsql.Time              `json:"start_time" cmp:"r.update_time>=$%v" valid:"start_time,o|i,r:-1;"`
+		EndTime   xsql.Time              `json:"end_time" cmp:"r.update_time<$%v" valid:"end_time,o|i,r:-1;"`
+	} `json:"where" join:"and" valid:"inline"`
+	Page struct {
+		Order string `json:"order" default:"order by r.update_time desc" valid:"order,o|s,l:0;"`
+		Skip  int    `json:"skip" valid:"skip,o|i,r:-1;"`
+		Limit int    `json:"limit" valid:"limit,o|i,r:0;"`
+	} `json:"page" valid:"inline"`
+	Query struct {
+		Records []*BalanceRecordItem `json:"records"`
+	} `json:"query" filter:"b.asset#all|r.type,changed,update_time#all"`
+	Count struct {
+		Total int64 `json:"total" scan:"tid"`
+	} `json:"count" filter:"r.count(tid)#all"`
+}
+
+func (o *BalanceRecordUnifySearcher) Apply(ctx context.Context) (err error) {
+	o.Page.Order = ""
+	err = crud.ApplyUnify(Pool(), ctx, o)
+	return
+}
+
 // func ListUserBalanceHistory(ctx context.Context, userID int64, asset string, startTime, endTime time.Time) (histories []*BalanceHistory, err error) {
 // 	err = crud.QueryWheref(
 // 		Pool, ctx, &BalanceHistory{}, "#all",

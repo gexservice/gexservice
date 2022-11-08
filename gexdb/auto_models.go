@@ -83,6 +83,52 @@ type BalanceHistory struct {
 	Status     BalanceHistoryStatus `json:"status,omitempty" valid:"status,r|i,e:0;"`           /* the balance record status, Normal=100: is normal status */
 }
 
+/***** metadata:BalanceRecord *****/
+type BalanceRecordType int
+type BalanceRecordTypeArray []BalanceRecordType
+
+const (
+	BalanceRecordTypeTrade    BalanceRecordType = 100 //is trade type
+	BalanceRecordTypeTradeFee BalanceRecordType = 110 //is trade fee
+	BalanceRecordTypeProfit   BalanceRecordType = 200 //is close profit
+	BalanceRecordTypeBlowup   BalanceRecordType = 210 //is blowup
+	BalanceRecordTypeTransfer BalanceRecordType = 300 //is transfer
+)
+
+//BalanceRecordTypeAll is the balance record type
+var BalanceRecordTypeAll = BalanceRecordTypeArray{BalanceRecordTypeTrade, BalanceRecordTypeTradeFee, BalanceRecordTypeProfit, BalanceRecordTypeBlowup, BalanceRecordTypeTransfer}
+
+//BalanceRecordTypeShow is the balance record type
+var BalanceRecordTypeShow = BalanceRecordTypeArray{BalanceRecordTypeTrade, BalanceRecordTypeTradeFee, BalanceRecordTypeProfit, BalanceRecordTypeBlowup, BalanceRecordTypeTransfer}
+
+type BalanceRecordStatus int
+type BalanceRecordStatusArray []BalanceRecordStatus
+
+const (
+	BalanceRecordStatusNormal BalanceRecordStatus = 100 //is normal
+)
+
+//BalanceRecordStatusAll is the balance status
+var BalanceRecordStatusAll = BalanceRecordStatusArray{BalanceRecordStatusNormal}
+
+//BalanceRecordStatusShow is the balance status
+var BalanceRecordStatusShow = BalanceRecordStatusArray{BalanceRecordStatusNormal}
+
+/*
+ * BalanceRecord  represents gex_balance_record
+ * BalanceRecord Fields:tid,balance_id,type,changed,update_time,create_time,status,
+ */
+type BalanceRecord struct {
+	T          string              `json:"-" table:"gex_balance_record"`                       /* the table name tag */
+	TID        int64               `json:"tid,omitempty" valid:"tid,r|i,r:0;"`                 /* the primary key */
+	BalanceID  int64               `json:"balance_id,omitempty" valid:"balance_id,r|i,r:0;"`   /* the balance id */
+	Type       BalanceRecordType   `json:"type,omitempty" valid:"type,r|i,e:0;"`               /* the balance record type, Trade=100: is trade type, TradeFee=110:is trade fee, Profit=200:is close profit, Blowup=210:is blowup, Transfer=300:is transfer */
+	Changed    decimal.Decimal     `json:"changed,omitempty" valid:"changed,r|f,r:0;"`         /* the balance change value */
+	UpdateTime xsql.Time           `json:"update_time,omitempty" valid:"update_time,r|i,r:1;"` /* the balance last update time */
+	CreateTime xsql.Time           `json:"create_time,omitempty" valid:"create_time,r|i,r:1;"` /* the balance create time */
+	Status     BalanceRecordStatus `json:"status,omitempty" valid:"status,r|i,e:0;"`           /* the balance status, Normal=100: is normal */
+}
+
 /***** metadata:Holding *****/
 type HoldingStatus int
 type HoldingStatusArray []HoldingStatus

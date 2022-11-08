@@ -1376,12 +1376,12 @@ func TestSpotMatcherError(t *testing.T) {
 		}
 		pgx.MockerClear()
 
-		pgx.MockerPanicRangeCall("Tx.Exec", 1, 6).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
+		pgx.MockerPanicRangeCall("Tx.Exec", 1, 8).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
 			_, err = matcher.ProcessLimit(ctx, userQuote.TID, gexdb.OrderSideBuy, decimal.NewFromFloat(2.5), decimal.NewFromFloat(100))
 			assetBalanceLocked(userBase.TID, area, spotBalanceBase, decimal.NewFromFloat(3))
 			return
 		})
-		pgx.MockerSetRangeCall("Tx.Exec", 1, 6).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
+		pgx.MockerSetRangeCall("Tx.Exec", 1, 8).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
 			_, err = matcher.ProcessLimit(ctx, userQuote.TID, gexdb.OrderSideBuy, decimal.NewFromFloat(2.5), decimal.NewFromFloat(100))
 			assetBalanceLocked(userBase.TID, area, spotBalanceBase, decimal.NewFromFloat(3))
 			return
@@ -1458,11 +1458,11 @@ func TestSpotMatcherError(t *testing.T) {
 			return
 		})
 
-		pgx.MockerPanicRangeCall("Tx.Exec", 1, 4).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
+		pgx.MockerPanicRangeCall("Tx.Exec", 1, 5).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
 			_, err = matcher.ProcessCancel(ctx, buyOrder.UserID, buyOrder.OrderID)
 			return
 		})
-		pgx.MockerSetRangeCall("Tx.Exec", 1, 4).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
+		pgx.MockerSetRangeCall("Tx.Exec", 1, 5).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
 			_, err = matcher.ProcessCancel(ctx, buyOrder.UserID, buyOrder.OrderID)
 			return
 		})

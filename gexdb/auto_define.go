@@ -33,6 +33,20 @@ package gexdb
  */
 
 /**
+ * @apiDefine BalanceRecordUpdate
+ */
+/**
+ * @apiDefine BalanceRecordObject
+ * @apiSuccess (BalanceRecord) {Int64} BalanceRecord.tid the primary key
+ * @apiSuccess (BalanceRecord) {Int64} BalanceRecord.balance_id the balance id
+ * @apiSuccess (BalanceRecord) {BalanceRecordType} BalanceRecord.type the balance record type, all suported is <a href="#metadata-BalanceRecord">BalanceRecordTypeAll</a>
+ * @apiSuccess (BalanceRecord) {Decimal} BalanceRecord.changed the balance change value
+ * @apiSuccess (BalanceRecord) {Time} BalanceRecord.update_time the balance last update time
+ * @apiSuccess (BalanceRecord) {Time} BalanceRecord.create_time the balance create time
+ * @apiSuccess (BalanceRecord) {BalanceRecordStatus} BalanceRecord.status the balance status, all suported is <a href="#metadata-BalanceRecord">BalanceRecordStatusAll</a>
+ */
+
+/**
  * @apiDefine HoldingUpdate
  */
 /**

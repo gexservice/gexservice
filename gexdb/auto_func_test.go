@@ -417,6 +417,222 @@ func TestAutoBalanceHistory(t *testing.T) {
 	}
 }
 
+func TestAutoBalanceRecord(t *testing.T) {
+	var err error
+	for _, value := range BalanceRecordTypeAll {
+		if value.EnumValid(int(value)) != nil {
+			t.Error("not enum valid")
+			return
+		}
+		if value.EnumValid(int(-321654)) == nil {
+			t.Error("not enum valid")
+			return
+		}
+		if BalanceRecordTypeAll.EnumValid(int(value)) != nil {
+			t.Error("not enum valid")
+			return
+		}
+		if BalanceRecordTypeAll.EnumValid(int(-321654)) == nil {
+			t.Error("not enum valid")
+			return
+		}
+	}
+	if len(BalanceRecordTypeAll.DbArray()) < 1 {
+		t.Error("not array")
+		return
+	}
+	if len(BalanceRecordTypeAll.InArray()) < 1 {
+		t.Error("not array")
+		return
+	}
+	for _, value := range BalanceRecordStatusAll {
+		if value.EnumValid(int(value)) != nil {
+			t.Error("not enum valid")
+			return
+		}
+		if value.EnumValid(int(-321654)) == nil {
+			t.Error("not enum valid")
+			return
+		}
+		if BalanceRecordStatusAll.EnumValid(int(value)) != nil {
+			t.Error("not enum valid")
+			return
+		}
+		if BalanceRecordStatusAll.EnumValid(int(-321654)) == nil {
+			t.Error("not enum valid")
+			return
+		}
+	}
+	if len(BalanceRecordStatusAll.DbArray()) < 1 {
+		t.Error("not array")
+		return
+	}
+	if len(BalanceRecordStatusAll.InArray()) < 1 {
+		t.Error("not array")
+		return
+	}
+	metav := MetaWithBalanceRecord()
+	if len(metav) < 1 {
+		t.Error("not meta")
+		return
+	}
+	balanceRecord := &BalanceRecord{}
+	balanceRecord.Valid()
+
+	table, fields := balanceRecord.Meta()
+	if len(table) < 1 || len(fields) < 1 {
+		t.Error("not meta")
+		return
+	}
+	fmt.Println(table, "---->", strings.Join(fields, ","))
+	if table := crud.Table(balanceRecord.MetaWith(int64(0))); len(table) < 1 {
+		t.Error("not table")
+		return
+	}
+	err = balanceRecord.Insert(GetQueryer, context.Background())
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if reflect.ValueOf(balanceRecord.TID).IsZero() {
+		t.Error("not id")
+		return
+	}
+	balanceRecord.Valid()
+	err = UpdateBalanceRecordFilter(context.Background(), balanceRecord, "")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	err = UpdateBalanceRecordWheref(context.Background(), balanceRecord, "")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	err = UpdateBalanceRecordFilterWheref(context.Background(), balanceRecord, BalanceRecordFilterUpdate, "tid=$%v", balanceRecord.TID)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	findBalanceRecord, err := FindBalanceRecord(context.Background(), balanceRecord.TID)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if balanceRecord.TID != findBalanceRecord.TID {
+		t.Error("find id error")
+		return
+	}
+	findBalanceRecord, err = FindBalanceRecordWheref(context.Background(), "tid=$%v", balanceRecord.TID)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if balanceRecord.TID != findBalanceRecord.TID {
+		t.Error("find id error")
+		return
+	}
+	findBalanceRecord, err = FindBalanceRecordFilterWheref(context.Background(), "#all", "tid=$%v", balanceRecord.TID)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if balanceRecord.TID != findBalanceRecord.TID {
+		t.Error("find id error")
+		return
+	}
+	findBalanceRecord, err = FindBalanceRecordWhereCall(GetQueryer, context.Background(), true, "and", []string{"tid=$1"}, []interface{}{balanceRecord.TID})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if balanceRecord.TID != findBalanceRecord.TID {
+		t.Error("find id error")
+		return
+	}
+	findBalanceRecord, err = FindBalanceRecordWherefCall(GetQueryer, context.Background(), true, "tid=$%v", balanceRecord.TID)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if balanceRecord.TID != findBalanceRecord.TID {
+		t.Error("find id error")
+		return
+	}
+	balanceRecordList, balanceRecordMap, err := ListBalanceRecordByID(context.Background())
+	if err != nil || len(balanceRecordList) > 0 || balanceRecordMap == nil || len(balanceRecordMap) > 0 {
+		t.Error(err)
+		return
+	}
+	balanceRecordList, balanceRecordMap, err = ListBalanceRecordByID(context.Background(), balanceRecord.TID)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if len(balanceRecordList) != 1 || balanceRecordList[0].TID != balanceRecord.TID || len(balanceRecordMap) != 1 || balanceRecordMap[balanceRecord.TID] == nil || balanceRecordMap[balanceRecord.TID].TID != balanceRecord.TID {
+		t.Error("list id error")
+		return
+	}
+	balanceRecordList, balanceRecordMap, err = ListBalanceRecordFilterByID(context.Background(), "#all")
+	if err != nil || len(balanceRecordList) > 0 || balanceRecordMap == nil || len(balanceRecordMap) > 0 {
+		t.Error(err)
+		return
+	}
+	balanceRecordList, balanceRecordMap, err = ListBalanceRecordFilterByID(context.Background(), "#all", balanceRecord.TID)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if len(balanceRecordList) != 1 || balanceRecordList[0].TID != balanceRecord.TID || len(balanceRecordMap) != 1 || balanceRecordMap[balanceRecord.TID] == nil || balanceRecordMap[balanceRecord.TID].TID != balanceRecord.TID {
+		t.Error("list id error")
+		return
+	}
+	balanceRecordList = nil
+	balanceRecordMap = nil
+	err = ScanBalanceRecordByID(context.Background(), []int64{balanceRecord.TID}, &balanceRecordList, &balanceRecordMap, "tid")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if len(balanceRecordList) != 1 || balanceRecordList[0].TID != balanceRecord.TID || len(balanceRecordMap) != 1 || balanceRecordMap[balanceRecord.TID] == nil || balanceRecordMap[balanceRecord.TID].TID != balanceRecord.TID {
+		t.Error("list id error")
+		return
+	}
+	balanceRecordList = nil
+	balanceRecordMap = nil
+	err = ScanBalanceRecordFilterByID(context.Background(), "#all", []int64{balanceRecord.TID}, &balanceRecordList, &balanceRecordMap, "tid")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if len(balanceRecordList) != 1 || balanceRecordList[0].TID != balanceRecord.TID || len(balanceRecordMap) != 1 || balanceRecordMap[balanceRecord.TID] == nil || balanceRecordMap[balanceRecord.TID].TID != balanceRecord.TID {
+		t.Error("list id error")
+		return
+	}
+	balanceRecordList = nil
+	balanceRecordMap = nil
+	err = ScanBalanceRecordWheref(context.Background(), "tid=$%v", []interface{}{balanceRecord.TID}, "", &balanceRecordList, &balanceRecordMap, "tid")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if len(balanceRecordList) != 1 || balanceRecordList[0].TID != balanceRecord.TID || len(balanceRecordMap) != 1 || balanceRecordMap[balanceRecord.TID] == nil || balanceRecordMap[balanceRecord.TID].TID != balanceRecord.TID {
+		t.Error("list id error")
+		return
+	}
+	balanceRecordList = nil
+	balanceRecordMap = nil
+	err = ScanBalanceRecordFilterWheref(context.Background(), "#all", "tid=$%v", []interface{}{balanceRecord.TID}, "", &balanceRecordList, &balanceRecordMap, "tid")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if len(balanceRecordList) != 1 || balanceRecordList[0].TID != balanceRecord.TID || len(balanceRecordMap) != 1 || balanceRecordMap[balanceRecord.TID] == nil || balanceRecordMap[balanceRecord.TID].TID != balanceRecord.TID {
+		t.Error("list id error")
+		return
+	}
+}
+
 func TestAutoHolding(t *testing.T) {
 	var err error
 	for _, value := range HoldingStatusAll {

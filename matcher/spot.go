@@ -800,6 +800,8 @@ func (s *SpotMatcher) updateOrder(tx *pgx.Tx, ctx context.Context, order *gexdb.
 
 func (s *SpotMatcher) syncBalanceByOrderDone(tx *pgx.Tx, ctx context.Context, changed *MatcherEvent, order *gexdb.Order) (err error) {
 	var in, out *gexdb.Balance
+	var inChanged decimal.Decimal
+	var outChanged decimal.Decimal
 	if order.Side == gexdb.OrderSideBuy {
 		in = &gexdb.Balance{
 			UserID: order.UserID,
@@ -807,6 +809,7 @@ func (s *SpotMatcher) syncBalanceByOrderDone(tx *pgx.Tx, ctx context.Context, ch
 			Asset:  s.Base,
 			Free:   order.InFilled,
 		}
+		inChanged = order.InFilled
 		if order.Price.IsPositive() { //limit buy
 			out = &gexdb.Balance{
 				UserID: order.UserID,
@@ -815,6 +818,7 @@ func (s *SpotMatcher) syncBalanceByOrderDone(tx *pgx.Tx, ctx context.Context, ch
 				Free:   order.Quantity.Sub(order.Filled).Mul(order.Price),
 				Locked: decimal.Zero.Sub(order.Quantity.Mul(order.Price)),
 			}
+			outChanged = order.Filled.Mul(order.Price)
 		} else { //market buy
 			out = &gexdb.Balance{
 				UserID: order.UserID,
@@ -822,6 +826,7 @@ func (s *SpotMatcher) syncBalanceByOrderDone(tx *pgx.Tx, ctx context.Context, ch
 				Asset:  s.Quote,
 				Free:   decimal.Zero.Sub(order.TotalPrice),
 			}
+			outChanged = order.TotalPrice
 		}
 	} else {
 		in = &gexdb.Balance{
@@ -830,6 +835,7 @@ func (s *SpotMatcher) syncBalanceByOrderDone(tx *pgx.Tx, ctx context.Context, ch
 			Asset:  s.Quote,
 			Free:   order.InFilled,
 		}
+		inChanged = order.InFilled
 		if order.Price.IsPositive() { //limit sell
 			out = &gexdb.Balance{
 				UserID: order.UserID,
@@ -838,6 +844,7 @@ func (s *SpotMatcher) syncBalanceByOrderDone(tx *pgx.Tx, ctx context.Context, ch
 				Free:   order.Quantity.Sub(order.Filled),
 				Locked: decimal.Zero.Sub(order.Quantity),
 			}
+			outChanged = order.Filled
 		} else { //market sell
 			out = &gexdb.Balance{
 				UserID: order.UserID,
@@ -845,6 +852,7 @@ func (s *SpotMatcher) syncBalanceByOrderDone(tx *pgx.Tx, ctx context.Context, ch
 				Asset:  s.Base,
 				Free:   decimal.Zero.Sub(order.Filled),
 			}
+			outChanged = order.Filled
 		}
 	}
 	err = gexdb.IncreaseBalanceCall(tx, ctx, in)
@@ -855,6 +863,23 @@ func (s *SpotMatcher) syncBalanceByOrderDone(tx *pgx.Tx, ctx context.Context, ch
 	err = gexdb.IncreaseBalanceCall(tx, ctx, out)
 	if err != nil {
 		err = NewErrMatcher(err, "[syncBalanceByOrderDone] change out balance %v fail", converter.JSON(out))
+		return
+	}
+	records := []*gexdb.BalanceRecord{
+		{
+			BalanceID: in.TID,
+			Type:      gexdb.BalanceRecordTypeTrade,
+			Changed:   inChanged,
+		},
+		{
+			BalanceID: out.TID,
+			Type:      gexdb.BalanceRecordTypeTrade,
+			Changed:   decimal.Zero.Sub(outChanged),
+		},
+	}
+	_, err = gexdb.AddBalancRecordCall(tx, ctx, records...)
+	if err != nil {
+		err = NewErrMatcher(err, "[syncBalanceByOrderDone] add balance record by %v fail", converter.JSON(records))
 		return
 	}
 	changed.AddBalance(in, out)

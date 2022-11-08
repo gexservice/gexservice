@@ -42,6 +42,9 @@ DROP INDEX IF EXISTS gex_holding_blowup_idx;
 DROP INDEX IF EXISTS gex_holding_amount_idx;
 DROP INDEX IF EXISTS gex_balance_user_area_asset_idx;
 DROP INDEX IF EXISTS gex_balance_status_idx;
+DROP INDEX IF EXISTS gex_balance_record_update_time_idx;
+DROP INDEX IF EXISTS gex_balance_record_type_idx;
+DROP INDEX IF EXISTS gex_balance_record_balance_id_idx;
 DROP INDEX IF EXISTS gex_balance_history_user_asset_idx;
 DROP INDEX IF EXISTS gex_balance_history_status_idx;
 ALTER TABLE IF EXISTS gex_user ALTER COLUMN tid DROP DEFAULT;
@@ -49,6 +52,7 @@ ALTER TABLE IF EXISTS gex_order_comm ALTER COLUMN tid DROP DEFAULT;
 ALTER TABLE IF EXISTS gex_order ALTER COLUMN tid DROP DEFAULT;
 ALTER TABLE IF EXISTS gex_kline ALTER COLUMN tid DROP DEFAULT;
 ALTER TABLE IF EXISTS gex_holding ALTER COLUMN tid DROP DEFAULT;
+ALTER TABLE IF EXISTS gex_balance_record ALTER COLUMN tid DROP DEFAULT;
 ALTER TABLE IF EXISTS gex_balance_history ALTER COLUMN tid DROP DEFAULT;
 ALTER TABLE IF EXISTS gex_balance ALTER COLUMN tid DROP DEFAULT;
 DROP TABLE IF EXISTS gex_withdraw;
@@ -64,6 +68,8 @@ DROP SEQUENCE IF EXISTS gex_holding_tid_seq;
 DROP TABLE IF EXISTS gex_holding;
 DROP SEQUENCE IF EXISTS gex_balance_tid_seq;
 DROP SEQUENCE IF EXISTS gex_balance_record_tid_seq;
+DROP TABLE IF EXISTS gex_balance_record;
+DROP SEQUENCE IF EXISTS gex_balance_history_tid_seq;
 DROP TABLE IF EXISTS gex_balance_history;
 DROP TABLE IF EXISTS gex_balance;
 
@@ -221,6 +227,89 @@ COMMENT ON COLUMN gex_balance_history.status IS 'the balance record status, Norm
 
 
 --
+-- Name: gex_balance_history_tid_seq; Type: SEQUENCE; Schema: public;
+--
+
+CREATE SEQUENCE gex_balance_history_tid_seq
+    START WITH 1000
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: gex_balance_history_tid_seq; Type: SEQUENCE OWNED BY; Schema: public;
+--
+
+ALTER SEQUENCE gex_balance_history_tid_seq OWNED BY gex_balance_history.tid;
+
+
+--
+-- Name: gex_balance_record; Type: TABLE; Schema: public;
+--
+
+CREATE TABLE gex_balance_record (
+    tid bigint NOT NULL,
+    balance_id bigint NOT NULL,
+    type integer NOT NULL,
+    changed double precision NOT NULL,
+    update_time timestamp(6) with time zone NOT NULL,
+    create_time timestamp(6) with time zone NOT NULL,
+    status integer NOT NULL
+);
+
+
+--
+-- Name: COLUMN gex_balance_record.tid; Type: COMMENT; Schema: public;
+--
+
+COMMENT ON COLUMN gex_balance_record.tid IS 'the primary key';
+
+
+--
+-- Name: COLUMN gex_balance_record.balance_id; Type: COMMENT; Schema: public;
+--
+
+COMMENT ON COLUMN gex_balance_record.balance_id IS 'the balance id';
+
+
+--
+-- Name: COLUMN gex_balance_record.type; Type: COMMENT; Schema: public;
+--
+
+COMMENT ON COLUMN gex_balance_record.type IS 'the balance record type, Trade=100: is trade type, TradeFee=110:is trade fee, Profit=200:is close profit, Blowup=210:is blowup, Transfer=300:is transfer';
+
+
+--
+-- Name: COLUMN gex_balance_record.changed; Type: COMMENT; Schema: public;
+--
+
+COMMENT ON COLUMN gex_balance_record.changed IS 'the balance change value';
+
+
+--
+-- Name: COLUMN gex_balance_record.update_time; Type: COMMENT; Schema: public;
+--
+
+COMMENT ON COLUMN gex_balance_record.update_time IS 'the balance last update time';
+
+
+--
+-- Name: COLUMN gex_balance_record.create_time; Type: COMMENT; Schema: public;
+--
+
+COMMENT ON COLUMN gex_balance_record.create_time IS 'the balance create time';
+
+
+--
+-- Name: COLUMN gex_balance_record.status; Type: COMMENT; Schema: public;
+--
+
+COMMENT ON COLUMN gex_balance_record.status IS 'the balance status, Normal=100: is normal';
+
+
+--
 -- Name: gex_balance_record_tid_seq; Type: SEQUENCE; Schema: public;
 --
 
@@ -236,7 +325,7 @@ CREATE SEQUENCE gex_balance_record_tid_seq
 -- Name: gex_balance_record_tid_seq; Type: SEQUENCE OWNED BY; Schema: public;
 --
 
-ALTER SEQUENCE gex_balance_record_tid_seq OWNED BY gex_balance_history.tid;
+ALTER SEQUENCE gex_balance_record_tid_seq OWNED BY gex_balance_record.tid;
 
 
 --
@@ -1117,7 +1206,14 @@ ALTER TABLE IF EXISTS ONLY gex_balance ALTER COLUMN tid SET DEFAULT nextval('gex
 -- Name: gex_balance_history tid; Type: DEFAULT; Schema: public;
 --
 
-ALTER TABLE IF EXISTS ONLY gex_balance_history ALTER COLUMN tid SET DEFAULT nextval('gex_balance_record_tid_seq'::regclass);
+ALTER TABLE IF EXISTS ONLY gex_balance_history ALTER COLUMN tid SET DEFAULT nextval('gex_balance_history_tid_seq'::regclass);
+
+
+--
+-- Name: gex_balance_record tid; Type: DEFAULT; Schema: public;
+--
+
+ALTER TABLE IF EXISTS ONLY gex_balance_record ALTER COLUMN tid SET DEFAULT nextval('gex_balance_record_tid_seq'::regclass);
 
 
 --
@@ -1156,6 +1252,14 @@ ALTER TABLE IF EXISTS ONLY gex_user ALTER COLUMN tid SET DEFAULT nextval('gex_us
 
 
 --
+-- Name: gex_balance_history gex_balance_history_pkey; Type: CONSTRAINT; Schema: public;
+--
+
+ALTER TABLE IF EXISTS ONLY gex_balance_history
+    ADD CONSTRAINT gex_balance_history_pkey PRIMARY KEY (tid);
+
+
+--
 -- Name: gex_balance gex_balance_pkey; Type: CONSTRAINT; Schema: public;
 --
 
@@ -1164,10 +1268,10 @@ ALTER TABLE IF EXISTS ONLY gex_balance
 
 
 --
--- Name: gex_balance_history gex_balance_record_pkey; Type: CONSTRAINT; Schema: public;
+-- Name: gex_balance_record gex_balance_record_pkey; Type: CONSTRAINT; Schema: public;
 --
 
-ALTER TABLE IF EXISTS ONLY gex_balance_history
+ALTER TABLE IF EXISTS ONLY gex_balance_record
     ADD CONSTRAINT gex_balance_record_pkey PRIMARY KEY (tid);
 
 
@@ -1231,6 +1335,27 @@ CREATE INDEX gex_balance_history_status_idx ON gex_balance_history USING btree (
 --
 
 CREATE UNIQUE INDEX gex_balance_history_user_asset_idx ON gex_balance_history USING btree (user_id, asset, create_time);
+
+
+--
+-- Name: gex_balance_record_balance_id_idx; Type: INDEX; Schema: public;
+--
+
+CREATE INDEX gex_balance_record_balance_id_idx ON gex_balance_record USING btree (balance_id);
+
+
+--
+-- Name: gex_balance_record_type_idx; Type: INDEX; Schema: public;
+--
+
+CREATE INDEX gex_balance_record_type_idx ON gex_balance_record USING btree (type);
+
+
+--
+-- Name: gex_balance_record_update_time_idx; Type: INDEX; Schema: public;
+--
+
+CREATE INDEX gex_balance_record_update_time_idx ON gex_balance_record USING btree (update_time);
 
 
 --

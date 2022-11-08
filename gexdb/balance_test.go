@@ -1,9 +1,11 @@
 package gexdb
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
+	"github.com/codingeasygo/util/xsql"
 	"github.com/shopspring/decimal"
 )
 
@@ -160,6 +162,56 @@ func TestBalance(t *testing.T) {
 	// 	return
 	// }
 	// pgx.MockerClear()
+}
+
+func TestBalanceRecord(t *testing.T) {
+	asset := "TEST"
+	user := testAddUser("TestBalanceRecord")
+	added, err := TouchBalance(ctx, BalanceAreaSpot, []string{asset}, user.TID)
+	if err != nil || added != 1 {
+		t.Error(err)
+		return
+	}
+	balance := &Balance{
+		UserID: user.TID,
+		Area:   BalanceAreaSpot,
+		Asset:  asset,
+		Free:   decimal.NewFromFloat(100),
+		Locked: decimal.NewFromFloat(100),
+		Margin: decimal.NewFromFloat(100),
+	}
+	err = IncreaseBalance(ctx, balance)
+	if err != nil || !balance.Free.Equal(decimal.NewFromFloat(100)) || !balance.Locked.Equal(decimal.NewFromFloat(100)) || !balance.Margin.Equal(decimal.NewFromFloat(100)) {
+		t.Error(err)
+		return
+	}
+
+	_, err = AddBalancRecordCall(Pool(), ctx, &BalanceRecord{
+		BalanceID: balance.TID,
+		Type:      BalanceRecordTypeTradeFee,
+		Changed:   decimal.NewFromFloat(1),
+	})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	_, err = AddBalancRecordCall(Pool(), ctx)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	searcher := BalanceRecordUnifySearcher{}
+	searcher.Where.Area = BalanceAreaSpot
+	searcher.Where.Asset = []string{balance.Asset}
+	searcher.Where.StartTime = xsql.Time(time.Now().Add(-time.Hour))
+	searcher.Where.EndTime = xsql.Time(time.Now())
+	err = searcher.Apply(ctx)
+	if err != nil || len(searcher.Query.Records) < 1 || searcher.Count.Total < 1 {
+		fmt.Println("-->", searcher.Query.Records)
+		fmt.Println("-->", searcher.Count.Total)
+		t.Error(err)
+		return
+	}
 }
 
 // func TestChangeBalance(t *testing.T) {

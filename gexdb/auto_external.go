@@ -166,6 +166,23 @@ type Ticker struct {
 	Bid    []decimal.Decimal `json:"bid"`
 }
 
+/**
+ * @apiDefine BalanceRecordItemObject
+ * @apiSuccess (BalanceRecordItem) {Int64} BalanceRecordItem.tid the primary key
+ * @apiSuccess (BalanceRecordItem) {String} BalanceRecord.asset the balance asset
+ * @apiSuccess (BalanceRecordItem) {BalanceRecordType} BalanceRecordItem.type the balance record type, all suported is <a href="#metadata-BalanceRecord">BalanceRecordTypeAll</a>
+ * @apiSuccess (BalanceRecordItem) {Decimal} BalanceRecordItem.changed the balance change value
+ * @apiSuccess (BalanceRecordItem) {Time} BalanceRecordItem.update_time the balance last update time
+ */
+
+type BalanceRecordItem struct {
+	TID        int64             `json:"tid"`
+	Asset      string            `json:"asset"`
+	Type       BalanceRecordType `json:"type,omitempty"`
+	Changed    decimal.Decimal   `json:"changed,omitempty"`
+	UpdateTime xsql.Time         `json:"update_time,omitempty"`
+}
+
 /***** metadata:ExReturnCode *****/
 
 const (

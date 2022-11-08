@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/Centny/rediscache v0.0.0-20220105111036-c599d3d485bd
 	github.com/centny/orderbook v0.2.6-0.20221105030542-d65960ed84c0
-	github.com/codingeasygo/crud v0.0.0-20221103105713-b50f57069b8a
+	github.com/codingeasygo/crud v0.0.0-20221108014119-4368796d26b8
 	github.com/codingeasygo/util v0.0.0-20221103081314-a6c91ccf3379
 	github.com/codingeasygo/web v0.0.0-20221103094050-e9f39f8e9983
 	github.com/gomodule/redigo v1.8.9
