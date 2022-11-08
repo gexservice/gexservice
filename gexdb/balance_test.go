@@ -186,7 +186,8 @@ func TestBalanceRecord(t *testing.T) {
 		return
 	}
 
-	_, err = AddBalancRecordCall(Pool(), ctx, &BalanceRecord{
+	_, err = AddBalanceRecordCall(Pool(), ctx, &BalanceRecord{
+		Creator:   user.TID,
 		BalanceID: balance.TID,
 		Type:      BalanceRecordTypeTradeFee,
 		Changed:   decimal.NewFromFloat(1),
@@ -195,7 +196,7 @@ func TestBalanceRecord(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	_, err = AddBalancRecordCall(Pool(), ctx)
+	_, err = AddBalanceRecordCall(Pool(), ctx)
 	if err != nil {
 		t.Error(err)
 		return

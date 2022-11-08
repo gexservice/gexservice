@@ -251,6 +251,7 @@ ALTER SEQUENCE gex_balance_history_tid_seq OWNED BY gex_balance_history.tid;
 
 CREATE TABLE gex_balance_record (
     tid bigint NOT NULL,
+    creator bigint NOT NULL,
     balance_id bigint NOT NULL,
     type integer NOT NULL,
     changed double precision NOT NULL,
@@ -265,6 +266,13 @@ CREATE TABLE gex_balance_record (
 --
 
 COMMENT ON COLUMN gex_balance_record.tid IS 'the primary key';
+
+
+--
+-- Name: COLUMN gex_balance_record.creator; Type: COMMENT; Schema: public;
+--
+
+COMMENT ON COLUMN gex_balance_record.creator IS 'the balance creator';
 
 
 --

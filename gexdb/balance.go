@@ -121,7 +121,7 @@ func CountBalance(ctx context.Context, area BalanceArea, start, end time.Time) (
 	return
 }
 
-func AddBalancRecordCall(caller crud.Queryer, ctx context.Context, records ...*BalanceRecord) (added int64, err error) {
+func AddBalanceRecordCall(caller crud.Queryer, ctx context.Context, records ...*BalanceRecord) (added int64, err error) {
 	if len(records) < 1 {
 		return
 	}

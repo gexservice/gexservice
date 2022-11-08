@@ -944,11 +944,12 @@ func (f *FuturesMatcher) blowupHolding(tx *pgx.Tx, ctx context.Context, changed 
 		return
 	}
 	record := &gexdb.BalanceRecord{
+		Creator:   holding.UserID,
 		BalanceID: balance.TID,
 		Type:      gexdb.BalanceRecordTypeBlowup,
 		Changed:   decimal.Zero.Sub(allClear),
 	}
-	_, err = gexdb.AddBalancRecordCall(tx, ctx, record)
+	_, err = gexdb.AddBalanceRecordCall(tx, ctx, record)
 	if err != nil {
 		err = NewErrMatcher(err, "[syncHoldingByPartDone] add balance record by %v fail", converter.JSON(record))
 		return
@@ -1280,6 +1281,7 @@ func (f *FuturesMatcher) syncHoldingByPartDone(tx *pgx.Tx, ctx context.Context, 
 	records := []*gexdb.BalanceRecord{}
 	if profit.Sign() != 0 {
 		records = append(records, &gexdb.BalanceRecord{
+			Creator:   holding.UserID,
 			BalanceID: balance.TID,
 			Type:      gexdb.BalanceRecordTypeProfit,
 			Changed:   profit,
@@ -1287,13 +1289,14 @@ func (f *FuturesMatcher) syncHoldingByPartDone(tx *pgx.Tx, ctx context.Context, 
 	}
 	if fee.Sign() != 0 {
 		records = append(records, &gexdb.BalanceRecord{
+			Creator:   holding.UserID,
 			BalanceID: balance.TID,
 			Type:      gexdb.BalanceRecordTypeTradeFee,
 			Changed:   fee,
 		})
 	}
 	if len(records) > 0 {
-		_, err = gexdb.AddBalancRecordCall(tx, ctx, records...)
+		_, err = gexdb.AddBalanceRecordCall(tx, ctx, records...)
 		if err != nil {
 			err = NewErrMatcher(err, "[syncHoldingByPartDone] add balance record by %v fail", converter.JSON(records))
 			return

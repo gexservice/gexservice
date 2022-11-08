@@ -867,17 +867,19 @@ func (s *SpotMatcher) syncBalanceByOrderDone(tx *pgx.Tx, ctx context.Context, ch
 	}
 	records := []*gexdb.BalanceRecord{
 		{
+			Creator:   order.UserID,
 			BalanceID: in.TID,
 			Type:      gexdb.BalanceRecordTypeTrade,
 			Changed:   inChanged,
 		},
 		{
+			Creator:   order.UserID,
 			BalanceID: out.TID,
 			Type:      gexdb.BalanceRecordTypeTrade,
 			Changed:   decimal.Zero.Sub(outChanged),
 		},
 	}
-	_, err = gexdb.AddBalancRecordCall(tx, ctx, records...)
+	_, err = gexdb.AddBalanceRecordCall(tx, ctx, records...)
 	if err != nil {
 		err = NewErrMatcher(err, "[syncBalanceByOrderDone] add balance record by %v fail", converter.JSON(records))
 		return

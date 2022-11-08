@@ -38,6 +38,7 @@ package gexdb
 /**
  * @apiDefine BalanceRecordObject
  * @apiSuccess (BalanceRecord) {Int64} BalanceRecord.tid the primary key
+ * @apiSuccess (BalanceRecord) {Int64} BalanceRecord.creator the balance creator
  * @apiSuccess (BalanceRecord) {Int64} BalanceRecord.balance_id the balance id
  * @apiSuccess (BalanceRecord) {BalanceRecordType} BalanceRecord.type the balance record type, all suported is <a href="#metadata-BalanceRecord">BalanceRecordTypeAll</a>
  * @apiSuccess (BalanceRecord) {Decimal} BalanceRecord.changed the balance change value
