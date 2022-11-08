@@ -110,6 +110,75 @@ func TestBalance(t *testing.T) {
 	}
 }
 
+func TestTransferChange(t *testing.T) {
+	user := testAddUser("TestTransferChange")
+	//inc
+	_, err := ChangeBalance(ctx, 100, user.TID, BalanceAreaFunds, "test", decimal.NewFromFloat(100))
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	//from->to
+	err = TransferChange(ctx, 100, user.TID, BalanceAreaFunds, BalanceAreaSpot, "test", decimal.NewFromFloat(100))
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	//transfer error
+	err = TransferChange(ctx, 100, user.TID, BalanceAreaFunds, BalanceAreaSpot, "test", decimal.NewFromFloat(100))
+	if !IsErrBalanceNotEnought(err) {
+		t.Error(err)
+		return
+	}
+	//to->from
+	err = TransferChange(ctx, 100, user.TID, BalanceAreaFunds, BalanceAreaSpot, "test", decimal.NewFromFloat(-100))
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	//transfer error
+	err = TransferChange(ctx, 100, user.TID, BalanceAreaFunds, BalanceAreaSpot, "test", decimal.NewFromFloat(-100))
+	if !IsErrBalanceNotEnought(err) {
+		t.Error(err)
+		return
+	}
+	pgx.MockerStart()
+	defer pgx.MockerStop()
+	pgx.MockerSetCall("Pool.Begin", 1, "Tx.Exec", 1, 2).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
+		err = TransferChange(ctx, 100, user.TID, BalanceAreaFunds, BalanceAreaSpot, "test", decimal.NewFromFloat(100))
+		return
+	})
+}
+
+func TestChangeBalance(t *testing.T) {
+	user := testAddUser("TestChangeBalance")
+	//inc
+	_, err := ChangeBalance(ctx, 100, user.TID, BalanceAreaSpot, "test", decimal.NewFromFloat(100))
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	//dec
+	_, err = ChangeBalance(ctx, 100, user.TID, BalanceAreaSpot, "test", decimal.NewFromFloat(-100))
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	//dec error
+	_, err = ChangeBalance(ctx, 100, user.TID, BalanceAreaSpot, "test", decimal.NewFromFloat(-100))
+	if !IsErrBalanceNotEnought(err) {
+		t.Error(err)
+		return
+	}
+
+	pgx.MockerStart()
+	defer pgx.MockerStop()
+	pgx.MockerSetCall("Pool.Begin", 1, "Tx.Exec", 1, 2).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
+		_, err = ChangeBalance(ctx, 100, user.TID, BalanceAreaSpot, "test", decimal.NewFromFloat(100))
+		return
+	})
+}
+
 func TestBalanceRecord(t *testing.T) {
 	asset := "TEST"
 	user := testAddUser("TestBalanceRecord")
@@ -159,33 +228,4 @@ func TestBalanceRecord(t *testing.T) {
 		t.Error(err)
 		return
 	}
-}
-
-func TestChangeBalance(t *testing.T) {
-	user := testAddUser("TestChangeBalance")
-	//inc
-	_, err := ChangeBalance(ctx, 100, user.TID, BalanceAreaSpot, "test", decimal.NewFromFloat(100))
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	//dec
-	_, err = ChangeBalance(ctx, 100, user.TID, BalanceAreaSpot, "test", decimal.NewFromFloat(-100))
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	//dec error
-	_, err = ChangeBalance(ctx, 100, user.TID, BalanceAreaSpot, "test", decimal.NewFromFloat(-100))
-	if err == nil {
-		t.Error(err)
-		return
-	}
-
-	pgx.MockerStart()
-	defer pgx.MockerStop()
-	pgx.MockerSetCall("Pool.Begin", 1, "Tx.Exec", 1, 2).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
-		_, err = ChangeBalance(ctx, 100, user.TID, BalanceAreaSpot, "test", decimal.NewFromFloat(100))
-		return
-	})
 }

@@ -18,13 +18,20 @@ func TouchBalance(ctx context.Context, area BalanceArea, assets []string, userID
 }
 
 func TouchBalanceCall(caller crud.Queryer, ctx context.Context, area BalanceArea, assets []string, userIDs ...int64) (added int64, err error) {
-	upsertArg := []interface{}{0, 0, time.Now(), time.Now(), BalanceStatusNormal, area}
+	added, err = TouchMultiBalanceCall(caller, ctx, BalanceAreaArray{area}, assets, userIDs...)
+	return
+}
+
+func TouchMultiBalanceCall(caller crud.Queryer, ctx context.Context, areaAll BalanceAreaArray, assets []string, userIDs ...int64) (added int64, err error) {
+	upsertArg := []interface{}{0, 0, time.Now(), time.Now(), BalanceStatusNormal}
 	values := []string{}
 
 	for _, userID := range userIDs {
-		for _, asset := range assets {
-			upsertArg = append(upsertArg, userID, asset)
-			values = append(values, fmt.Sprintf("($1,$2,$3,$4,$5,$%d,$6,$%d)", len(upsertArg)-1, len(upsertArg)))
+		for _, area := range areaAll {
+			for _, asset := range assets {
+				upsertArg = append(upsertArg, userID, area, asset)
+				values = append(values, fmt.Sprintf("($1,$2,$3,$4,$5,$%d,$%d,$%d)", len(upsertArg)-2, len(upsertArg)-1, len(upsertArg)))
+			}
 		}
 	}
 	upsertSQL := fmt.Sprintf(`
@@ -121,6 +128,105 @@ func CountBalance(ctx context.Context, area BalanceArea, start, end time.Time) (
 	return
 }
 
+func TransferChange(ctx context.Context, creator, userID int64, from, to BalanceArea, asset string, value decimal.Decimal) (err error) {
+	tx, err := Pool().Begin(ctx)
+	if err != nil {
+		return
+	}
+	defer func() {
+		if err == nil {
+			err = tx.Commit(ctx)
+		} else {
+			tx.Rollback(ctx)
+		}
+	}()
+	err = TransferChangeCall(tx, ctx, creator, userID, from, to, asset, value)
+	return
+}
+
+func TransferChangeCall(caller crud.Queryer, ctx context.Context, creator, userID int64, from, to BalanceArea, asset string, value decimal.Decimal) (err error) {
+	_, err = TouchMultiBalanceCall(caller, ctx, BalanceAreaArray{from, to}, []string{asset}, userID)
+	if err != nil {
+		return
+	}
+	fromBalance := &Balance{
+		UserID: userID,
+		Area:   from,
+		Asset:  asset,
+		Free:   decimal.Zero.Sub(value),
+	}
+	err = IncreaseBalanceCall(caller, ctx, fromBalance)
+	if err != nil {
+		return
+	}
+	toBalance := &Balance{
+		UserID: userID,
+		Area:   to,
+		Asset:  asset,
+		Free:   value,
+	}
+	err = IncreaseBalanceCall(caller, ctx, toBalance)
+	if err != nil {
+		return
+	}
+	_, err = AddBalanceRecordCall(
+		caller, ctx,
+		&BalanceRecord{
+			Creator:   creator,
+			BalanceID: fromBalance.TID,
+			Type:      BalanceRecordTypeChange,
+			Changed:   decimal.Zero.Sub(value),
+		},
+		&BalanceRecord{
+			Creator:   creator,
+			BalanceID: toBalance.TID,
+			Type:      BalanceRecordTypeChange,
+			Changed:   value,
+		},
+	)
+	return
+}
+
+func ChangeBalance(ctx context.Context, creator, userID int64, area BalanceArea, asset string, changed decimal.Decimal) (balance *Balance, err error) {
+	tx, err := Pool().Begin(ctx)
+	if err != nil {
+		return
+	}
+	defer func() {
+		if err == nil {
+			err = tx.Commit(ctx)
+		} else {
+			tx.Rollback(ctx)
+		}
+	}()
+	balance, err = ChangeBalanceCall(tx, ctx, creator, userID, area, asset, changed)
+	return
+}
+
+func ChangeBalanceCall(caller crud.Queryer, ctx context.Context, creator, userID int64, area BalanceArea, asset string, changed decimal.Decimal) (balance *Balance, err error) {
+	_, err = TouchBalanceCall(caller, ctx, area, []string{asset}, userID)
+	if err != nil {
+		return
+	}
+	balance = &Balance{
+		UserID: userID,
+		Area:   area,
+		Asset:  asset,
+		Free:   changed,
+	}
+	err = IncreaseBalanceCall(caller, ctx, balance)
+	if err != nil {
+		return
+	}
+	_, err = AddBalanceRecordCall(caller, ctx, &BalanceRecord{
+		Creator:   creator,
+		BalanceID: balance.TID,
+		Type:      BalanceRecordTypeChange,
+		Changed:   changed,
+	})
+	return
+}
+
 func AddBalanceRecordCall(caller crud.Queryer, ctx context.Context, records ...*BalanceRecord) (added int64, err error) {
 	if len(records) < 1 {
 		return
@@ -178,45 +284,5 @@ type BalanceRecordUnifySearcher struct {
 func (o *BalanceRecordUnifySearcher) Apply(ctx context.Context) (err error) {
 	o.Page.Order = ""
 	err = crud.ApplyUnify(Pool(), ctx, o)
-	return
-}
-
-func ChangeBalance(ctx context.Context, creator, userID int64, area BalanceArea, asset string, changed decimal.Decimal) (balance *Balance, err error) {
-	tx, err := Pool().Begin(ctx)
-	if err != nil {
-		return
-	}
-	defer func() {
-		if err == nil {
-			err = tx.Commit(ctx)
-		} else {
-			tx.Rollback(ctx)
-		}
-	}()
-	balance, err = ChangeBalanceCall(tx, ctx, creator, userID, area, asset, changed)
-	return
-}
-
-func ChangeBalanceCall(caller crud.Queryer, ctx context.Context, creator, userID int64, area BalanceArea, asset string, changed decimal.Decimal) (balance *Balance, err error) {
-	_, err = TouchBalanceCall(caller, ctx, area, []string{asset}, userID)
-	if err != nil {
-		return
-	}
-	balance = &Balance{
-		UserID: userID,
-		Area:   area,
-		Asset:  asset,
-		Free:   changed,
-	}
-	err = IncreaseBalanceCall(caller, ctx, balance)
-	if err != nil {
-		return
-	}
-	_, err = AddBalanceRecordCall(caller, ctx, &BalanceRecord{
-		Creator:   creator,
-		BalanceID: balance.TID,
-		Type:      BalanceRecordTypeChange,
-		Changed:   changed,
-	})
 	return
 }

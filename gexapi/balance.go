@@ -135,6 +135,93 @@ func ListBalanceH(s *web.Session) web.Result {
 	})
 }
 
+//TransferBalanceH is http handler
+/**
+ *
+ * @api {GET} /usr/transferBalance Transfer Balance
+ * @apiName TransferBalance
+ * @apiGroup Balance
+ *
+ * @apiParam  {Number} from the balance transfer from area, all type supported is <a href="#metadata-Balance">BalanceAreaAll</a>
+ * @apiParam  {Number} to the balance transfer to area, all type supported is <a href="#metadata-Balance">BalanceAreaAll</a>
+ * @apiParam  {String} asset the balance asset to change
+ * @apiParam  {Number} value the transfer value
+ *
+ * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>
+ *
+ * @apiSuccessExample {type} Success-Response:
+ * {
+ *     "code": 0
+ * }
+ */
+func TransferBalanceH(s *web.Session) web.Result {
+	var from, to gexdb.BalanceArea
+	var asset string
+	var value decimal.Decimal
+	err := s.ValidFormat(`
+		from,r|i,e:;
+		to,r|i,e:;
+		asset,r|s,l:0;
+		value,r|f,n:;
+	`, &from, &to, &asset, &value)
+	if err != nil {
+		return util.ReturnCodeLocalErr(s, define.ArgsInvalid, "arg-err", err)
+	}
+	userID := s.Int64("user_id")
+	err = gexdb.TransferChange(s.R.Context(), userID, userID, from, to, asset, value)
+	if err != nil {
+		xlog.Errorf("ChangeBalanceH change balance by %v,%v,%v,%v fail with %v", from, to, asset, value, err)
+		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
+	}
+	return s.SendJSON(xmap.M{
+		"code": define.Success,
+	})
+}
+
+//ChangeUserBalanceH is http handler
+/**
+ *
+ * @api {GET} /admin/changeUserBalanceH Change User Balance
+ * @apiName ChangeUserBalance
+ * @apiGroup Balance
+ *
+ * @apiParam  {Number} user_id the user id to change balance
+ * @apiParam  {Number} area the balance area to change, all type supported is <a href="#metadata-Balance">BalanceAreaAll</a>
+ * @apiParam  {String} asset the balance asset to change
+ * @apiParam  {Number} changed the value to increase or descrease
+ *
+ * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>
+ *
+ * @apiSuccessExample {type} Success-Response:
+ * {
+ *     "code": 0
+ * }
+ */
+func ChangeUserBalanceH(s *web.Session) web.Result {
+	var userID int64
+	var area gexdb.BalanceArea
+	var asset string
+	var changed decimal.Decimal
+	err := s.ValidFormat(`
+		user_id,r|i,r:0;
+		area,r|i,e:;
+		asset,r|s,l:0;
+		changed,r|f,n:;
+	`, &userID, &area, &asset, &changed)
+	if err != nil {
+		return util.ReturnCodeLocalErr(s, define.ArgsInvalid, "arg-err", err)
+	}
+	creator := s.Int64("user_id")
+	_, err = gexdb.ChangeBalance(s.R.Context(), creator, userID, area, asset, changed)
+	if err != nil {
+		xlog.Errorf("ChangeBalanceH change balance by %v,%v,%v fail with %v", area, asset, changed, err)
+		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
+	}
+	return s.SendJSON(xmap.M{
+		"code": define.Success,
+	})
+}
+
 //ListBalanceRecordH is http handler
 /**
  *
@@ -181,49 +268,5 @@ func ListBalanceRecordH(s *web.Session) web.Result {
 		"code":    define.Success,
 		"records": searcher.Query.Records,
 		"total":   searcher.Count.Total,
-	})
-}
-
-//ChangeUserBalanceH is http handler
-/**
- *
- * @api {GET} /admin/changeUserBalanceH Change User Balance
- * @apiName ChangeUserBalance
- * @apiGroup Balance
- *
- * @apiParam  {Number} user_id the user id to change balance
- * @apiParam  {Number} area the balance area to change, all type supported is <a href="#metadata-Balance">BalanceAreaAll</a>
- * @apiParam  {String} asset the balance asset to change
- * @apiParam  {Number} changed the value to increase or descrease
- *
- * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>
- *
- * @apiSuccessExample {type} Success-Response:
- * {
- *     "code": 0
- * }
- */
-func ChangeUserBalanceH(s *web.Session) web.Result {
-	var userID int64
-	var area gexdb.BalanceArea
-	var asset string
-	var changed decimal.Decimal
-	err := s.ValidFormat(`
-		user_id,r|i,r:0;
-		area,r|i,e:;
-		asset,r|s,l:0;
-		changed,r|f,n:;
-	`, &userID, &area, &asset, &changed)
-	if err != nil {
-		return util.ReturnCodeLocalErr(s, define.ArgsInvalid, "arg-err", err)
-	}
-	creator := s.Int64("user_id")
-	_, err = gexdb.ChangeBalance(s.R.Context(), creator, userID, area, asset, changed)
-	if err != nil {
-		xlog.Errorf("ChangeBalanceH change balance by %v,%v,%v fail with %v", area, asset, changed, err)
-		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
-	}
-	return s.SendJSON(xmap.M{
-		"code": define.Success,
 	})
 }
