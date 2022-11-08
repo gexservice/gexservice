@@ -93,13 +93,14 @@ const (
 	BalanceRecordTypeProfit   BalanceRecordType = 200 //is close profit
 	BalanceRecordTypeBlowup   BalanceRecordType = 210 //is blowup
 	BalanceRecordTypeTransfer BalanceRecordType = 300 //is transfer
+	BalanceRecordTypeChange   BalanceRecordType = 400 //is manual change type
 )
 
 //BalanceRecordTypeAll is the balance record type
-var BalanceRecordTypeAll = BalanceRecordTypeArray{BalanceRecordTypeTrade, BalanceRecordTypeTradeFee, BalanceRecordTypeProfit, BalanceRecordTypeBlowup, BalanceRecordTypeTransfer}
+var BalanceRecordTypeAll = BalanceRecordTypeArray{BalanceRecordTypeTrade, BalanceRecordTypeTradeFee, BalanceRecordTypeProfit, BalanceRecordTypeBlowup, BalanceRecordTypeTransfer, BalanceRecordTypeChange}
 
 //BalanceRecordTypeShow is the balance record type
-var BalanceRecordTypeShow = BalanceRecordTypeArray{BalanceRecordTypeTrade, BalanceRecordTypeTradeFee, BalanceRecordTypeProfit, BalanceRecordTypeBlowup, BalanceRecordTypeTransfer}
+var BalanceRecordTypeShow = BalanceRecordTypeArray{BalanceRecordTypeTrade, BalanceRecordTypeTradeFee, BalanceRecordTypeProfit, BalanceRecordTypeBlowup, BalanceRecordTypeTransfer, BalanceRecordTypeChange}
 
 type BalanceRecordStatus int
 type BalanceRecordStatusArray []BalanceRecordStatus
@@ -123,7 +124,7 @@ type BalanceRecord struct {
 	TID        int64               `json:"tid,omitempty" valid:"tid,r|i,r:0;"`                 /* the primary key */
 	Creator    int64               `json:"creator,omitempty" valid:"creator,r|i,r:0;"`         /* the balance creator */
 	BalanceID  int64               `json:"balance_id,omitempty" valid:"balance_id,r|i,r:0;"`   /* the balance id */
-	Type       BalanceRecordType   `json:"type,omitempty" valid:"type,r|i,e:0;"`               /* the balance record type, Trade=100: is trade type, TradeFee=110:is trade fee, Profit=200:is close profit, Blowup=210:is blowup, Transfer=300:is transfer */
+	Type       BalanceRecordType   `json:"type,omitempty" valid:"type,r|i,e:0;"`               /* the balance record type, Trade=100: is trade type, TradeFee=110:is trade fee, Profit=200:is close profit, Blowup=210:is blowup, Transfer=300:is transfer, Change=400: is manual change type */
 	Changed    decimal.Decimal     `json:"changed,omitempty" valid:"changed,r|f,r:0;"`         /* the balance change value */
 	UpdateTime xsql.Time           `json:"update_time,omitempty" valid:"update_time,r|i,r:1;"` /* the balance last update time */
 	CreateTime xsql.Time           `json:"create_time,omitempty" valid:"create_time,r|i,r:1;"` /* the balance create time */

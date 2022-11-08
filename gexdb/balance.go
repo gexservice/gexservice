@@ -181,76 +181,42 @@ func (o *BalanceRecordUnifySearcher) Apply(ctx context.Context) (err error) {
 	return
 }
 
-// func ListUserBalanceHistory(ctx context.Context, userID int64, asset string, startTime, endTime time.Time) (histories []*BalanceHistory, err error) {
-// 	err = crud.QueryWheref(
-// 		Pool, ctx, &BalanceHistory{}, "#all",
-// 		"user_id=$%v,asset=$%v,create_time>=$%v,create_time<=$%v",
-// 		[]interface{}{userID, asset, startTime, endTime},
-// 		"order by create_time asc", 0, 0,
-// 		&histories,
-// 	)
-// 	return
-// }
+func ChangeBalance(ctx context.Context, creator, userID int64, area BalanceArea, asset string, changed decimal.Decimal) (balance *Balance, err error) {
+	tx, err := Pool().Begin(ctx)
+	if err != nil {
+		return
+	}
+	defer func() {
+		if err == nil {
+			err = tx.Commit(ctx)
+		} else {
+			tx.Rollback(ctx)
+		}
+	}()
+	balance, err = ChangeBalanceCall(tx, ctx, creator, userID, area, asset, changed)
+	return
+}
 
-// func ChangeBalance(ctx context.Context, creator, userID int64, asset string, changed decimal.Decimal) (balance *Balance, order *Order, err error) {
-// 	tx, err := Pool().Begin(ctx)
-// 	if err != nil {
-// 		return
-// 	}
-// 	defer func() {
-// 		if err == nil {
-// 			err = tx.Commit(ctx)
-// 		} else {
-// 			tx.Rollback(ctx)
-// 		}
-// 	}()
-// 	balance, order, err = ChangeBalanceCall(tx, ctx, creator, userID, asset, changed)
-// 	return
-// }
-
-// func ChangeBalanceCall(caller crud.Queryer, ctx context.Context, creator, userID int64, asset string, changed decimal.Decimal) (balance *Balance, order *Order, err error) {
-// 	balance = &Balance{
-// 		UserID: userID,
-// 		Asset:  asset,
-// 		Free:   changed,
-// 		Status: BalanceStatusNormal,
-// 	}
-// 	order = &Order{
-// 		OrderID:  NewOrderID(),
-// 		UserID:   balance.UserID,
-// 		Creator:  creator,
-// 		Quantity: changed,
-// 		Filled:   changed,
-// 		Status:   OrderStatusDone,
-// 	}
-// 	// switch balance.Asset {
-// 	// // case BalanceAssetYWE:
-// 	// // 	order.Type = OrderTypeChangeYWE
-// 	// // case BalanceAssetMMK:
-// 	// // 	order.Type = OrderTypeMMK
-// 	// default:
-// 	// 	err = fmt.Errorf("balance asset %v is not supported", balance.Asset)
-// 	// 	return
-// 	// }
-// 	if balance.Free.LessThan(decimal.Zero) {
-// 		order.OutBalance = balance.Asset
-// 		order.OutFilled = balance.Free.Abs()
-// 		var having decimal.Decimal
-// 		err = caller.QueryRow(ctx, `select free from gex_balance where user_id=$1 and asset=$2 for update`, balance.UserID, balance.Asset).Scan(&having)
-// 		if err != nil {
-// 			return
-// 		}
-// 		if having.LessThan(balance.Free.Abs()) {
-// 			err = ErrBalanceNotEnought(fmt.Errorf("not enought"))
-// 			return
-// 		}
-// 	} else {
-// 		order.InBalance = balance.Asset
-// 		order.InFilled = balance.Free
-// 	}
-// 	err = IncreaseBalanceCall(caller, ctx, balance)
-// 	if err == nil {
-// 		err = AddOrderCall(caller, ctx, order)
-// 	}
-// 	return
-// }
+func ChangeBalanceCall(caller crud.Queryer, ctx context.Context, creator, userID int64, area BalanceArea, asset string, changed decimal.Decimal) (balance *Balance, err error) {
+	_, err = TouchBalanceCall(caller, ctx, area, []string{asset}, userID)
+	if err != nil {
+		return
+	}
+	balance = &Balance{
+		UserID: userID,
+		Area:   area,
+		Asset:  asset,
+		Free:   changed,
+	}
+	err = IncreaseBalanceCall(caller, ctx, balance)
+	if err != nil {
+		return
+	}
+	_, err = AddBalanceRecordCall(caller, ctx, &BalanceRecord{
+		Creator:   creator,
+		BalanceID: balance.TID,
+		Type:      BalanceRecordTypeChange,
+		Changed:   changed,
+	})
+	return
+}
