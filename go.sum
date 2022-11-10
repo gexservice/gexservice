@@ -9,8 +9,8 @@ github.com/cockroachdb/apd v1.1.0 h1:3LFP3629v+1aKXU5Q37mxmRxX/pIu1nijXydLShEq5I
 github.com/cockroachdb/apd v1.1.0/go.mod h1:8Sl8LxpKi29FqWXR16WEFZRNSz3SoPzUzeMeY4+DwBQ=
 github.com/codingeasygo/crud v0.0.0-20221108014119-4368796d26b8 h1:JsIIcAOe1l9J1B4K0nUktglK2zlHGxB6lJPC2ioSR+A=
 github.com/codingeasygo/crud v0.0.0-20221108014119-4368796d26b8/go.mod h1:qi2dKB0sI6Prbeg2OaQHkz5IbtNDFXhcfTTS0wc+FIY=
-github.com/codingeasygo/util v0.0.0-20221103081314-a6c91ccf3379 h1:CXtO4LWiFw5ssnY9gM9d6PPVIn588RZUr7WRrsSPf6o=
-github.com/codingeasygo/util v0.0.0-20221103081314-a6c91ccf3379/go.mod h1:CE705pc3Xn2F3nqMKhvfaigeXeDudpdteTzbf+2jwig=
+github.com/codingeasygo/util v0.0.0-20221110130109-404a61359281 h1:3LQE3M5+IZPrBlCRmFpRy4sWmFNK8wxGMQJ3lGsbXXc=
+github.com/codingeasygo/util v0.0.0-20221110130109-404a61359281/go.mod h1:CE705pc3Xn2F3nqMKhvfaigeXeDudpdteTzbf+2jwig=
 github.com/codingeasygo/web v0.0.0-20221103094050-e9f39f8e9983 h1:wm/XAOrn4AplQqXsCCAqPOQQu6M/5jmEazDHAyDAH3Y=
 github.com/codingeasygo/web v0.0.0-20221103094050-e9f39f8e9983/go.mod h1:2g18e/pfOaPeeUzDBcZxh4kxdTS+pQMSmBZGYfwpFOc=
 github.com/coreos/go-systemd v0.0.0-20190321100706-95778dfbb74e/go.mod h1:F5haX7vjVVG0kc13fIWeqUViNPyEJxv/OmvnBo0Yme4=
