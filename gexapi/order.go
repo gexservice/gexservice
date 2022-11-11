@@ -125,6 +125,7 @@ func PlaceOrderH(s *web.Session) web.Result {
  * @apiName CancelOrder
  * @apiGroup Order
  *
+ * @apiParam  {String} symbol the order symbol
  * @apiParam  {String} order_id the order id
  *
  * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a> or <a href="#metadata-ExReturnCode">ExReturnCode</a>
