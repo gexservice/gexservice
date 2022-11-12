@@ -119,6 +119,7 @@ func CountPendingOrderCall(caller crud.Queryer, ctx context.Context, userID int6
  * @apiDefine OrderUnifySearcher
  * @apiParam  {String} [side] the side filter, multi with comma, all type supported is <a href="#metadata-Order">OrderSideAll</a>
  * @apiParam  {Number} [type] the type filter, multi with comma, all type supported is <a href="#metadata-Order">OrderTypeAll</a>
+ * @apiParam  {String} [area] the symbol area filter
  * @apiParam  {String} [symbol] the symbol filter
  * @apiParam  {Number} [start_time] the time filter
  * @apiParam  {Number} [end_time] the time filter
@@ -132,6 +133,7 @@ type OrderUnifySearcher struct {
 	Where struct {
 		UserID    xsql.Int64Array  `json:"user_id" cmp:"user_id=any($%v)" valid:"user_id,o|i,r:0;"`
 		Creator   xsql.Int64Array  `json:"creator" cmp:"creator=any($%v)" valid:"creator,o|i,r:0;"`
+		Area      string           `json:"area" cmp:"symbol like $%v" valid:"area,o|i,r:0;"`
 		Symbol    string           `json:"symbol" cmp:"symbol=$%v"  valid:"symbol,o|s,l:0;"`
 		Side      OrderSideArray   `json:"side" cmp:"side=any($%v)" valid:"side,o|s,e:0;"`
 		Type      OrderTypeArray   `json:"type" cmp:"type=any($%v)" valid:"type,o|i,e:;"`
@@ -158,6 +160,9 @@ type OrderUnifySearcher struct {
 func (o *OrderUnifySearcher) Apply(ctx context.Context) (err error) {
 	if len(o.Where.Key) > 0 {
 		o.Where.Key = "%" + o.Where.Key + "%"
+	}
+	if len(o.Where.Area) > 0 {
+		o.Where.Area = o.Where.Area + "%"
 	}
 	o.Page.Order = crud.BuildOrderby(OrderOrderbyAll, o.Page.Order)
 	err = crud.ApplyUnify(Pool(), ctx, o)

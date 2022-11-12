@@ -40,6 +40,7 @@ func TestOrder(t *testing.T) {
 	}
 	searcher := &OrderUnifySearcher{}
 	searcher.Where.UserID = xsql.Int64Array{order.UserID}
+	searcher.Where.Area = "te"
 	searcher.Where.Symbol = order.Symbol
 	searcher.Where.Key = order.OrderID
 	err = searcher.Apply(ctx)
