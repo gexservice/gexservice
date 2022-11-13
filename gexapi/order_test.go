@@ -64,6 +64,7 @@ func TestOrder(t *testing.T) {
 	fmt.Printf("searchOrder--->%v\n", converter.JSON(searchOrder))
 	orderID := searchOrder.StrDef("", "/orders/0/order_id")
 	ts.Should(t, "code", define.Success, "/orders", xmap.ShouldIsNoEmpty).GetMap("/usr/searchOrder?side=%v", gexdb.OrderSideBuy)
+	ts.Should(t, "code", define.Success, "/orders", xmap.ShouldIsNoEmpty).GetMap("/usr/searchOrder?area=%v", "spot")
 	//
 	//test error
 	pgx.MockerStart()
