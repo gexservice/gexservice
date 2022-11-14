@@ -228,15 +228,17 @@ func CancelOrderH(s *web.Session) web.Result {
  * }
  */
 func CancelAllOrderH(s *web.Session) web.Result {
+	var area string
 	var symbol string
 	err := s.ValidFormat(`
+		area,O|S,L:0;
 		symbol,O|S,L:0~32;
-	`, &symbol)
+	`, &area, &symbol)
 	if err != nil {
 		return util.ReturnCodeLocalErr(s, define.ArgsInvalid, "arg-err", err)
 	}
 	userID := s.Int64("user_id")
-	orders, err := gexdb.ListPendingOrder(s.R.Context(), userID, symbol)
+	orders, err := gexdb.ListPendingOrder(s.R.Context(), userID, area, symbol)
 	if err != nil {
 		xlog.Errorf("CancelAllOrderH list pending order fail with %v by %v,%v", err, userID, symbol)
 		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)

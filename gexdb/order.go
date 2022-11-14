@@ -113,13 +113,16 @@ func ListOrderForTriggerCall(caller crud.Queryer, ctx context.Context, symbol st
 	return
 }
 
-func ListPendingOrder(ctx context.Context, userID int64, symbol string) (orders []*Order, err error) {
-	orders, err = ListPendingOrderCall(Pool(), ctx, userID, symbol)
+func ListPendingOrder(ctx context.Context, userID int64, area, symbol string) (orders []*Order, err error) {
+	orders, err = ListPendingOrderCall(Pool(), ctx, userID, area, symbol)
 	return
 }
 
-func ListPendingOrderCall(caller crud.Queryer, ctx context.Context, userID int64, symbol string) (orders []*Order, err error) {
-	err = crud.QueryWheref(caller, ctx, &Order{}, "#all", "user_id=$%v,symbol=$%v,status=any($%v)", []interface{}{userID, symbol, OrderStatusArray{OrderStatusWaiting, OrderStatusPending, OrderStatusPartialled}}, "", 0, 0, &orders)
+func ListPendingOrderCall(caller crud.Queryer, ctx context.Context, userID int64, area, symbol string) (orders []*Order, err error) {
+	if len(area) > 0 {
+		area += "%"
+	}
+	err = crud.QueryWheref(caller, ctx, &Order{}, "#all", "user_id=$%v,symbol like $%v,symbol=$%v,status=any($%v)", []interface{}{userID, area, symbol, OrderStatusArray{OrderStatusWaiting, OrderStatusPending, OrderStatusPartialled}}, "", 0, 0, &orders)
 	return
 }
 

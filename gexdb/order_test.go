@@ -67,7 +67,7 @@ func TestOrder(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	orders, err := ListPendingOrder(ctx, order.UserID, order.Symbol)
+	orders, err := ListPendingOrder(ctx, order.UserID, "te", order.Symbol)
 	if err != nil || len(orders) > 0 {
 		t.Error(err)
 		return
