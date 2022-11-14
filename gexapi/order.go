@@ -215,6 +215,7 @@ func CancelOrderH(s *web.Session) web.Result {
  * @apiName CancelAllOrder
  * @apiGroup Order
  *
+ * @apiParam  {String} [area] the order symbol area
  * @apiParam  {String} [symbol] the order symbol
  *
  * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a> or <a href="#metadata-ExReturnCode">ExReturnCode</a>
