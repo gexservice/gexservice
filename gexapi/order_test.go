@@ -25,10 +25,37 @@ func TestOrder(t *testing.T) {
 		ts.Should(t, "code", define.ArgsInvalid).GetMap("/usr/placeOrder?type=%v&symbol=%v&side=%v&quantity=1&price=100", gexdb.OrderTypeTrade, symbol, 1)
 		buyOrder, _ := ts.Should(t, "code", define.Success, "/order/tid", xmap.ShouldIsNoZero).GetMap("/usr/placeOrder?type=%v&symbol=%v&side=%v&quantity=1&price=10", gexdb.OrderTypeTrade, symbol, gexdb.OrderSideBuy)
 		orderID := buyOrder.StrDef("", "/order/order_id")
-		ts.Should(t, "code", define.ArgsInvalid).GetMap("/usr/cancelOrder?symbol=%v&order_id=%v", "", orderID)
+		ts.Should(t, "code", define.ArgsInvalid).GetMap("/usr/cancelOrder?order_id=%v", "")
 		cancelOrder, _ := ts.Should(t, "code", define.Success, "/order/status", gexdb.OrderStatusCanceled).GetMap("/usr/cancelOrder?symbol=%v&order_id=%v", symbol, orderID)
 		fmt.Printf("cancelOrder--->%v\n", converter.JSON(cancelOrder))
 		ts.Should(t, "code", gexdb.CodeOrderNotCancelable).GetMap("/usr/cancelOrder?symbol=%v&order_id=%v", symbol, orderID)
+		ts.Should(t, "code", define.Success, "/order/status", gexdb.OrderStatusCanceled).GetMap("/usr/queryOrder?order_id=%v", orderID)
+	}
+	{ //trigger buy cancel
+		clearCookie()
+		ts.Should(t, "code", define.Success).GetMap("/pub/login?username=%v&password=%v", *userabc0.Account, "123")
+		buyOrder, _ := ts.Should(t, "code", define.Success, "/order/status", gexdb.OrderStatusWaiting).GetMap("/usr/placeOrder?type=%v&symbol=%v&side=%v&quantity=1&price=10&trigger_type=%v&trigger_price=10", gexdb.OrderTypeTrigger, symbol, gexdb.OrderSideBuy, gexdb.OrderTriggerTypeStopProfit)
+		orderID := buyOrder.StrDef("", "/order/order_id")
+		ts.Should(t, "code", define.Success, "/order/status", gexdb.OrderStatusCanceled).GetMap("/usr/cancelOrder?symbol=%v&order_id=%v", symbol, orderID)
+	}
+	{ //buy cancel all
+		clearCookie()
+		ts.Should(t, "code", define.Success).GetMap("/pub/login?username=%v&password=%v", *userabc0.Account, "123")
+		ts.Should(t, "code", define.ArgsInvalid).GetMap("/usr/placeOrder?type=%v&symbol=%v&side=%v&quantity=1&price=100", gexdb.OrderTypeTrade, symbol, 1)
+		buyOrder, _ := ts.Should(t, "code", define.Success, "/order/tid", xmap.ShouldIsNoZero).GetMap("/usr/placeOrder?type=%v&symbol=%v&side=%v&quantity=1&price=10", gexdb.OrderTypeTrade, symbol, gexdb.OrderSideBuy)
+		orderID := buyOrder.StrDef("", "/order/order_id")
+		ts.Should(t, "code", define.ArgsInvalid).GetMap("/usr/cancelAllOrder?symbol=%v", "xxfdsfsdfdsfsdfdsfsdfdsfsdfdsfdsfsdfdssfsdfsdfdsfsfdsf")
+		cancelAllOrder, _ := ts.Should(t, "code", define.Success).GetMap("/usr/cancelAllOrder?symbol=%v", symbol)
+		fmt.Printf("cancelAllOrder--->%v\n", converter.JSON(cancelAllOrder))
+		ts.Should(t, "code", define.Success).GetMap("/usr/cancelAllOrder?symbol=%v", symbol)
+		ts.Should(t, "code", define.Success, "/order/status", gexdb.OrderStatusCanceled).GetMap("/usr/queryOrder?order_id=%v", orderID)
+	}
+	{ //trigger buy cancel all
+		clearCookie()
+		ts.Should(t, "code", define.Success).GetMap("/pub/login?username=%v&password=%v", *userabc0.Account, "123")
+		buyOrder, _ := ts.Should(t, "code", define.Success, "/order/status", gexdb.OrderStatusWaiting).GetMap("/usr/placeOrder?type=%v&symbol=%v&side=%v&quantity=1&price=10&trigger_type=%v&trigger_price=10", gexdb.OrderTypeTrigger, symbol, gexdb.OrderSideBuy, gexdb.OrderTriggerTypeStopProfit)
+		orderID := buyOrder.StrDef("", "/order/order_id")
+		ts.Should(t, "code", define.Success).GetMap("/usr/cancelAllOrder?symbol=%v", symbol)
 		ts.Should(t, "code", define.Success, "/order/status", gexdb.OrderStatusCanceled).GetMap("/usr/queryOrder?order_id=%v", orderID)
 	}
 	{ //buy cancel(post)
@@ -62,7 +89,6 @@ func TestOrder(t *testing.T) {
 	ts.Should(t, "code", define.ArgsInvalid).GetMap("/usr/searchOrder?type=10")
 	searchOrder, _ := ts.Should(t, "code", define.Success, "/orders", xmap.ShouldIsNoEmpty).GetMap("/usr/searchOrder")
 	fmt.Printf("searchOrder--->%v\n", converter.JSON(searchOrder))
-	orderID := searchOrder.StrDef("", "/orders/0/order_id")
 	ts.Should(t, "code", define.Success, "/orders", xmap.ShouldIsNoEmpty).GetMap("/usr/searchOrder?side=%v", gexdb.OrderSideBuy)
 	ts.Should(t, "code", define.Success, "/orders", xmap.ShouldIsNoEmpty).GetMap("/usr/searchOrder?area=%v", "spot")
 	//
@@ -73,10 +99,17 @@ func TestOrder(t *testing.T) {
 
 	clearCookie()
 	ts.Should(t, "code", define.Success).GetMap("/pub/login?username=%v&password=%v", *userabc0.Account, "123")
+	buyOrder, _ := ts.Should(t, "code", define.Success, "/order/tid", xmap.ShouldIsNoZero).GetMap("/usr/placeOrder?type=%v&symbol=%v&side=%v&quantity=1&price=10", gexdb.OrderTypeTrade, symbol, gexdb.OrderSideBuy)
+	orderID := buyOrder.StrDef("", "/order/order_id")
+	buyTriggerOrder, _ := ts.Should(t, "code", define.Success, "/order/status", gexdb.OrderStatusWaiting).GetMap("/usr/placeOrder?type=%v&symbol=%v&side=%v&quantity=1&price=10&trigger_type=%v&trigger_price=10", gexdb.OrderTypeTrigger, symbol, gexdb.OrderSideBuy, gexdb.OrderTriggerTypeStopProfit)
+	triggerOrderID := buyTriggerOrder.StrDef("", "/order/order_id")
 	pgx.MockerClear()
 
 	pgx.MockerSetCall("Rows.Scan", 1).Should(t, "code", define.ServerError).GetMap("/usr/placeOrder?type=%v&symbol=%v&side=%v&quantity=1&price=10", gexdb.OrderTypeTrade, symbol, gexdb.OrderSideBuy)
-	pgx.MockerSetCall("Rows.Scan", 1).Should(t, "code", define.ServerError).GetMap("/usr/cancelOrder?symbol=%v&order_id=%v", symbol, orderID)
+	pgx.MockerSetCall("Rows.Scan", 1, 2).Should(t, "code", define.ServerError).GetMap("/usr/cancelOrder?order_id=%v", orderID)
+	pgx.MockerSetCall("Pool.Exec", 1).Should(t, "code", define.ServerError).GetMap("/usr/cancelOrder?order_id=%v", triggerOrderID)
+	pgx.MockerSetCall("Rows.Scan", 1, 2).Should(t, "code", define.ServerError).GetMap("/usr/cancelAllOrder?symbol=%v", symbol)
+	pgx.MockerSetCall("Pool.Exec", 1).Should(t, "code", define.ServerError).GetMap("/usr/cancelAllOrder?symbol=%v", symbol)
 	pgx.MockerSetCall("Rows.Scan", 1).Should(t, "code", define.ServerError).GetMap("/usr/searchOrder")
 	pgx.MockerSetCall("Rows.Scan", 1).Should(t, "code", define.ServerError).GetMap("/usr/queryOrder?order_id=%v", orderID)
 

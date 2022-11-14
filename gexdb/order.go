@@ -25,15 +25,18 @@ func NewOrderID() (orderID string) {
 	return fmt.Sprintf("%v%02d%05d", timeStr, MarchineID, seqOrderID)
 }
 
-func FindOrderByOrderID(ctx context.Context, orderID string) (order *Order, err error) {
-	order, err = FindOrderByOrderIDCall(Pool(), ctx, orderID, false)
+func FindOrderByOrderID(ctx context.Context, userID int64, orderID string) (order *Order, err error) {
+	order, err = FindOrderByOrderIDCall(Pool(), ctx, userID, orderID, false)
 	return
 }
 
-func FindOrderByOrderIDCall(caller crud.Queryer, ctx context.Context, orderID string, lock bool) (order *Order, err error) {
+func FindOrderByOrderIDCall(caller crud.Queryer, ctx context.Context, userID int64, orderID string, lock bool) (order *Order, err error) {
 	orderIDInt, _ := strconv.ParseInt(orderID, 10, 64)
 	querySQL := crud.QuerySQL(&Order{}, "#all")
-	querySQL, args := crud.JoinWheref(querySQL, nil, "tid=$%v,order_id=$%v#+or", orderIDInt, orderID)
+	and, args := crud.AppendWheref(nil, nil, "user_id=$%v", userID)
+	or, args := crud.AppendWheref(nil, args, "tid=$%v,order_id=$%v", orderIDInt, orderID)
+	and = append(and, "("+strings.Join(or, " or ")+")")
+	querySQL = crud.JoinWhere(querySQL, and, "and")
 	if lock {
 		querySQL += " for update "
 	}
@@ -107,6 +110,16 @@ func ListOrderForTriggerCall(caller crud.Queryer, ctx context.Context, symbol st
 	and = append(and, "("+strings.Join(or, " or ")+")")
 	querySQL = crud.JoinWhere(querySQL, and, " and ", "order by update_time asc")
 	err = crud.Query(caller, ctx, &Order{}, "#all", querySQL, args, &orders)
+	return
+}
+
+func ListPendingOrder(ctx context.Context, userID int64, symbol string) (orders []*Order, err error) {
+	orders, err = ListPendingOrderCall(Pool(), ctx, userID, symbol)
+	return
+}
+
+func ListPendingOrderCall(caller crud.Queryer, ctx context.Context, userID int64, symbol string) (orders []*Order, err error) {
+	err = crud.QueryWheref(caller, ctx, &Order{}, "#all", "user_id=$%v,symbol=$%v,status=any($%v)", []interface{}{userID, symbol, OrderStatusArray{OrderStatusWaiting, OrderStatusPending, OrderStatusPartialled}}, "", 0, 0, &orders)
 	return
 }
 

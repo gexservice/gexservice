@@ -125,7 +125,6 @@ func PlaceOrderH(s *web.Session) web.Result {
  * @apiName CancelOrder
  * @apiGroup Order
  *
- * @apiParam  {String} symbol the order symbol
  * @apiParam  {String} order_id the order id
  *
  * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a> or <a href="#metadata-ExReturnCode">ExReturnCode</a>
@@ -172,22 +171,33 @@ func PlaceOrderH(s *web.Session) web.Result {
  * }
  */
 func CancelOrderH(s *web.Session) web.Result {
-	var symbol, orderID string
+	var orderID string
 	err := s.ValidFormat(`
-		symbol,R|S,L:0;
 		order_id,R|S,L:0;
-	`, &symbol, &orderID)
+	`, &orderID)
 	if err != nil {
 		return util.ReturnCodeLocalErr(s, define.ArgsInvalid, "arg-err", err)
 	}
 	userID := s.Int64("user_id")
-	order, err := matcher.ProcessCancel(s.R.Context(), userID, symbol, orderID)
+	order, err := gexdb.FindOrderByOrderID(s.R.Context(), userID, orderID)
+	if err != nil {
+		xlog.Errorf("CancelOrderH find order fail with %v by %v,%v", err, userID, orderID)
+		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
+	}
+	if order.Status == gexdb.OrderStatusWaiting {
+		_, err = gexdb.CancelTriggerOrder(s.R.Context(), userID, order.Symbol, order.TID)
+		if err == nil {
+			order.Status = gexdb.OrderStatusCanceled
+		}
+	} else {
+		order, err = matcher.ProcessCancel(s.R.Context(), userID, order.Symbol, orderID)
+	}
 	if err != nil {
 		code := define.ServerError
 		if matcher.IsErrNotCancelable(err) {
 			code = gexdb.CodeOrderNotCancelable
 		} else {
-			xlog.Errorf("CancelOrderH cancel order  by user:%v,symbol:%v,order_id:%v, err is \n%v", userID, symbol, orderID, matcher.ErrStack(err))
+			xlog.Errorf("CancelOrderH cancel order  by user:%v,order_id:%v, err is \n%v", userID, orderID, matcher.ErrStack(err))
 		}
 		return util.ReturnCodeLocalErr(s, code, "srv-err", err)
 	}
@@ -195,6 +205,58 @@ func CancelOrderH(s *web.Session) web.Result {
 	return s.SendJSON(xmap.M{
 		"code":  0,
 		"order": order,
+	})
+}
+
+//CancelAllOrderH is http handler
+/**
+ *
+ * @api {GET} /usr/cancelAllOrder Cancel All Order
+ * @apiName CancelAllOrder
+ * @apiGroup Order
+ *
+ * @apiParam  {String} [symbol] the order symbol
+ *
+ * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a> or <a href="#metadata-ExReturnCode">ExReturnCode</a>
+ *
+ * @apiParamExample  {Query} Cancel Order:
+ * symbol=100
+ *
+ * @apiSuccessExample {JSON} Success-Response:
+ * {
+ *     "code": 0
+ * }
+ */
+func CancelAllOrderH(s *web.Session) web.Result {
+	var symbol string
+	err := s.ValidFormat(`
+		symbol,O|S,L:0~32;
+	`, &symbol)
+	if err != nil {
+		return util.ReturnCodeLocalErr(s, define.ArgsInvalid, "arg-err", err)
+	}
+	userID := s.Int64("user_id")
+	orders, err := gexdb.ListPendingOrder(s.R.Context(), userID, symbol)
+	if err != nil {
+		xlog.Errorf("CancelAllOrderH list pending order fail with %v by %v,%v", err, userID, symbol)
+		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
+	}
+	for _, order := range orders {
+		if order.Status == gexdb.OrderStatusWaiting {
+			_, err = gexdb.CancelTriggerOrder(s.R.Context(), userID, order.Symbol, order.TID)
+		} else {
+			_, err = matcher.ProcessCancel(s.R.Context(), userID, order.Symbol, order.OrderID)
+		}
+		if err != nil {
+			break
+		}
+	}
+	if err != nil {
+		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
+	}
+	xlog.Infof("PlaceOrderH user %v cancel %v order success with %v", userID, symbol)
+	return s.SendJSON(xmap.M{
+		"code": 0,
 	})
 }
 
@@ -341,7 +403,7 @@ func QueryOrderH(s *web.Session) web.Result {
 		return util.ReturnCodeLocalErr(s, define.ArgsInvalid, "arg-err", err)
 	}
 	userID := s.Int64("user_id")
-	order, err := gexdb.FindOrderByOrderID(s.R.Context(), orderID)
+	order, err := gexdb.FindOrderByOrderID(s.R.Context(), 0, orderID)
 	if err != nil {
 		xlog.Errorf("QueryOrderH find order fail with %v by %v", err, orderID)
 		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)

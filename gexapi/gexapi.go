@@ -52,6 +52,7 @@ func Handle(pre string, mux *web.SessionMux) {
 	//order
 	mux.HandleFunc("^"+pre+"/usr/placeOrder", PlaceOrderH)
 	mux.HandleFunc("^"+pre+"/usr/cancelOrder", CancelOrderH)
+	mux.HandleFunc("^"+pre+"/usr/cancelAllOrder", CancelAllOrderH)
 	mux.HandleFunc("^"+pre+"/usr/searchOrder(\\?.*)?$", SearchOrderH)
 	mux.HandleFunc("^"+pre+"/usr/queryOrder(\\?.*)?$", QueryOrderH)
 	// mux.HandleFunc("^"+pre+"/usr/countOrderComm(\\?.*)?$", CountOrderCommH)

@@ -271,7 +271,7 @@ func (s *SpotMatcher) processCancelOrder(ctx context.Context, args *gexdb.Order)
 	}
 
 	//find order
-	order, err = gexdb.FindOrderByOrderIDCall(tx, ctx, args.OrderID, true)
+	order, err = gexdb.FindOrderByOrderIDCall(tx, ctx, 0, args.OrderID, true)
 	if err != nil {
 		err = NewErrMatcher(err, "[ProcessCancel] find order by %v fail", args.OrderID)
 		return

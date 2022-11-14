@@ -80,7 +80,7 @@ func testAddUser(prefix string) (user *gexdb.User) {
 }
 
 func assetOrderStatus(orderID string, status gexdb.OrderStatus) {
-	order, err := gexdb.FindOrderByOrderID(ctx, orderID)
+	order, err := gexdb.FindOrderByOrderID(ctx, 0, orderID)
 	if err != nil {
 		panic(err)
 	}

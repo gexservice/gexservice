@@ -28,12 +28,12 @@ func TestOrder(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	findOrder, err := FindOrderByOrderID(ctx, order.OrderID)
+	findOrder, err := FindOrderByOrderID(ctx, 0, order.OrderID)
 	if err != nil || order.TID != findOrder.TID {
 		t.Error(err)
 		return
 	}
-	findOrder, err = FindOrderByOrderIDCall(Pool(), ctx, order.OrderID, true)
+	findOrder, err = FindOrderByOrderIDCall(Pool(), ctx, 0, order.OrderID, true)
 	if err != nil || order.TID != findOrder.TID {
 		t.Error(err)
 		return
@@ -65,8 +65,13 @@ func TestOrder(t *testing.T) {
 	having, err := CountPendingOrderCall(Pool(), ctx, order.UserID, order.Symbol)
 	if err != nil || having > 0 {
 		t.Error(err)
+		return
 	}
-
+	orders, err := ListPendingOrder(ctx, order.UserID, order.Symbol)
+	if err != nil || len(orders) > 0 {
+		t.Error(err)
+		return
+	}
 	//
 	//test error
 	pgx.MockerStart()

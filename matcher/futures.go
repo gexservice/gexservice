@@ -297,7 +297,7 @@ func (f *FuturesMatcher) processCancelOrder(ctx context.Context, args *gexdb.Ord
 	startDepth := f.bookVal.Depth(1)
 
 	//find order
-	order, err = gexdb.FindOrderByOrderIDCall(tx, ctx, args.OrderID, true)
+	order, err = gexdb.FindOrderByOrderIDCall(tx, ctx, 0, args.OrderID, true)
 	if err != nil {
 		err = NewErrMatcher(err, "[ProcessCancel] find order by %v fail", args.OrderID)
 		return
@@ -1010,7 +1010,7 @@ func (f *FuturesMatcher) allTrans(base *gexdb.Order, price decimal.Decimal, done
 func (f *FuturesMatcher) doneBookOrder(tx *pgx.Tx, ctx context.Context, changed *MatcherEvent, baseOrderID string, bookOrders ...*orderbook.Order) (err error) {
 	var order *gexdb.Order
 	for _, bookOrder := range bookOrders {
-		order, err = gexdb.FindOrderByOrderIDCall(tx, ctx, bookOrder.ID(), false)
+		order, err = gexdb.FindOrderByOrderIDCall(tx, ctx, 0, bookOrder.ID(), false)
 		if err != nil {
 			err = NewErrMatcher(err, "[doneBookOrder] find order by %v fail", bookOrder.ID())
 			break
@@ -1047,7 +1047,7 @@ func (f *FuturesMatcher) doneBookOrder(tx *pgx.Tx, ctx context.Context, changed 
 }
 
 func (f *FuturesMatcher) partBookOrder(tx *pgx.Tx, ctx context.Context, changed *MatcherEvent, baseOrderID string, partOrder *orderbook.Order, partDone decimal.Decimal) (err error) {
-	order, err := gexdb.FindOrderByOrderIDCall(tx, ctx, partOrder.ID(), false)
+	order, err := gexdb.FindOrderByOrderIDCall(tx, ctx, 0, partOrder.ID(), false)
 	if err != nil {
 		err = NewErrMatcher(err, "[partOrder] find order by %v fail", partOrder.ID())
 		return
