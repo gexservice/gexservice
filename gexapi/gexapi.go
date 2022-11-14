@@ -48,6 +48,7 @@ func Handle(pre string, mux *web.SessionMux) {
 	mux.HandleFunc("^"+pre+"/usr/listWithdraw(\\?.*)?$", ListWithdrawH)
 	//holding
 	mux.HandleFunc("^"+pre+"/usr/listHolding(\\?.*)?$", ListHoldingH)
+	mux.HandleFunc("^"+pre+"/usr/loadHolding(\\?.*)?$", LoadHoldingH)
 	mux.HandleFunc("^"+pre+"/usr/changeHoldingLever(\\?.*)?$", ChangeHoldingLeverH)
 	//order
 	mux.HandleFunc("^"+pre+"/usr/placeOrder", PlaceOrderH)

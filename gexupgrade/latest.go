@@ -311,7 +311,7 @@ CREATE TABLE gex_holding (
     amount double precision DEFAULT 0 NOT NULL,
     open double precision DEFAULT 0 NOT NULL,
     blowup double precision DEFAULT 0 NOT NULL,
-    lever integer DEFAULT 1 NOT NULL,
+    lever integer DEFAULT 5 NOT NULL,
     margin_used double precision DEFAULT 0 NOT NULL,
     margin_added double precision DEFAULT 0 NOT NULL,
     update_time timestamp(6) with time zone NOT NULL,

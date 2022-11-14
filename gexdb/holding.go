@@ -52,7 +52,7 @@ func ListUserHolding(ctx context.Context, userID int64) (holdings []*Holding, er
 
 func ListUserHoldingCall(caller crud.Queryer, ctx context.Context, userID int64) (holdings []*Holding, err error) {
 	sql := crud.QuerySQL(&Holding{}, "#all")
-	sql, args := crud.JoinWheref(sql, nil, "user_id=$%v", userID)
+	sql, args := crud.JoinWheref(sql, nil, "user_id=$%v,amount!=$%v#all", userID, 0)
 	err = crud.Query(caller, ctx, &Holding{}, "#all", sql, args, &holdings)
 	return
 }
