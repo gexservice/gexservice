@@ -162,7 +162,7 @@ func LoadHoldingH(s *web.Session) web.Result {
 //ChangeHoldingLeverH is http handler
 /**
  *
- * @api {GET} /usr/ChangeHoldingLeverH Change Holding Lever
+ * @api {GET} /usr/changeHoldingLever Change Holding Lever
  * @apiName ChangeHoldingLever
  * @apiGroup Balance
  *
