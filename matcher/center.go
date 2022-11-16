@@ -16,6 +16,18 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+/**
+ * @apiDefine SymbolInfoObject
+ * @apiSuccess (SymbolInfo) {Int64} SymbolInfo.precision_quantity the symbol quantity precision
+ * @apiSuccess (SymbolInfo) {Int64} SymbolInfo.precision_price the symbol price precision
+ * @apiSuccess (SymbolInfo) {BalanceArea} SymbolInfo.area the balance area type, all suported is <a href="#metadata-Balance">BalanceAreaAll</a>
+ * @apiSuccess (SymbolInfo) {String} SymbolInfo.symbol the symbol key
+ * @apiSuccess (SymbolInfo) {String} SymbolInfo.base the symbol base asset(coin)
+ * @apiSuccess (SymbolInfo) {String} SymbolInfo.quote the symbol quote asset(coin)
+ * @apiSuccess (SymbolInfo) {Decimal} SymbolInfo.fee the symbol trade fee
+ * @apiSuccess (SymbolInfo) {Decimal} SymbolInfo.margin_max the symbol holding margin max to blowup
+ * @apiSuccess (SymbolInfo) {Decimal} SymbolInfo.margin_add the symbol holding margin add neary blowup
+ */
 type SymbolInfo struct {
 	PrecisionQuantity int32             `json:"precision_quantity"`
 	PrecisionPrice    int32             `json:"precision_price"`

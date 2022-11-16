@@ -31,13 +31,15 @@ func Bootstrap() {
 	Shared.Start()
 }
 
-func ListSymbol(prefix string, only []string, orderby string) (symbols []*matcher.SymbolInfo, lines map[string]*gexdb.KLine) {
+func ListSymbol(prefix string, only []string, orderby string) (symbols []*matcher.SymbolInfo, symbolMap map[string]*matcher.SymbolInfo, lines map[string]*gexdb.KLine) {
 	lines = map[string]*gexdb.KLine{}
+	symbolMap = map[string]*matcher.SymbolInfo{}
 	procSymbol := func(symbol *matcher.SymbolInfo) {
 		if len(prefix) > 0 && !strings.HasPrefix(symbol.Symbol, prefix) {
 			return
 		}
 		symbols = append(symbols, symbol)
+		symbolMap[symbol.Symbol] = symbol
 		line := LoadKLine(symbol.Symbol, "1day")
 		if line == nil {
 			return

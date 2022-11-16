@@ -9,6 +9,7 @@ import (
 	"github.com/gexservice/gexservice/base/util"
 	"github.com/gexservice/gexservice/base/xlog"
 	"github.com/gexservice/gexservice/gexdb"
+	"github.com/gexservice/gexservice/market"
 	"github.com/gexservice/gexservice/matcher"
 )
 
@@ -275,6 +276,8 @@ func CancelAllOrderH(s *web.Session) web.Result {
  * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>
  * @apiSuccess (Order) {Array} orders the order array
  * @apiUse OrderObject
+ * @apiSuccess (SymbolInfo) {Array} symbols the symbol info, mapping by symbol key
+ * @apiUse SymbolInfoObject
  *
  * @apiSuccessExample {JSON} Success-Response:
  * {
@@ -326,10 +329,12 @@ func SearchOrderH(s *web.Session) web.Result {
 		xlog.Errorf("SearchOrderH searcher order fail with %v by %v", err, converter.JSON(searcher))
 		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
 	}
+	_, symbols, _ := market.ListSymbol("", searcher.Query.Symbols, "")
 	return s.SendJSON(xmap.M{
-		"code":   define.Success,
-		"orders": searcher.Query.Orders,
-		"total":  searcher.Count.Total,
+		"code":    define.Success,
+		"orders":  searcher.Query.Orders,
+		"symbols": symbols,
+		"total":   searcher.Count.Total,
 	})
 }
 
@@ -345,6 +350,8 @@ func SearchOrderH(s *web.Session) web.Result {
  * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>
  * @apiSuccess (Order) {Object} order the order info
  * @apiUse OrderObject
+ * @apiSuccess (SymbolInfo) {Object} symbol the symbol info
+ * @apiUse SymbolInfoObject
  *
  * @apiParamExample  {Query} QueryOrder:
  * order_id=100
@@ -421,8 +428,10 @@ func QueryOrderH(s *web.Session) web.Result {
 			return util.ReturnCodeLocalErr(s, define.NotAccess, "srv-err", define.ErrNotAccess)
 		}
 	}
+	symbol, _ := market.LoadSymbol(order.Symbol)
 	return s.SendJSON(xmap.M{
-		"code":  0,
-		"order": order,
+		"code":   0,
+		"order":  order,
+		"symbol": symbol,
 	})
 }

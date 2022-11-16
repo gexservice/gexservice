@@ -87,17 +87,19 @@ func ListHoldingH(s *web.Session) web.Result {
 		xlog.Errorf("ListHoldingH find balance by %v,%v fail with %v", userID, matcher.Quote, err)
 		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
 	}
-	holdings, err := gexdb.ListUserHolding(s.R.Context(), userID)
+	holdings, symbols, err := gexdb.ListUserHolding(s.R.Context(), userID)
 	if err != nil {
 		xlog.Errorf("ListHoldingH list holding by %v fail with %v", userID, err)
 		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
 	}
+	_, symbolInfoes, _ := market.ListSymbol("", symbols, "")
 	unprofits, tickers := market.CalcHoldingUnprofit(s.R.Context(), holdings...)
 	return s.SendJSON(xmap.M{
 		"code":      0,
 		"balance":   balance,
 		"holdings":  holdings,
 		"unprofits": unprofits,
+		"symbols":   symbolInfoes,
 		"tickers":   tickers,
 	})
 }
@@ -153,9 +155,12 @@ func LoadHoldingH(s *web.Session) web.Result {
 		xlog.Errorf("LoadHoldingH find holding by %v,%v fail with %v", symbol, userID, err)
 		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
 	}
+	symbolInfo, day := market.LoadSymbol(symbol)
 	return s.SendJSON(xmap.M{
 		"code":    0,
 		"holding": holding,
+		"symbol":  symbolInfo,
+		"day":     day,
 	})
 }
 

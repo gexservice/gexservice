@@ -23,12 +23,8 @@ import (
  * @apiParam  {String} orderby the symbol orderby, supported in +rate/-rate/+volume/-volume
  *
  * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>
- * @apiSuccess (Symbols) {Array} symbols the symbol info list
- * @apiSuccess (Symbols) {String} symbols.base the symbol base asset
- * @apiSuccess (Symbols) {String} symbols.quote the symbol quote asset
- * @apiSuccess (Symbols) {String} symbols.fee the symbol trade fee
- * @apiSuccess (Symbols) {String} symbols.precision_price the symbol price percision
- * @apiSuccess (Symbols) {String} symbols.precision_quantity the symbol quantity percision
+ * @apiSuccess (SymbolInfo) {Array} symbols the symbol info list
+ * @apiUse SymbolInfoObject
  * @apiSuccess (KLine) {Object} days the symbol day change line, mapping by key is symbol
  * @apiUse KLineObject
  *
@@ -77,7 +73,7 @@ import (
  *
  */
 func ListSymbolH(s *web.Session) web.Result {
-	symbols, days := market.ListSymbol(s.Argument("type"), nil, s.Argument("orderby"))
+	symbols, _, days := market.ListSymbol(s.Argument("type"), nil, s.Argument("orderby"))
 	return s.SendJSON(xmap.M{
 		"code":    0,
 		"symbols": symbols,
@@ -95,12 +91,8 @@ func ListSymbolH(s *web.Session) web.Result {
  * @apiParam  {String} symbol the symbol
  *
  * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>
- * @apiSuccess (Symbol) {Object} symbol the symbol info
- * @apiSuccess (Symbol) {String} symbol.base the symbol base asset
- * @apiSuccess (Symbol) {String} symbol.quote the symbol quote asset
- * @apiSuccess (Symbol) {String} symbol.fee the symbol trade fee
- * @apiSuccess (Symbol) {String} symbol.precision_price the symbol price percision
- * @apiSuccess (Symbol) {String} symbol.precision_quantity the symbol quantity percision
+ * @apiSuccess (SymbolInfo) {Object} symbol the symbol info
+ * @apiUse SymbolInfoObject
  * @apiSuccess (KLine) {Object} day the symbol day change line
  * @apiUse KLineObject
  *
@@ -408,12 +400,8 @@ func LoadDepthH(s *web.Session) web.Result {
  * @apiParam  {String} orderby the symbol orderby, supported in +rate/-rate/+volume/-volume
  *
  * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>
- * @apiSuccess (Symbols) {Array} symbols the symbol info list
- * @apiSuccess (Symbols) {String} symbols.base the symbol base asset
- * @apiSuccess (Symbols) {String} symbols.quote the symbol quote asset
- * @apiSuccess (Symbols) {String} symbols.fee the symbol trade fee
- * @apiSuccess (Symbols) {String} symbols.precision_price the symbol price percision
- * @apiSuccess (Symbols) {String} symbols.precision_quantity the symbol quantity percision
+ * @apiSuccess (SymbolInfo) {Array} symbol the symbol info
+ * @apiUse SymbolInfoObject
  * @apiSuccess (KLine) {Object} days the symbol day change line, mapping by key is symbol
  * @apiUse KLineObject
  *
@@ -471,7 +459,7 @@ func ListFavoritesSymbolH(s *web.Session) web.Result {
 	var symbols []*matcher.SymbolInfo
 	var days map[string]*gexdb.KLine
 	if favorites != nil && len(favorites.Symbols) > 0 {
-		symbols, days = market.ListSymbol(s.Argument("type"), favorites.Symbols, s.Argument("orderby"))
+		symbols, _, days = market.ListSymbol(s.Argument("type"), favorites.Symbols, s.Argument("orderby"))
 	}
 	return s.SendJSON(xmap.M{
 		"code":    0,

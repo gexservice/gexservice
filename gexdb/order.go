@@ -167,6 +167,7 @@ type OrderUnifySearcher struct {
 		Orders   []*Order `json:"orders"`
 		OrderIDs []int64  `json:"order_ids" scan:"tid"`
 		UserIDs  []int64  `json:"user_ids" scan:"user_id"`
+		Symbols  []string `json:"symbols" scan:"symbol"`
 	} `json:"query" filter:"^transaction#all"`
 	Count struct {
 		Total int64 `json:"total" scan:"tid"`
