@@ -20,7 +20,7 @@ import (
  * @apiDefine SymbolInfoObject
  * @apiSuccess (SymbolInfo) {Int64} SymbolInfo.precision_quantity the symbol quantity precision
  * @apiSuccess (SymbolInfo) {Int64} SymbolInfo.precision_price the symbol price precision
- * @apiSuccess (SymbolInfo) {BalanceArea} SymbolInfo.area the balance area type, all suported is <a href="#metadata-Balance">BalanceAreaAll</a>
+ * @apiSuccess (SymbolInfo) {String} SymbolInfo.type the symbol type, all suported is spot/futures
  * @apiSuccess (SymbolInfo) {String} SymbolInfo.symbol the symbol key
  * @apiSuccess (SymbolInfo) {String} SymbolInfo.base the symbol base asset(coin)
  * @apiSuccess (SymbolInfo) {String} SymbolInfo.quote the symbol quote asset(coin)
@@ -29,15 +29,15 @@ import (
  * @apiSuccess (SymbolInfo) {Decimal} SymbolInfo.margin_add the symbol holding margin add neary blowup
  */
 type SymbolInfo struct {
-	PrecisionQuantity int32             `json:"precision_quantity"`
-	PrecisionPrice    int32             `json:"precision_price"`
-	Area              gexdb.BalanceArea `json:"area"`
-	Symbol            string            `json:"symbol"`
-	Base              string            `json:"base"`
-	Quote             string            `json:"quote"`
-	Fee               decimal.Decimal   `json:"fee"`
-	MarginMax         decimal.Decimal   `json:"margin_max"`
-	MarginAdd         decimal.Decimal   `json:"margin_add"`
+	PrecisionQuantity int32           `json:"precision_quantity"`
+	PrecisionPrice    int32           `json:"precision_price"`
+	Type              string          `json:"type"`
+	Symbol            string          `json:"symbol"`
+	Base              string          `json:"base"`
+	Quote             string          `json:"quote"`
+	Fee               decimal.Decimal `json:"fee"`
+	MarginMax         decimal.Decimal `json:"margin_max"`
+	MarginAdd         decimal.Decimal `json:"margin_add"`
 }
 
 func (s *SymbolInfo) String() string {
@@ -221,6 +221,7 @@ func BootstrapMatcherCenterByConfig(config *xprop.Config) (center *MatcherCenter
 			strings.ReplaceAll(`
 				_S/precision_quantity,o|i,r:0;
 				_S/precision_price,o|i,r:0;
+				_S/type,r|s,o:spot~futures;
 				_S/symbol,r|s,l:0;
 				_S/base,r|s,l:0;
 				_S/quote,r|s,l:0;
@@ -228,12 +229,12 @@ func BootstrapMatcherCenterByConfig(config *xprop.Config) (center *MatcherCenter
 				_S/margin_max,o|f,r:0~1;
 				_S/margin_add,o|f,r:0~1;
 			`, "_S", sec),
-			&info.PrecisionQuantity, &info.PrecisionPrice, &info.Symbol, &info.Base, &info.Quote, &info.Fee, &info.MarginMax, &info.MarginAdd,
+			&info.PrecisionQuantity, &info.PrecisionPrice, &info.Type, &info.Symbol, &info.Base, &info.Quote, &info.Fee, &info.MarginMax, &info.MarginAdd,
 		)
 		if err != nil {
 			break
 		}
-		if strings.HasPrefix(info.Symbol, "spot.") {
+		if info.Type == "spot" {
 			spot := NewSpotMatcher(info.Symbol, info.Base, info.Quote, center)
 			spot.Fee = center.FeeCache
 			spot.PrecisionPrice = info.PrecisionPrice
