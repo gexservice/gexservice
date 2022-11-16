@@ -125,6 +125,11 @@ func testFuturesInit(i int) (env *FuturesTestEnv) {
 	if err != nil {
 		panic(err)
 	}
+	env.AdderHolding.Lever = 1
+	err = gexdb.UpdateHoldingFilter(ctx, env.AdderHolding, "lever")
+	if err != nil {
+		panic(err)
+	}
 
 	env.SmallHolding, err = gexdb.FindHoldlingBySymbol(ctx, env.Small.TID, futuresHoldingSymbol)
 	if err != nil {
