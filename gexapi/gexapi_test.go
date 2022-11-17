@@ -28,6 +28,7 @@ import (
 const matcherConfig = `
 [matcher.SPOT_YWEUSDT]
 on=1
+type=spot
 symbol=spot.YWEUSDT
 base=YWE
 quote=USDT
@@ -35,6 +36,7 @@ fee=0.002
 
 [matcher.FUTURES_YWEUSDT]
 on=1
+type=futures
 symbol=futures.YWEUSDT
 base=YWE
 quote=USDT
