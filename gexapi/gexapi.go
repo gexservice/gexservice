@@ -33,6 +33,7 @@ func Handle(pre string, mux *web.SessionMux) {
 	mux.HandleFunc("^"+pre+"/usr/userInfo(\\?.*)?$", UserInfoH)
 	mux.HandleFunc("^"+pre+"/usr/loadUser(\\?.*)?$", LoadUserH)
 	mux.HandleFunc("^"+pre+"/usr/updateUser(\\?.*)?$", UpdateUserH)
+	mux.HandleFunc("^"+pre+"/usr/updateUserConfig(\\?.*)?$", UpdateUserConfigH)
 	mux.HandleFunc("^"+pre+"/usr/searchUser(\\?.*)?$", SearchUserH)
 	// mux.HandleFunc("^"+pre+"/usr/searchMyUser(\\?.*)?$", SearchMyUserH)
 	// mux.HandleFunc("^"+pre+"/usr/updateMyUserRemakr(\\?.*)?$", UpdateMyUserRemarkH)

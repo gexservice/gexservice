@@ -153,3 +153,25 @@ func TestUserFavorites(t *testing.T) {
 		return
 	})
 }
+
+func TestUserConfig(t *testing.T) {
+	//
+	user := testAddUser("TestUserConfig")
+	err := UpdateUserConfig(ctx, user.TID, func(config xmap.M) {
+		config["a"] = 1
+	})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	//
+	//test error
+	pgx.MockerStart()
+	defer pgx.MockerStop()
+	pgx.MockerSetCall("Pool.Begin", 1, "Rows.Scan", 1).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
+		err = UpdateUserConfig(ctx, user.TID, func(config xmap.M) {
+			config["a"] = 1
+		})
+		return
+	})
+}

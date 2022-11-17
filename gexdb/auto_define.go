@@ -172,7 +172,8 @@ package gexdb
  * @apiSuccess (User) {StringPtr} User.image the user image
  * @apiSuccess (User) {Object} User.fee the user fee
  * @apiSuccess (User) {Object} User.external the user external info
- * @apiSuccess (User) {UserFavorites} User.favorites
+ * @apiSuccess (User) {UserFavorites} User.favorites the user favorites
+ * @apiSuccess (User) {Object} User.config the user config
  * @apiSuccess (User) {Time} User.update_time the last updat time
  * @apiSuccess (User) {Time} User.create_time the craete time
  * @apiSuccess (User) {UserStatus} User.status the user status, all suported is <a href="#metadata-User">UserStatusAll</a>

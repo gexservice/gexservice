@@ -56,8 +56,8 @@ var PgGen = gen.AutoGen{
 		"gex_user": {
 			gen.FieldsOrder:    "account,phone,update_time,create_time",
 			gen.FieldsOptional: "role,name,account,phone,password,trade_pass,image,external,status",
-			gen.FieldsFind:     "^password,trade_pass#all",
-			gen.FieldsScan:     "^password,trade_pass#all",
+			gen.FieldsFind:     "^password,trade_pass,favorites#all",
+			gen.FieldsScan:     "^password,trade_pass,favorites#all",
 		},
 		"gex_order": {
 			gen.FieldsOrder:    "update_time,create_time",

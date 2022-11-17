@@ -52,5 +52,8 @@ func CheckDb(ctx context.Context) (created bool, err error) {
 		_, _, err = Pool().Exec(ctx, gexupgrade.LATEST)
 		created = true
 	}
+	if err == nil {
+		_, _, err = Pool().Exec(ctx, gexupgrade.CHECK)
+	}
 	return
 }

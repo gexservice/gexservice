@@ -388,7 +388,7 @@ const UserOrderbyAll = "account,phone,update_time,create_time"
 
 /*
  * User  represents gex_user
- * User Fields:tid,type,role,name,account,phone,password,trade_pass,image,fee,external,favorites,update_time,create_time,status,
+ * User Fields:tid,type,role,name,account,phone,password,trade_pass,image,fee,external,favorites,config,update_time,create_time,status,
  */
 type User struct {
 	T          string        `json:"-" table:"gex_user"`                                 /* the table name tag */
@@ -403,7 +403,8 @@ type User struct {
 	Image      *string       `json:"image,omitempty" valid:"image,o|s,l:0;"`             /* the user image */
 	Fee        xsql.M        `json:"fee,omitempty" valid:"fee,r|s,l:0;"`                 /* the user fee */
 	External   xsql.M        `json:"external,omitempty" valid:"external,o|s,l:0;"`       /* the user external info */
-	Favorites  UserFavorites `json:"favorites,omitempty" valid:"favorites,r|s,l:0;"`     /*  */
+	Favorites  UserFavorites `json:"favorites,omitempty" valid:"favorites,r|s,l:0;"`     /* the user favorites */
+	Config     xsql.M        `json:"config,omitempty" valid:"config,r|s,l:0;"`           /* the user config */
 	UpdateTime xsql.Time     `json:"update_time,omitempty" valid:"update_time,r|i,r:1;"` /* the last updat time */
 	CreateTime xsql.Time     `json:"create_time,omitempty" valid:"create_time,r|i,r:1;"` /* the craete time */
 	Status     UserStatus    `json:"status,omitempty" valid:"status,o|i,e:0;"`           /* the user status, Normal=100:is normal, Locked=200:is locked, Removed=-1:is deleted */

@@ -45,16 +45,30 @@ func TestLoginByUsername(t *testing.T) {
 		},
 	}, "/usr/updateUser")
 	fmt.Printf("updateUser->%v\n", converter.JSON(updateUser))
+	ts.Should(t, "code", define.ArgsInvalid).PostJSONMap("xx", "/usr/updateUserConfig")
+	ts.Should(t, "code", define.Success).PostJSONMap(xmap.M{
+		"pay_coin": "abc",
+		"xx":       123,
+	}, "/usr/updateUserConfig")
+	ts.Should(t, "code", define.Success, "/user/config/pay_coin", "abc", "/user/config/xx", 123).GetMap("/usr/userInfo")
+	ts.Should(t, "code", define.Success).PostJSONMap(xmap.M{
+		"xx": nil,
+	}, "/usr/updateUserConfig")
+	ts.Should(t, "code", define.Success, "/user/config/xx", xmap.ShouldIsNil).GetMap("/usr/userInfo")
 	//
 	//test error
 	pgx.MockerStart()
 	defer pgx.MockerStop()
 	pgx.MockerClear()
 	pgx.MockerSetCall("Rows.Scan", 1).Should(t, "code", define.ServerError).GetMap("/usr/userInfo")
-	pgx.MockerSetRangeCall("Rows.Scan", 2, 4).Should(t, "code", define.Success).GetMap("/usr/userInfo")
+	pgx.MockerSetRangeCall("Rows.Scan", 2, 7).Should(t, "code", define.Success).GetMap("/usr/userInfo")
 	pgx.MockerSetCall("Rows.Scan", 1).Should(t, "code", define.ServerError).PostJSONMap(&gexdb.User{
 		Password: converter.StringPtr("123"),
 	}, "/usr/updateUser")
+	pgx.MockerSetCall("Rows.Scan", 1).Should(t, "code", define.ServerError).PostJSONMap(xmap.M{
+		"pay_coin": "abc",
+		"xx":       123,
+	}, "/usr/updateUserConfig")
 	//logout
 	ts.Should(t, "code", define.Success).GetMap("/usr/logout")
 	ts.Should(t, "code", define.Redirect).GetMap("/usr/userInfo")

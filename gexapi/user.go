@@ -172,6 +172,7 @@ func LogoutH(hs *web.Session) web.Result {
  * @apiSuccess (Config) {String} config.withdraw_max the withdraw max
  * @apiSuccess (User) {Object} user the user info
  * @apiUse UserObject
+ * @apiSuccess (CoinRate) {Object} coin_rate the coin rate info, mapping by coin as key
  *
  *
  * @apiSuccessExample {type} Success-Response:
@@ -221,6 +222,10 @@ func sendUserInfo(s *web.Session, user *gexdb.User) web.Result {
 	if err != nil { //ignore error
 		xlog.Warnf("UserInfoH load config fail with %v by uid:%v", err, user.TID)
 	}
+	coinRate, err := gexdb.LoadCoinRate(s.R.Context())
+	if err != nil { //ignore error
+		xlog.Warnf("UserInfoH load coin rate fail with %v by uid:%v", err, user.TID)
+	}
 	//
 	var accesses = xmap.M{
 		"type": user.Type,
@@ -231,6 +236,7 @@ func sendUserInfo(s *web.Session, user *gexdb.User) web.Result {
 		"user":              user,
 		"trade_pass_setted": tradePassSetted,
 		"config":            config,
+		"coin_rate":         coinRate,
 		"accesses":          accesses,
 		"session_id":        s.ID(),
 	})
@@ -327,6 +333,56 @@ func UpdateUserH(s *web.Session) web.Result {
 		return util.ReturnCodeLocalErr(s, code, "srv-err", err)
 	}
 	xlog.Debugf("update user to system from %v success with user:%+v", s.R.RemoteAddr, converter.JSON(updateUser))
+	return s.SendJSON(xmap.M{
+		"code": 0,
+	})
+}
+
+//UpdateUserConfigH is http handler to update user base info
+/**
+ *
+ * @api {POST} /usr/updateUserConfig Update User Config
+ * @apiName UpdateUserConfig
+ * @apiGroup User
+ *
+ * @apiParam  {String} [pay_coin] will update user pay coin
+ *
+ *
+ * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>
+ *
+ * @apiParamExample  {JSON} UpdateConfig-Example:
+ * {
+ *     "pay_coin" : "abc"
+ * }
+ *
+ *
+ * @apiSuccessExample {JSON} Success-Response:
+ * {
+ *     "code": 0,
+ * }
+ *
+ */
+func UpdateUserConfigH(s *web.Session) web.Result {
+	args := xmap.M{}
+	_, err := s.RecvJSON(&args)
+	if err != nil {
+		return util.ReturnCodeLocalErr(s, define.ArgsInvalid, "arg-err", err)
+	}
+	userID := s.Int64("user_id")
+	err = gexdb.UpdateUserConfig(s.R.Context(), userID, func(config xmap.M) {
+		for k, v := range args {
+			if v == nil {
+				delete(config, k)
+			} else {
+				config[k] = v
+			}
+		}
+	})
+	if err != nil {
+		xlog.Errorf("UpdateUserConfigH update user config with %v fail with %v", converter.JSON(args), err)
+		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
+	}
+	xlog.Infof("UpdateUserConfigH update user %v config with %v success", userID, converter.JSON(args))
 	return s.SendJSON(xmap.M{
 		"code": 0,
 	})

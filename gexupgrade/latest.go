@@ -930,6 +930,7 @@ CREATE TABLE gex_user (
     fee jsonb DEFAULT '{}'::jsonb NOT NULL,
     external jsonb DEFAULT '{}'::jsonb NOT NULL,
     favorites jsonb DEFAULT '{}'::jsonb NOT NULL,
+    config jsonb DEFAULT '{}'::jsonb NOT NULL,
     update_time timestamp with time zone NOT NULL,
     create_time timestamp with time zone NOT NULL,
     status smallint DEFAULT 100 NOT NULL
@@ -1011,6 +1012,20 @@ COMMENT ON COLUMN gex_user.fee IS 'the user fee';
 --
 
 COMMENT ON COLUMN gex_user.external IS 'the user external info';
+
+
+--
+-- Name: COLUMN gex_user.favorites; Type: COMMENT; Schema: public;
+--
+
+COMMENT ON COLUMN gex_user.favorites IS 'the user favorites';
+
+
+--
+-- Name: COLUMN gex_user.config; Type: COMMENT; Schema: public;
+--
+
+COMMENT ON COLUMN gex_user.config IS 'the user config';
 
 
 --

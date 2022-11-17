@@ -2464,10 +2464,10 @@ const UserFilterInsert = "role,name,account,phone,password,trade_pass,image,exte
 const UserFilterUpdate = "update_time,role,name,account,phone,password,trade_pass,image,external,status"
 
 //UserFilterFind is crud filter
-const UserFilterFind = "^password,trade_pass#all"
+const UserFilterFind = "^password,trade_pass,favorites#all"
 
 //UserFilterScan is crud filter
-const UserFilterScan = "^password,trade_pass#all"
+const UserFilterScan = "^password,trade_pass,favorites#all"
 
 //EnumValid will valid value by UserType
 func (o *UserType) EnumValid(v interface{}) (err error) {
@@ -2640,6 +2640,10 @@ func (user *User) Insert(caller interface{}, ctx context.Context) (err error) {
 		user.External = xsql.M{}
 	}
 
+	if len(user.Config) < 1 {
+		user.Config = xsql.M{}
+	}
+
 	if user.UpdateTime.Timestamp() < 1 {
 		user.UpdateTime = xsql.TimeNow()
 	}
@@ -2739,12 +2743,12 @@ func FindUserCall(caller interface{}, ctx context.Context, userID int64, lock bo
 
 //FindUserWhereCall will find gex_user by where from database
 func FindUserWhereCall(caller interface{}, ctx context.Context, lock bool, join string, where []string, args []interface{}) (user *User, err error) {
-	querySQL := crud.QuerySQL(&User{}, "^password,trade_pass#all")
+	querySQL := crud.QuerySQL(&User{}, "^password,trade_pass,favorites#all")
 	querySQL = crud.JoinWhere(querySQL, where, join)
 	if lock {
 		querySQL += " for update "
 	}
-	err = crud.QueryRow(caller, ctx, &User{}, "^password,trade_pass#all", querySQL, args, &user)
+	err = crud.QueryRow(caller, ctx, &User{}, "^password,trade_pass,favorites#all", querySQL, args, &user)
 	return
 }
 
@@ -2756,7 +2760,7 @@ func FindUserWheref(ctx context.Context, format string, args ...interface{}) (us
 
 //FindUserWherefCall will find gex_user by where from database
 func FindUserWherefCall(caller interface{}, ctx context.Context, lock bool, format string, args ...interface{}) (user *User, err error) {
-	user, err = FindUserFilterWherefCall(GetQueryer, ctx, lock, "^password,trade_pass#all", format, args...)
+	user, err = FindUserFilterWherefCall(GetQueryer, ctx, lock, "^password,trade_pass,favorites#all", format, args...)
 	return
 }
 
@@ -2818,7 +2822,7 @@ func ScanUserByID(ctx context.Context, userIDs []int64, dest ...interface{}) (er
 
 //ScanUserByIDCall will list gex_user by id from database
 func ScanUserByIDCall(caller interface{}, ctx context.Context, userIDs []int64, dest ...interface{}) (err error) {
-	err = ScanUserFilterByIDCall(caller, ctx, "^password,trade_pass#all", userIDs, dest...)
+	err = ScanUserFilterByIDCall(caller, ctx, "^password,trade_pass,favorites#all", userIDs, dest...)
 	return
 }
 
@@ -2845,7 +2849,7 @@ func ScanUserWheref(ctx context.Context, format string, args []interface{}, suff
 
 //ScanUserWherefCall will list gex_user by format from database
 func ScanUserWherefCall(caller interface{}, ctx context.Context, format string, args []interface{}, suffix string, dest ...interface{}) (err error) {
-	err = ScanUserFilterWherefCall(caller, ctx, "^password,trade_pass#all", format, args, suffix, dest...)
+	err = ScanUserFilterWherefCall(caller, ctx, "^password,trade_pass,favorites#all", format, args, suffix, dest...)
 	return
 }
 

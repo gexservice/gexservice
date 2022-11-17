@@ -11,3 +11,7 @@ INSERT INTO gex_config(key,value,update_time) VALUES ('welcome_message', 'welcom
 INSERT INTO gex_config(key,value,update_time) VALUES ('withdraw_max', '50000', '2021-07-04 12:51:17.074424+00');
 INSERT INTO gex_config(key,value,update_time) VALUES ('trade_rule', 'rule', '2021-07-04 12:51:17.074424+00');
 `
+
+const CHECK = `
+ALTER TABLE gex_user ADD COLUMN IF NOT EXISTS config jsonb DEFAULT '{}'::jsonb NOT NULL;
+`

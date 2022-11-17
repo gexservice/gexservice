@@ -6,6 +6,7 @@ import (
 	"github.com/codingeasygo/crud"
 	"github.com/codingeasygo/util/converter"
 	"github.com/codingeasygo/util/xmap"
+	"github.com/codingeasygo/util/xsql"
 )
 
 //FindUserByUsrPwd will return user by match account/email/phone=username and passowrd=matched
@@ -85,7 +86,7 @@ func UpdateUserFavorites(ctx context.Context, userID int64, call func(favorites 
 			tx.Rollback(ctx)
 		}
 	}()
-	user, err := FindUserFilterWherefCall(tx, ctx, true, "favorites#all", "tid=$%v", userID)
+	user, err := FindUserFilterWherefCall(tx, ctx, true, "tid,favorites#all", "tid=$%v", userID)
 	if err != nil {
 		return
 	}
@@ -99,6 +100,29 @@ func LoadUserFavorites(ctx context.Context, userID int64) (favorites *UserFavori
 	if err == nil {
 		favorites = &user.Favorites
 	}
+	return
+}
+
+func UpdateUserConfig(ctx context.Context, userID int64, call func(config xmap.M)) (err error) {
+	tx, err := Pool().Begin(ctx)
+	if err != nil {
+		return
+	}
+	defer func() {
+		if err == nil {
+			err = tx.Commit(ctx)
+		} else {
+			tx.Rollback(ctx)
+		}
+	}()
+	user, err := FindUserFilterWherefCall(tx, ctx, true, "tid,config#all", "tid=$%v", userID)
+	if err != nil {
+		return
+	}
+	config := user.Config.AsMap()
+	call(config)
+	user.Config = xsql.M(config)
+	err = user.UpdateFilter(tx, ctx, "config")
 	return
 }
 
