@@ -10,6 +10,7 @@ import (
 	"github.com/codingeasygo/crud"
 	"github.com/codingeasygo/crud/gen"
 	"github.com/codingeasygo/crud/pgx"
+	"github.com/codingeasygo/util/xhash"
 	"github.com/codingeasygo/util/xtime"
 	"github.com/gexservice/gexservice/base/xlog"
 	"github.com/gexservice/gexservice/gexupgrade"
@@ -56,4 +57,8 @@ func CheckDb(ctx context.Context) (created bool, err error) {
 		_, _, err = Pool().Exec(ctx, gexupgrade.CHECK)
 	}
 	return
+}
+
+func EncryptionUserPassword(pwd string) string {
+	return xhash.SHA1([]byte(pwd))
 }

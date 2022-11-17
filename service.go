@@ -17,7 +17,10 @@ import (
 	"github.com/codingeasygo/web/filter"
 	"github.com/gexservice/gexservice/base/baseapi"
 	"github.com/gexservice/gexservice/base/basedb"
+	"github.com/gexservice/gexservice/base/captcha"
+	"github.com/gexservice/gexservice/base/email"
 	"github.com/gexservice/gexservice/base/session"
+	"github.com/gexservice/gexservice/base/sms"
 	"github.com/gexservice/gexservice/base/transport"
 	"github.com/gexservice/gexservice/base/xlog"
 	"github.com/gexservice/gexservice/gexapi"
@@ -83,6 +86,25 @@ func main() {
 		} else {
 			web.Shared.Handle("^/transport/redis(\\?.*)?$", forward)
 		}
+	}
+	// emailSender, err := email.NewEmailSenderFromConfig(conf)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// email.SendEmail = emailSender.SendEmail
+	email.SendEmail = func(v *email.VerifyEmail, email string, templateParam xmap.M) (err error) {
+		return
+	}
+	email.CaptchaVerify = func(v *email.VerifyEmail, id, code string) (err error) {
+		err = captcha.CaptchaVerify(id, code)
+		return
+	}
+	sms.SendSms = func(v *sms.VerifyPhone, phoneNumber string, templateParam xmap.M) (err error) {
+		return
+	}
+	sms.CaptchaVerify = func(v *sms.VerifyPhone, id, code string) (err error) {
+		err = captcha.CaptchaVerify(id, code)
+		return
 	}
 	//base handler
 	web.Shared.Filter("^.*$", filter.NewAllCORS())

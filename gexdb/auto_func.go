@@ -2452,16 +2452,16 @@ func ScanOrderCommFilterWherefCall(caller interface{}, ctx context.Context, filt
 }
 
 //UserFilterOptional is crud filter
-const UserFilterOptional = "role,name,account,phone,password,trade_pass,image,external,status"
+const UserFilterOptional = "role,name,account,phone,email,password,trade_pass,image,external,status"
 
 //UserFilterRequired is crud filter
 const UserFilterRequired = ""
 
 //UserFilterInsert is crud filter
-const UserFilterInsert = "role,name,account,phone,password,trade_pass,image,external,status"
+const UserFilterInsert = "role,name,account,phone,email,password,trade_pass,image,external,status"
 
 //UserFilterUpdate is crud filter
-const UserFilterUpdate = "update_time,role,name,account,phone,password,trade_pass,image,external,status"
+const UserFilterUpdate = "update_time,role,name,account,phone,email,password,trade_pass,image,external,status"
 
 //UserFilterFind is crud filter
 const UserFilterFind = "^password,trade_pass,favorites#all"

@@ -11,7 +11,7 @@ import (
 
 //FindUserByUsrPwd will return user by match account/email/phone=username and passowrd=matched
 func FindUserByUsrPwd(ctx context.Context, username, password string) (*User, error) {
-	return FindUserWheref(ctx, "(account=$%v or phone=$%v),password=$%v", username, password)
+	return FindUserWheref(ctx, "(account=$%v or email=$%v or phone=$%v),password=$%v", username, password)
 }
 
 //FindUserByAccount will return user by match account/email/phone=username and passowrd=matched

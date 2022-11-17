@@ -18,6 +18,7 @@ DROP INDEX IF EXISTS gex_user_status_idx;
 DROP INDEX IF EXISTS gex_user_role_idx;
 DROP INDEX IF EXISTS gex_user_phone_idx;
 DROP INDEX IF EXISTS gex_user_password_idx;
+DROP INDEX IF EXISTS gex_user_email_idx;
 DROP INDEX IF EXISTS gex_user_account_idx;
 DROP INDEX IF EXISTS gex_order_user_id_idx;
 DROP INDEX IF EXISTS gex_order_update_time_idx;
@@ -987,6 +988,7 @@ CREATE TABLE gex_user (
     name character varying(255),
     account character varying(255),
     phone character varying(255),
+    email character varying(255),
     password character varying(255),
     trade_pass character varying(255),
     image text,
@@ -1040,6 +1042,13 @@ COMMENT ON COLUMN gex_user.account IS 'the user account to login';
 --
 
 COMMENT ON COLUMN gex_user.phone IS 'the user phone number to login';
+
+
+--
+-- Name: COLUMN gex_user.email; Type: COMMENT; Schema: public;
+--
+
+COMMENT ON COLUMN gex_user.email IS 'the user email';
 
 
 --
@@ -1559,6 +1568,13 @@ CREATE UNIQUE INDEX gex_user_account_idx ON gex_user USING btree (account);
 
 
 --
+-- Name: gex_user_email_idx; Type: INDEX; Schema: public;
+--
+
+CREATE UNIQUE INDEX gex_user_email_idx ON gex_user USING btree (email);
+
+
+--
 -- Name: gex_user_password_idx; Type: INDEX; Schema: public;
 --
 
@@ -1569,7 +1585,7 @@ CREATE INDEX gex_user_password_idx ON gex_user USING btree (password);
 -- Name: gex_user_phone_idx; Type: INDEX; Schema: public;
 --
 
-CREATE INDEX gex_user_phone_idx ON gex_user USING btree (phone);
+CREATE UNIQUE INDEX gex_user_phone_idx ON gex_user USING btree (phone);
 
 
 --

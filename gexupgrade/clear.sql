@@ -10,6 +10,7 @@ DROP INDEX IF EXISTS gex_user_status_idx;
 DROP INDEX IF EXISTS gex_user_role_idx;
 DROP INDEX IF EXISTS gex_user_phone_idx;
 DROP INDEX IF EXISTS gex_user_password_idx;
+DROP INDEX IF EXISTS gex_user_email_idx;
 DROP INDEX IF EXISTS gex_user_account_idx;
 DROP INDEX IF EXISTS gex_order_user_id_idx;
 DROP INDEX IF EXISTS gex_order_update_time_idx;

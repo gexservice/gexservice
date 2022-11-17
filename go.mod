@@ -8,6 +8,7 @@ require (
 	github.com/codingeasygo/crud v0.0.0-20221108014119-4368796d26b8
 	github.com/codingeasygo/util v0.0.0-20221110130109-404a61359281
 	github.com/codingeasygo/web v0.0.0-20221103094050-e9f39f8e9983
+	github.com/dchest/captcha v1.0.0
 	github.com/gomodule/redigo v1.8.9
 	github.com/shopspring/decimal v1.3.1
 	go.uber.org/zap v1.23.0
@@ -25,8 +26,9 @@ require (
 	github.com/jackc/pgtype v1.11.0 // indirect
 	github.com/jackc/pgx/v4 v4.16.1 // indirect
 	github.com/jackc/puddle v1.2.1 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
-	golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97 // indirect
+	golang.org/x/crypto v0.0.0-20211215153901-e495a2d5b3d3 // indirect
 	golang.org/x/text v0.4.0 // indirect
 )

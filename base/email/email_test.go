@@ -1,4 +1,4 @@
-package sms
+package email
 
 import (
 	"fmt"
@@ -11,36 +11,36 @@ import (
 	"github.com/gexservice/gexservice/base/define"
 )
 
-func TestVerifyPhone(t *testing.T) {
+func TestVerifyEmail(t *testing.T) {
 	func() {
 		defer func() {
 			recover()
 		}()
-		_ = SendSms(nil, "", nil)
+		_ = SendEmail(nil, "", nil)
 	}()
-	SendVerifySmsH.Type = VerifyPhoneTypeUser
-	SendLoginSmsH.Type = VerifyPhoneTypePhone
+	SendVerifyEmailH.Type = VerifyEmailTypeUser
+	SendLoginEmailH.Type = VerifyEmailTypePhone
 	//
 	redisURI := "redis.loc:6379?db=1"
 	rediscache.InitRedisPool(redisURI)
 	Redis = rediscache.C
 	ts := httptest.NewMuxServer()
 	Hand("", ts.Mux)
-	SendSms = func(v *VerifyPhone, phoneNumber string, templateParam xmap.M) (err error) {
+	SendEmail = func(v *VerifyEmail, emailNumber string, templateParam xmap.M) (err error) {
 		return nil
 	}
 	//
-	res, err := ts.GetMap("/pub/sendLoginSms?phone=1234567890")
+	res, err := ts.GetMap("/pub/sendLoginEmail?email=1234567890@qq.com")
 	if err != nil || res.Int64("code") != 0 {
 		t.Errorf("%v,%v", err, res)
 		return
 	}
-	having, err := LoadPhoneCode(PhoneCodeTypeLogin, "1234567890")
+	having, err := LoadEmailCode(EmailCodeTypeLogin, "1234567890@qq.com")
 	if err != nil || len(having) < 1 {
 		t.Error(err)
 		return
 	}
-	res, err = ts.GetMap("/pub/sendLoginSms?phone=1234567890")
+	res, err = ts.GetMap("/pub/sendLoginEmail?email=1234567890@qq.com")
 	if err != nil || res.Int64("code") != define.Frequently {
 		t.Errorf("%v,%v", err, res)
 		return
@@ -50,14 +50,14 @@ func TestVerifyPhone(t *testing.T) {
 	rediscache.MockerStart()
 	defer rediscache.MockerStop()
 	//
-	res, err = ts.GetMap("/pub/sendLoginSms?phone=")
+	res, err = ts.GetMap("/pub/sendLoginEmail?email=")
 	if err != nil || res.Int64("code") == 0 {
 		t.Errorf("%v,%v", err, res)
 		return
 	}
-	SendLoginSmsH.CalledUser = map[string]int64{}
+	SendLoginEmailH.CalledUser = map[string]int64{}
 	rediscache.MockerSet("Conn.Do", 1)
-	res, err = ts.GetMap("/pub/sendLoginSms?phone=1234567810")
+	res, err = ts.GetMap("/pub/sendLoginEmail?email=1234567810@qq.com")
 	if err != nil || res.Int64("code") != define.ServerError {
 		t.Errorf("%v,%v", err, res)
 		return
@@ -65,11 +65,11 @@ func TestVerifyPhone(t *testing.T) {
 	fmt.Println(converter.JSON(res))
 	rediscache.MockerClear()
 	//
-	SendLoginSmsH.CalledUser = map[string]int64{}
-	SendSms = func(v *VerifyPhone, phoneNumber string, templateParam xmap.M) (err error) {
+	SendLoginEmailH.CalledUser = map[string]int64{}
+	SendEmail = func(v *VerifyEmail, emailNumber string, templateParam xmap.M) (err error) {
 		return fmt.Errorf("mock error")
 	}
-	res, err = ts.GetMap("/pub/sendLoginSms?phone=1234567810")
+	res, err = ts.GetMap("/pub/sendLoginEmail?email=1234567810@qq.com")
 	if err != nil || res.Int64("code") != define.ServerError {
 		t.Errorf("%v,%v", err, res)
 		return

@@ -153,6 +153,7 @@ package gexdb
  * @apiParam (User) {StringPtr} [User.name] the user name
  * @apiParam (User) {StringPtr} [User.account] the user account to login
  * @apiParam (User) {StringPtr} [User.phone] the user phone number to login
+ * @apiParam (User) {StringPtr} [User.email] the user email
  * @apiParam (User) {StringPtr} [User.password] the user password to login
  * @apiParam (User) {StringPtr} [User.trade_pass] the user trade password
  * @apiParam (User) {StringPtr} [User.image] the user image
@@ -167,6 +168,7 @@ package gexdb
  * @apiSuccess (User) {StringPtr} User.name the user name
  * @apiSuccess (User) {StringPtr} User.account the user account to login
  * @apiSuccess (User) {StringPtr} User.phone the user phone number to login
+ * @apiSuccess (User) {StringPtr} User.email the user email
  * @apiSuccess (User) {StringPtr} User.password the user password to login
  * @apiSuccess (User) {StringPtr} User.trade_pass the user trade password
  * @apiSuccess (User) {StringPtr} User.image the user image

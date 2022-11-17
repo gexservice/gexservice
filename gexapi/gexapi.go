@@ -4,6 +4,9 @@ import (
 	"github.com/codingeasygo/web"
 	"github.com/gexservice/gexservice/base/baseapi"
 	"github.com/gexservice/gexservice/base/basedb"
+	"github.com/gexservice/gexservice/base/captcha"
+	"github.com/gexservice/gexservice/base/email"
+	"github.com/gexservice/gexservice/base/sms"
 	"github.com/gexservice/gexservice/gexdb"
 	"github.com/gexservice/gexservice/market"
 )
@@ -27,8 +30,11 @@ func Handle(pre string, mux *web.SessionMux) {
 	baseapi.Handle(pre, mux)
 	//index
 	mux.HandleFunc("^"+pre+"/pub/index(\\?.*)?$", IndexH)
+	//captcha
+	captcha.Hand(pre, mux)
 	//user
 	mux.HandleFunc("^"+pre+"/pub/login(\\?.*)?$", LoginH)
+	mux.HandleFunc("^"+pre+"/pub/registerUser(\\?.*)?$", RegisterUserH)
 	mux.HandleFunc("^"+pre+"/usr/logout(\\?.*)?$", LogoutH)
 	mux.HandleFunc("^"+pre+"/usr/userInfo(\\?.*)?$", UserInfoH)
 	mux.HandleFunc("^"+pre+"/usr/loadUser(\\?.*)?$", LoadUserH)
@@ -76,6 +82,18 @@ func Handle(pre string, mux *web.SessionMux) {
 	mux.HandleFunc("^"+pre+"/admin/updateSymbolMaker", UpdateSymbolMakerH)
 	mux.HandleFunc("^"+pre+"/admin/startSymbolMaker", StartSymbolMakerH)
 	mux.HandleFunc("^"+pre+"/admin/stopSymbolMaker", StopSymbolMakerH)
+	//sms
+	sms.Hand(pre, mux)
+	//email
+	email.Hand(pre, mux)
+}
+
+//Handle will register all handler
+func HandleDebug(pre string, mux *web.SessionMux) {
+	//sms
+	sms.HandDebug(pre, mux)
+	//email
+	email.HandDebug(pre, mux)
 }
 
 func RecvValidJSON(s *web.Session, valider gexdb.Validable) (err error) {

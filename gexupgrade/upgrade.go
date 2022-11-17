@@ -14,4 +14,6 @@ INSERT INTO gex_config(key,value,update_time) VALUES ('trade_rule', 'rule', '202
 
 const CHECK = `
 ALTER TABLE gex_user ADD COLUMN IF NOT EXISTS config jsonb DEFAULT '{}'::jsonb NOT NULL;
+ALTER TABLE gex_user ADD COLUMN IF NOT EXISTS email character varying(255);
+CREATE UNIQUE INDEX IF NOT EXISTS gex_user_email_idx ON gex_user USING btree (email);
 `

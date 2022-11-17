@@ -7,6 +7,13 @@
 * 管理后台用户管理：使用<a href="#api-User-SearchUser">列出用户接口</a>
 * 更新用户配置：使用<a href="#api-User-UpdateUserConfig">更新用户配置接口</a>
 
+## 关于用户注册
+* 使用手机号或邮箱注册时，需要先发送验证码，发送验证码需要用户输入图形验证码
+  * 获取图形验证码需要先调用<a href="#api-Captcha-NewCaptcha">生成验证码</a>获取图形验证码图片ID
+  * 拼接`/pub/captcha/${captcha_id}.png`获得验证图片地址
+  * <a href="#api-User-SendLoginEmail">发送邮箱登录、注册验证码</a> 或 <a href="#api-User-SendLoginPhone">发送手机登录、注册验证码</a>， `captcha_id`为图形验证码id,`captcha_code`为用户输入验证码
+* 使用<a href="#api-User-RegisterUser">注册用户接口</a>注册用户
+
 ## 关于汇率与币价格显示
 * <a href="#api-User-UserInfo">登录用户信息接口</a>
 * `user.config.price_show_coin`为用户配置的显示汇率

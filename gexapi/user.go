@@ -2,6 +2,7 @@ package gexapi
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/codingeasygo/crud/pgx"
@@ -11,6 +12,8 @@ import (
 	"github.com/codingeasygo/web"
 	"github.com/gexservice/gexservice/base/basedb"
 	"github.com/gexservice/gexservice/base/define"
+	"github.com/gexservice/gexservice/base/email"
+	"github.com/gexservice/gexservice/base/sms"
 	"github.com/gexservice/gexservice/base/util"
 	"github.com/gexservice/gexservice/base/xlog"
 	"github.com/gexservice/gexservice/gexdb"
@@ -129,6 +132,113 @@ func LoginH(s *web.Session) web.Result {
 	s.Flush()
 	xlog.Infof("LoginH user login to sytem from %v success by uid:%v", s.R.RemoteAddr, user.TID)
 	return sendUserInfo(s, user)
+}
+
+//RegisterUserH is http handler to update user base info
+/**
+ *
+ * @api {POST} /pub/registerUser Register User
+ * @apiName RegisterUser
+ * @apiGroup User
+ *
+ *
+ * @apiParam  {String} [phone] the user phone
+ * @apiParam  {String} [email] the user email
+ * @apiParam  {String} [name] the user nick name
+ * @apiParam  {String} [account] the user account，若没有，则填入phone
+ * @apiParam  {String} [password] the user password
+ * @apiParam  {String} code the phone verify code
+ *
+ * @apiSuccess (User) {Object} user the user info
+ * @apiUse UserObject
+ *
+ * @apiParamExample  {JSON} PhoneRegister-Example:
+ * {
+ *     "phone" : "12345678901",
+ *     "account" : "12345678901",
+ *     "code" : "123",
+ *     "password" : "123",
+ *     "name" : "用户昵称"
+ * }
+ *
+ *
+ * @apiSuccessExample {JSON} Success-Response:
+ * {
+ *     "accesses": {
+ *         "role": 100,
+ *         "type": 100
+ *     },
+ *     "code": 0,
+ *     "session_id": "62ee0b67285c6622bb000001",
+ *     "user": {
+ *         "account": "abc0",
+ *         "create_time": 1659767655050,
+ *         "image": "abc0_image",
+ *         "name": "abc0_name",
+ *         "phone": "abc0_123",
+ *         "status": 100,
+ *         "tid": 100006,
+ *         "type": 100,
+ *         "update_time": 1659767655050
+ *     }
+ * }
+ */
+func RegisterUserH(s *web.Session) web.Result {
+	var user struct {
+		Code string `json:"code"`
+		gexdb.User
+	}
+	if err := RecvValidJSON(s, &user); err != nil {
+		return util.ReturnCodeLocalErr(s, define.ArgsInvalid, "arg-err", err)
+	}
+	if user.Password != nil {
+		user.Password = converter.StringPtr(gexdb.EncryptionUserPassword(*user.Password))
+	}
+	if user.Phone != nil && len(*user.Phone) > 0 {
+		expected, err := sms.LoadPhoneCode(sms.PhoneCodeTypeLogin, *user.Phone)
+		if err != nil {
+			xlog.Warnf("RegisterUser load phone code with %v fail with %v", *user.Phone, err)
+			return util.ReturnCodeLocalErr(s, define.CodeInvalid, "srv-err", err)
+		}
+		if len(user.Code) < 1 || len(expected) < 1 || expected != user.Code {
+			xlog.Warnf("RegisterUser verify phone code with phone %v fail with expect:%v,having:%v", converter.IndirectString(user.Phone), expected, user.Code)
+			return util.ReturnCodeLocalErr(s, define.CodeInvalid, "srv-err", define.ErrCodeInvalid)
+		}
+	} else if user.Email != nil && len(*user.Email) > 0 {
+		if len(*user.Email) > 200 || !regexp.MustCompile("^.*@.*$").MatchString(*user.Email) {
+			return util.ReturnCodeLocalErr(s, define.ArgsInvalid, "arg-err", fmt.Errorf("user email is invalid or empty "))
+		}
+		expected, err := email.LoadEmailCode(email.EmailCodeTypeLogin, *user.Email)
+		if err != nil {
+			xlog.Warnf("RegisterUser load email code with %v fail with %v", *user.Email, err)
+			return util.ReturnCodeLocalErr(s, define.CodeInvalid, "srv-err", err)
+		}
+		if len(user.Code) < 1 || len(expected) < 1 || expected != user.Code {
+			xlog.Warnf("RegisterUser verify email code with email %v fail with expect:%v,having:%v", converter.IndirectString(user.Email), expected, user.Code)
+			return util.ReturnCodeLocalErr(s, define.CodeInvalid, "srv-err", define.ErrCodeInvalid)
+		}
+	} else {
+		return util.ReturnCodeLocalErr(s, define.ArgsInvalid, "arg-err", fmt.Errorf("user phone or email is required"))
+	}
+	user.Type = gexdb.UserTypeNormal
+	user.Role = gexdb.UserRoleNormal
+	user.Status = gexdb.UserStatusNormal
+	err := gexdb.AddUser(s.R.Context(), &user.User)
+	if err != nil {
+		xlog.Warnf("RegisterUser add user with %v fail with %v", converter.JSON(user), err)
+		code := define.ServerError
+		if strings.Contains(err.Error(), "duplicate") {
+			code = define.Duplicate
+		}
+		return util.ReturnCodeLocalErr(s, code, "srv-err", err)
+	}
+	s.Clear()
+	xlog.Infof("RegisterUserH add user to system from %v success with user:%+v", s.R.RemoteAddr, converter.JSON(user))
+	s.SetValue("user_id", user.TID)
+	s.Flush()
+	//返回时不应该把password的内容返回
+	user.Password = nil
+	return sendUserInfo(s, &user.User)
 }
 
 //LogoutH is http handler will logout current session

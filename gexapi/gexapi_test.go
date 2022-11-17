@@ -13,10 +13,12 @@ import (
 	"github.com/codingeasygo/util/converter"
 	"github.com/codingeasygo/util/xhash"
 	"github.com/codingeasygo/util/xhttp"
+	"github.com/codingeasygo/util/xmap"
 	"github.com/codingeasygo/util/xprop"
 	"github.com/codingeasygo/web/httptest"
 	"github.com/gexservice/gexservice/base/basedb"
 	"github.com/gexservice/gexservice/base/baseupgrade"
+	"github.com/gexservice/gexservice/base/email"
 	"github.com/gexservice/gexservice/base/sms"
 	"github.com/gexservice/gexservice/gexdb"
 	"github.com/gexservice/gexservice/gexupgrade"
@@ -65,12 +67,25 @@ func init() {
 	basedb.Pool = pgx.Pool
 	gexdb.Pool().Exec(ctx, gexupgrade.DROP)
 	basedb.Pool().Exec(ctx, strings.ReplaceAll(baseupgrade.DROP, "_sys_", "gex_"))
+	sms.SendSms = func(v *sms.VerifyPhone, phoneNumber string, templateParam xmap.M) (err error) {
+		return
+	}
+	sms.CaptchaVerify = func(v *sms.VerifyPhone, id, code string) (err error) {
+		return
+	}
+	email.SendEmail = func(v *email.VerifyEmail, email string, templateParam xmap.M) (err error) {
+		return
+	}
+	email.CaptchaVerify = func(v *email.VerifyEmail, id, code string) (err error) {
+		return
+	}
 
 	//
 	redisURI := "redis.loc:6379?db=1"
 	rediscache.InitRedisPool(redisURI)
 	gexdb.Redis = rediscache.C
 	sms.Redis = rediscache.C
+	email.Redis = rediscache.C
 	_, err = basedb.CheckDb()
 	if err != nil {
 		panic(err)

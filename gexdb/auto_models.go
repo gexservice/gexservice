@@ -388,7 +388,7 @@ const UserOrderbyAll = "account,phone,update_time,create_time"
 
 /*
  * User  represents gex_user
- * User Fields:tid,type,role,name,account,phone,password,trade_pass,image,fee,external,favorites,config,update_time,create_time,status,
+ * User Fields:tid,type,role,name,account,phone,email,password,trade_pass,image,fee,external,favorites,config,update_time,create_time,status,
  */
 type User struct {
 	T          string        `json:"-" table:"gex_user"`                                 /* the table name tag */
@@ -398,6 +398,7 @@ type User struct {
 	Name       *string       `json:"name,omitempty" valid:"name,o|s,l:0;"`               /* the user name */
 	Account    *string       `json:"account,omitempty" valid:"account,o|s,l:0;"`         /* the user account to login */
 	Phone      *string       `json:"phone,omitempty" valid:"phone,o|s,p:^\\d{11}$;"`     /* the user phone number to login */
+	Email      *string       `json:"email,omitempty" valid:"email,o|s,l:0;"`             /* the user email */
 	Password   *string       `json:"password,omitempty" valid:"password,o|s,l:0;"`       /* the user password to login */
 	TradePass  *string       `json:"trade_pass,omitempty" valid:"trade_pass,o|s,l:0;"`   /* the user trade password */
 	Image      *string       `json:"image,omitempty" valid:"image,o|s,l:0;"`             /* the user image */

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/Centny/rediscache"
 	"github.com/codingeasygo/util/converter"
 	"github.com/codingeasygo/util/xmap"
 	"github.com/codingeasygo/web"
@@ -11,6 +12,8 @@ import (
 
 	"github.com/codingeasygo/crud/pgx"
 	"github.com/gexservice/gexservice/base/define"
+	"github.com/gexservice/gexservice/base/email"
+	"github.com/gexservice/gexservice/base/sms"
 	"github.com/gexservice/gexservice/gexdb"
 )
 
@@ -72,6 +75,86 @@ func TestLoginByUsername(t *testing.T) {
 	//logout
 	ts.Should(t, "code", define.Success).GetMap("/usr/logout")
 	ts.Should(t, "code", define.Redirect).GetMap("/usr/userInfo")
+}
+
+func TestRegisterUserByPhone(t *testing.T) {
+	clearCookie()
+	ts.Should(t, "code", define.ArgsInvalid).PostJSONMap("xxx", "/pub/registerUser")
+	ts.Should(t, "code", define.ArgsInvalid).PostJSONMap(xmap.M{}, "/pub/registerUser")
+	ts.Should(t, "code", define.ArgsInvalid).PostJSONMap(xmap.M{
+		"phone": "xxxx",
+	}, "/pub/registerUser")
+	ts.Should(t, "code", define.CodeInvalid).PostJSONMap(xmap.M{
+		"phone": "12345678901",
+		"code":  "123",
+	}, "/pub/registerUser")
+	ts.Should(t, "code", define.Success).GetMap("/pub/sendLoginSms?phone=%v", "12345678901")
+	code, err := sms.LoadPhoneCode(sms.PhoneCodeTypeLogin, "12345678901")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	ts.Should(t, "code", define.Success).PostJSONMap(xmap.M{
+		"phone":    "12345678901",
+		"code":     code,
+		"password": "123",
+	}, "/pub/registerUser")
+	ts.Should(t, "code", define.Success, "user", xmap.ShouldIsNoNil).GetMap("/usr/userInfo")
+	ts.Should(t, "code", define.Duplicate).PostJSONMap(xmap.M{
+		"phone":    "12345678901",
+		"code":     code,
+		"password": "123",
+	}, "/pub/registerUser")
+	clearCookie()
+	ts.Should(t, "code", define.Success).GetMap("/pub/login?username=%v&password=%v", "12345678901", "123")
+
+	rediscache.MockerStart()
+	defer rediscache.MockerStop()
+	rediscache.MockerSet("Conn.Do", 1)
+	ts.Should(t, "code", define.CodeInvalid).PostJSONMap(xmap.M{
+		"phone": "12345678902",
+		"code":  "123",
+	}, "/pub/registerUser")
+}
+
+func TestRegisterUserByEmail(t *testing.T) {
+	clearCookie()
+	ts.Should(t, "code", define.ArgsInvalid).PostJSONMap("xxx", "/pub/registerUser")
+	ts.Should(t, "code", define.ArgsInvalid).PostJSONMap(xmap.M{}, "/pub/registerUser")
+	ts.Should(t, "code", define.ArgsInvalid).PostJSONMap(xmap.M{
+		"email": "xxx",
+	}, "/pub/registerUser")
+	ts.Should(t, "code", define.CodeInvalid).PostJSONMap(xmap.M{
+		"email": "12345678901@qq.com",
+		"code":  "123",
+	}, "/pub/registerUser")
+	ts.Should(t, "code", define.Success).GetMap("/pub/sendLoginEmail?email=%v", "12345678901@qq.com")
+	code, err := email.LoadEmailCode(email.EmailCodeTypeLogin, "12345678901@qq.com")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	ts.Should(t, "code", define.Success).PostJSONMap(xmap.M{
+		"email":    "12345678901@qq.com",
+		"code":     code,
+		"password": "123",
+	}, "/pub/registerUser")
+	ts.Should(t, "code", define.Success, "user", xmap.ShouldIsNoNil).GetMap("/usr/userInfo")
+	ts.Should(t, "code", define.Duplicate).PostJSONMap(xmap.M{
+		"email":    "12345678901@qq.com",
+		"code":     code,
+		"password": "123",
+	}, "/pub/registerUser")
+	clearCookie()
+	ts.Should(t, "code", define.Success).GetMap("/pub/login?username=%v&password=%v", "12345678901@qq.com", "123")
+
+	rediscache.MockerStart()
+	defer rediscache.MockerStop()
+	rediscache.MockerSet("Conn.Do", 1)
+	ts.Should(t, "code", define.CodeInvalid).PostJSONMap(xmap.M{
+		"email": "12345678902@qq.com",
+		"code":  "123",
+	}, "/pub/registerUser")
 }
 
 func TestManageUser(t *testing.T) {
