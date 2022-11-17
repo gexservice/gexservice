@@ -2,6 +2,7 @@ package gexapi
 
 import (
 	"github.com/codingeasygo/util/xmap"
+	"github.com/codingeasygo/util/xsql"
 	"github.com/codingeasygo/util/xtime"
 	"github.com/codingeasygo/web"
 	"github.com/gexservice/gexservice/base/define"
@@ -523,7 +524,7 @@ func AddFavoritesSymbolH(s *web.Session) web.Result {
  * @apiName RemoveFavoritesSymbol
  * @apiGroup Market
  *
- * @apiParam  {String} symbol the symbol to add
+ * @apiParam  {String} symbol the symbol to remove, multi split by comma
  *
  * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>
  *
@@ -535,23 +536,23 @@ func AddFavoritesSymbolH(s *web.Session) web.Result {
  *
  */
 func RemoveFavoritesSymbolH(s *web.Session) web.Result {
-	var symbol string
+	var symbols []string
 	err := s.ValidFormat(`
 		symbol,r|s,l:0;
-	`, &symbol)
+	`, &symbols)
 	if err != nil {
 		return util.ReturnCodeLocalErr(s, define.ArgsInvalid, "arg-err", err)
 	}
 	userID := s.Value("user_id").(int64)
 	err = gexdb.UpdateUserFavorites(s.R.Context(), userID, func(favorites *gexdb.UserFavorites) {
-		symbols := []string{}
+		symbolAll := []string{}
 		for _, s := range favorites.Symbols {
-			if symbol == s {
+			if xsql.StringArray(symbols).HavingOne(s) {
 				continue
 			}
-			symbols = append(symbols, s)
+			symbolAll = append(symbolAll, s)
 		}
-		favorites.Symbols = symbols
+		favorites.Symbols = symbolAll
 	})
 	if err != nil {
 		xlog.Errorf("RemoveFavoritesSymbolH remove user favorites fail with %v", err)
