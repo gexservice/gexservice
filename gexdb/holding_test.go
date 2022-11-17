@@ -37,7 +37,7 @@ func TestHolding(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	holdings, symbols, err := ListUserHolding(ctx, user.TID)
+	holdings, symbols, err := ListUserHolding(ctx, user.TID, []string{symbol})
 	if err != nil || len(holdings) < 1 || len(symbols) < 1 {
 		t.Error(err)
 		return

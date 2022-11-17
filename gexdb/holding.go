@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/codingeasygo/crud"
+	"github.com/codingeasygo/util/xsql"
 	"github.com/shopspring/decimal"
 )
 
@@ -45,14 +46,16 @@ func FindHoldlingBySymbolCall(caller crud.Queryer, ctx context.Context, userID i
 	return
 }
 
-func ListUserHolding(ctx context.Context, userID int64) (holdings []*Holding, symbols []string, err error) {
-	holdings, symbols, err = ListUserHoldingCall(Pool(), ctx, userID)
+func ListUserHolding(ctx context.Context, userID int64, symbolOnly []string) (holdings []*Holding, symbols []string, err error) {
+	holdings, symbols, err = ListUserHoldingCall(Pool(), ctx, userID, symbolOnly)
 	return
 }
 
-func ListUserHoldingCall(caller crud.Queryer, ctx context.Context, userID int64) (holdings []*Holding, symbols []string, err error) {
+func ListUserHoldingCall(caller crud.Queryer, ctx context.Context, userID int64, symbolOnly []string) (holdings []*Holding, symbols []string, err error) {
 	sql := crud.QuerySQL(&Holding{}, "#all")
-	sql, args := crud.JoinWheref(sql, nil, "user_id=$%v,amount!=$%v#all", userID, 0)
+	where, args := crud.AppendWheref(nil, nil, "user_id=$%v,amount!=$%v#all", userID, 0)
+	where, args = crud.AppendWheref(where, args, "symbol=any($%v)", xsql.StringArray(symbolOnly))
+	sql = crud.JoinWhere(sql, where, "and")
 	err = crud.Query(caller, ctx, &Holding{}, "#all", sql, args, &holdings, &symbols, "symbol")
 	return
 }

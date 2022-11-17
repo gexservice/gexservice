@@ -19,6 +19,7 @@ import (
  * @apiGroup Balance
  *
  *
+ * @apiParam  {String} [symbol] the symbol to list
  * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>
  * @apiSuccess (Balance) {Object} balance the user balance info
  * @apiUse BalanceObject
@@ -81,13 +82,17 @@ import (
  * }
  */
 func ListHoldingH(s *web.Session) web.Result {
+	var symbolOnly []string
+	s.ValidFormat(`
+		symbol,o|s,l:0;
+	`, &symbolOnly)
 	userID := s.Value("user_id").(int64)
 	balance, err := gexdb.FindBalanceByAsset(s.R.Context(), userID, gexdb.BalanceAreaFutures, matcher.Quote)
 	if err != nil {
 		xlog.Errorf("ListHoldingH find balance by %v,%v fail with %v", userID, matcher.Quote, err)
 		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
 	}
-	holdings, symbols, err := gexdb.ListUserHolding(s.R.Context(), userID)
+	holdings, symbols, err := gexdb.ListUserHolding(s.R.Context(), userID, symbolOnly)
 	if err != nil {
 		xlog.Errorf("ListHoldingH list holding by %v fail with %v", userID, err)
 		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
