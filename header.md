@@ -5,6 +5,12 @@
 
 ## 关于用户
 * 管理后台用户管理：使用<a href="#api-User-SearchUser">列出用户接口</a>
+* 更新用户配置：使用<a href="#api-User-UpdateUserConfig">更新用户配置接口</a>
+
+## 关于汇率与币价格显示
+* <a href="#api-User-UserInfo">登录用户信息接口</a>
+* `user.config.price_show_coin`为用户配置的显示汇率
+* `coin_rate`为当前所有显示币的汇率，显示时为当前价格*选择币的汇率
 
 ## 关于行情数据
 * 列出行情，使用<a href="#api-Market-ListSymbol">列出交易对接口</a>

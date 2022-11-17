@@ -345,14 +345,14 @@ func UpdateUserH(s *web.Session) web.Result {
  * @apiName UpdateUserConfig
  * @apiGroup User
  *
- * @apiParam  {String} [pay_coin] will update user pay coin
+ * @apiParam  {String} [price_show_coin] will update user price show coin
  *
  *
  * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>
  *
  * @apiParamExample  {JSON} UpdateConfig-Example:
  * {
- *     "pay_coin" : "abc"
+ *     "price_show_coin" : "abc"
  * }
  *
  *
