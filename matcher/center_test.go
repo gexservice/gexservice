@@ -578,5 +578,21 @@ fee=0.002
 			t.Error(err)
 			return
 		}
+
+		config3 := xprop.NewConfig()
+		config3.LoadPropString(`
+[matcher.SPOT_YWEUSDT]
+on=1
+type=xxx
+symbol=spot.YWEUSDT
+base=YWE
+quote=USDT
+fee=0.002
+		`)
+		_, err = BootstrapMatcherCenterByConfig(config3)
+		if err == nil {
+			t.Error(err)
+			return
+		}
 	}
 }

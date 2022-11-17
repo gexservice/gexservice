@@ -221,7 +221,7 @@ func BootstrapMatcherCenterByConfig(config *xprop.Config) (center *MatcherCenter
 			strings.ReplaceAll(`
 				_S/precision_quantity,o|i,r:0;
 				_S/precision_price,o|i,r:0;
-				_S/type,r|s,o:spot~futures;
+				_S/type,r|s,l:0;
 				_S/symbol,r|s,l:0;
 				_S/base,r|s,l:0;
 				_S/quote,r|s,l:0;
