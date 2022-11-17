@@ -84,23 +84,45 @@ func AdminAccessF(s *web.Session) web.Result {
  * @apiSuccessExample {JSON} Success-Response:
  * {
  *     "accesses": {
- *         "role": 100
+ *         "role": 100,
+ *         "type": 100
  *     },
  *     "code": 0,
- *     "session_id": "613c40a7285c668490000001",
+ *     "coin_rate": [
+ *         {
+ *             "key": "cn",
+ *             "name": "人民币",
+ *             "rate": 7.2
+ *         },
+ *         {
+ *             "key": "en",
+ *             "name": "美金",
+ *             "rate": 1
+ *         },
+ *         {
+ *             "key": "xx",
+ *             "name": "缅甸币",
+ *             "rate": 100
+ *         }
+ *     ],
+ *     "config": {
+ *         "welcome_message": "welcom",
+ *         "withdraw_max": "50000"
+ *     },
+ *     "session_id": "637614b4285c666ec7000001",
+ *     "trade_pass_setted": 1,
  *     "user": {
- *         "account": "abc2",
- *         "broker_id": 0,
- *         "create_time": 1631338663770,
- *         "external": {},
- *         "image": "abc2_image",
+ *         "account": "abc0",
+ *         "create_time": 1668682932081,
+ *         "favorites": {},
+ *         "image": "abc0_image",
+ *         "name": "abc0_name",
+ *         "phone": "abc0_123",
  *         "role": 100,
- *         "name": "abc2_name",
- *         "phone": "abc2_123",
  *         "status": 100,
- *         "tid": 100004,
+ *         "tid": 100002,
  *         "type": 100,
- *         "update_time": 1631338663770
+ *         "update_time": 1668682932081
  *     }
  * }
  *
@@ -169,17 +191,41 @@ func LoginH(s *web.Session) web.Result {
  *         "type": 100
  *     },
  *     "code": 0,
- *     "session_id": "62ee0b67285c6622bb000001",
+ *     "coin_rate": [
+ *         {
+ *             "key": "cn",
+ *             "name": "人民币",
+ *             "rate": 7.2
+ *         },
+ *         {
+ *             "key": "en",
+ *             "name": "美金",
+ *             "rate": 1
+ *         },
+ *         {
+ *             "key": "xx",
+ *             "name": "缅甸币",
+ *             "rate": 100
+ *         }
+ *     ],
+ *     "config": {
+ *         "welcome_message": "welcom",
+ *         "withdraw_max": "50000"
+ *     },
+ *     "session_id": "637614b4285c666ec7000001",
+ *     "trade_pass_setted": 1,
  *     "user": {
  *         "account": "abc0",
- *         "create_time": 1659767655050,
+ *         "create_time": 1668682932081,
+ *         "favorites": {},
  *         "image": "abc0_image",
  *         "name": "abc0_name",
  *         "phone": "abc0_123",
+ *         "role": 100,
  *         "status": 100,
- *         "tid": 100006,
+ *         "tid": 100002,
  *         "type": 100,
- *         "update_time": 1659767655050
+ *         "update_time": 1668682932081
  *     }
  * }
  */
@@ -292,13 +338,33 @@ func LogoutH(hs *web.Session) web.Result {
  *         "type": 100
  *     },
  *     "code": 0,
- *     "session_id": "616b8ed9285c660c6a000001",
+ *     "coin_rate": [
+ *         {
+ *             "key": "cn",
+ *             "name": "人民币",
+ *             "rate": 7.2
+ *         },
+ *         {
+ *             "key": "en",
+ *             "name": "美金",
+ *             "rate": 1
+ *         },
+ *         {
+ *             "key": "xx",
+ *             "name": "缅甸币",
+ *             "rate": 100
+ *         }
+ *     ],
+ *     "config": {
+ *         "welcome_message": "welcom",
+ *         "withdraw_max": "50000"
+ *     },
+ *     "session_id": "637614b4285c666ec7000001",
  *     "trade_pass_setted": 1,
  *     "user": {
  *         "account": "abc0",
- *         "broker_id": 100004,
- *         "create_time": 1634438873232,
- *         "external": {},
+ *         "create_time": 1668682932081,
+ *         "favorites": {},
  *         "image": "abc0_image",
  *         "name": "abc0_name",
  *         "phone": "abc0_123",
@@ -306,7 +372,7 @@ func LogoutH(hs *web.Session) web.Result {
  *         "status": 100,
  *         "tid": 100002,
  *         "type": 100,
- *         "update_time": 1634438873233
+ *         "update_time": 1668682932081
  *     }
  * }
  */

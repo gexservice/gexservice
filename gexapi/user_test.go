@@ -11,6 +11,7 @@ import (
 	"github.com/codingeasygo/web/httptest"
 
 	"github.com/codingeasygo/crud/pgx"
+	"github.com/gexservice/gexservice/base/basedb"
 	"github.com/gexservice/gexservice/base/define"
 	"github.com/gexservice/gexservice/base/email"
 	"github.com/gexservice/gexservice/base/sms"
@@ -19,6 +20,23 @@ import (
 
 func TestLoginByUsername(t *testing.T) {
 	//login
+	basedb.StoreConf(ctx, gexdb.ConfigCoinRate, converter.JSON([]xmap.M{
+		{
+			"name": "人民币",
+			"key":  "cn",
+			"rate": 7.2,
+		},
+		{
+			"name": "美金",
+			"key":  "en",
+			"rate": 1,
+		},
+		{
+			"name": "缅甸币",
+			"key":  "xx",
+			"rate": 100,
+		},
+	}))
 	login, _ := ts.Should(t, "code", define.Success).GetMap("/pub/login?username=%v&password=%v", "abc0", "123")
 	fmt.Printf("login--->%v\n", converter.JSON(login))
 	ts.Should(t, "code", define.NotFound).GetMap("/pub/login?username=%v&password=%v", "abc0", "1x23")
