@@ -87,6 +87,11 @@ func ListHoldingH(s *web.Session) web.Result {
 		symbol,o|s,l:0;
 	`, &symbolOnly)
 	userID := s.Value("user_id").(int64)
+	_, err := gexdb.TouchBalance(s.R.Context(), gexdb.BalanceAreaFutures, []string{matcher.Quote}, userID)
+	if err != nil {
+		xlog.Errorf("ListHoldingH touch balance by %v,%v fail with %v", matcher.Quote, userID, err)
+		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
+	}
 	balance, err := gexdb.FindBalanceByAsset(s.R.Context(), userID, gexdb.BalanceAreaFutures, matcher.Quote)
 	if err != nil {
 		xlog.Errorf("ListHoldingH find balance by %v,%v fail with %v", userID, matcher.Quote, err)

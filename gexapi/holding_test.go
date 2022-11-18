@@ -38,6 +38,6 @@ func TestHolding(t *testing.T) {
 
 	pgx.MockerSetCall("Pool.Exec", 1).Should(t, "code", define.ServerError).GetMap("/usr/loadHolding?symbol=XX")
 	pgx.MockerSetCall("Rows.Scan", 1).Should(t, "code", define.ServerError).GetMap("/usr/loadHolding?symbol=XX")
-	pgx.MockerSetCall("Rows.Scan", 1, 2).Should(t, "code", define.ServerError).GetMap("/usr/listHolding")
+	pgx.MockerSetCall("Rows.Scan", 1, 2, "Pool.Exec", 1).Should(t, "code", define.ServerError).GetMap("/usr/listHolding")
 	pgx.MockerSetCall("Rows.Scan", 1).Should(t, "code", define.ServerError).GetMap("/usr/changeHoldingLever?symbol=%v&lever=1", "futures.YWEUSDT")
 }
