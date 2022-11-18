@@ -9,6 +9,7 @@ import (
 	"github.com/gexservice/gexservice/gexdb"
 	"github.com/gexservice/gexservice/market"
 	"github.com/gexservice/gexservice/matcher"
+	"github.com/shopspring/decimal"
 )
 
 //ListHoldingH is http handler
@@ -102,8 +103,15 @@ func ListHoldingH(s *web.Session) web.Result {
 		xlog.Errorf("ListHoldingH list holding by %v fail with %v", userID, err)
 		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
 	}
-	_, symbolInfoes, _ := market.ListSymbol("", symbols, "")
-	unprofits, tickers := market.CalcHoldingUnprofit(s.R.Context(), holdings...)
+	var symbolInfoes map[string]*matcher.SymbolInfo
+	if len(symbols) > 0 {
+		_, symbolInfoes, _ = market.ListSymbol("", symbols, "")
+	}
+	var unprofits map[string]decimal.Decimal
+	var tickers map[string]*gexdb.Ticker
+	if len(holdings) > 0 {
+		unprofits, tickers = market.CalcHoldingUnprofit(s.R.Context(), holdings...)
+	}
 	return s.SendJSON(xmap.M{
 		"code":      0,
 		"balance":   balance,
