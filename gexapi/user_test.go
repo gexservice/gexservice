@@ -103,34 +103,34 @@ func TestRegisterUserByPhone(t *testing.T) {
 		"phone": "xxxx",
 	}, "/pub/registerUser")
 	ts.Should(t, "code", define.CodeInvalid).PostJSONMap(xmap.M{
-		"phone": "12345678901",
+		"phone": "22345678901",
 		"code":  "123",
 	}, "/pub/registerUser")
-	ts.Should(t, "code", define.Success).GetMap("/pub/sendLoginSms?phone=%v", "12345678901")
-	code, err := sms.LoadPhoneCode(sms.PhoneCodeTypeLogin, "12345678901")
+	ts.Should(t, "code", define.Success).GetMap("/pub/sendLoginSms?phone=%v", "22345678901")
+	code, err := sms.LoadPhoneCode(sms.PhoneCodeTypeLogin, "22345678901")
 	if err != nil {
 		t.Error(err)
 		return
 	}
 	ts.Should(t, "code", define.Success).PostJSONMap(xmap.M{
-		"phone":    "12345678901",
+		"phone":    "22345678901",
 		"code":     code,
 		"password": "123",
 	}, "/pub/registerUser")
 	ts.Should(t, "code", define.Success, "user", xmap.ShouldIsNoNil).GetMap("/usr/userInfo")
 	ts.Should(t, "code", define.Duplicate).PostJSONMap(xmap.M{
-		"phone":    "12345678901",
+		"phone":    "22345678901",
 		"code":     code,
 		"password": "123",
 	}, "/pub/registerUser")
 	clearCookie()
-	ts.Should(t, "code", define.Success).GetMap("/pub/login?username=%v&password=%v", "12345678901", "123")
+	ts.Should(t, "code", define.Success).GetMap("/pub/login?username=%v&password=%v", "22345678901", "123")
 
 	rediscache.MockerStart()
 	defer rediscache.MockerStop()
 	rediscache.MockerSet("Conn.Do", 1)
 	ts.Should(t, "code", define.CodeInvalid).PostJSONMap(xmap.M{
-		"phone": "12345678902",
+		"phone": "22345678902",
 		"code":  "123",
 	}, "/pub/registerUser")
 }

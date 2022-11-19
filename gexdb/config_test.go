@@ -15,8 +15,8 @@ func TestLoadCoinRate(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	err = basedb.StoreConf(ctx, ConfigCoinRate, converter.JSON(map[string]float64{
-		"xx": 10,
+	err = basedb.StoreConf(ctx, ConfigCoinRate, converter.JSON([]map[string]float64{
+		{"xx": 10},
 	}))
 	if err != nil {
 		t.Error(err)
