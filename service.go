@@ -120,6 +120,7 @@ func main() {
 		conf.Range("admin", func(key string, val interface{}) { gexapi.ConfAdminH[key] = val })
 	}
 	maker.Verbose = conf.IntDef(0, "/maker/verbose") == 1
+	maker.Log = conf.StrDef("maker-%v.log", "/maker/log")
 	err = matcher.Bootstrap(context.Background(), conf)
 	if err != nil {
 		panic(err)

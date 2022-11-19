@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"os"
 	"reflect"
 	"strings"
 	"sync"
@@ -20,6 +21,8 @@ import (
 	"github.com/gexservice/gexservice/gexdb"
 	"github.com/gexservice/gexservice/matcher"
 	"github.com/shopspring/decimal"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 func init() {
@@ -27,6 +30,7 @@ func init() {
 }
 
 var Verbose = false
+var Log string = "maker-%v.log"
 
 var makerAll = map[string]*Maker{}
 var makerLock = sync.RWMutex{}
@@ -67,6 +71,8 @@ func Start(ctx context.Context, symbol string) (err error) {
 		return
 	}
 	maker := NewMaker(config)
+	maker.Verbose = Verbose
+	maker.Log = Log
 	err = maker.Start(ctx)
 	if err == nil {
 		makerAll[symbol] = maker
@@ -288,6 +294,7 @@ func (c *Config) Random(past time.Duration, close decimal.Decimal) (next decimal
 type Maker struct {
 	Config       *Config
 	Verbose      bool
+	Log          string
 	Clear        time.Duration
 	symbol       *matcher.SymbolInfo
 	depth        *orderbook.Depth
@@ -309,12 +316,17 @@ type Maker struct {
 	clearLast    time.Time
 	clearRemoved int64
 	clearShow    time.Time
+	logOut       *os.File
+	logLevel     zap.AtomicLevel
+	logCore      zapcore.Core
+	logger       *zap.SugaredLogger
 	waiter       sync.WaitGroup
 }
 
 func NewMaker(config *Config) (maker *Maker) {
 	maker = &Maker{
 		Config:       config,
+		Log:          "maker-%v.log",
 		Clear:        5 * time.Second,
 		makingAll:    map[string]decimal.Decimal{},
 		makingOrder:  map[string]*gexdb.Order{},
@@ -329,12 +341,42 @@ func NewMaker(config *Config) (maker *Maker) {
 }
 
 func (m *Maker) Start(ctx context.Context) (err error) {
-	m.close = m.Config.Open
 	m.symbol = matcher.Shared.Symbols[m.Config.Symbol]
 	if m.symbol == nil {
 		err = fmt.Errorf("symbol %v is not found on matcher", m.Config.Symbol)
 		return
 	}
+	if m.logOut != nil {
+		err = fmt.Errorf("started")
+		return
+	}
+	if m.Log == "stdout" {
+		m.logOut = os.Stdout
+	} else {
+		m.logOut, err = os.OpenFile(fmt.Sprintf(m.Log, m.symbol.Symbol), os.O_CREATE|os.O_WRONLY|os.O_APPEND, os.ModePerm)
+	}
+	if err != nil {
+		return
+	}
+	defer func() {
+		if err != nil && m.logOut != nil && m.Log != "stdout" {
+			m.logOut.Close()
+			m.logOut = nil
+		}
+	}()
+	config := zapcore.EncoderConfig{
+		TimeKey:          "time",
+		MessageKey:       "msg",
+		LevelKey:         "level",
+		EncodeLevel:      zapcore.CapitalLevelEncoder,
+		EncodeTime:       zapcore.TimeEncoderOfLayout("2006-01-02 15:04:05.000"),
+		ConsoleSeparator: " ",
+	}
+	m.logLevel = zap.NewAtomicLevel()
+	m.logCore = zapcore.NewCore(zapcore.NewConsoleEncoder(config), m.logOut, m.logLevel)
+	m.logger = zap.New(m.logCore, zap.AddCaller()).Sugar()
+	//
+	m.close = m.Config.Open
 	if strings.HasPrefix(m.symbol.Symbol, "spot.") {
 		_, err = gexdb.TouchBalance(ctx, gexdb.BalanceAreaSpot, []string{m.symbol.Base, m.symbol.Quote}, m.Config.UserID)
 		if err != nil {
@@ -369,7 +411,7 @@ func (m *Maker) Start(ctx context.Context) (err error) {
 	m.waiter.Add(1)
 	m.tickerWaiter.Add(1)
 	go m.loopTicker()
-	xlog.Infof("Maker(%v) the maker is started", m.symbol)
+	m.logger.Infof("Maker(%v) the maker is started", m.symbol)
 	return
 }
 
@@ -378,6 +420,12 @@ func (m *Maker) Stop() {
 	m.tickerWaiter.Wait()
 	m.makerQueue <- 0
 	m.waiter.Wait()
+	if m.logOut != nil && m.Log != "stdout" {
+		m.logOut.Close()
+	}
+	m.logCore = nil
+	m.logOut = nil
+	m.logger = nil
 }
 
 func (m *Maker) Update(config *Config) {
@@ -458,7 +506,7 @@ func (m *Maker) loopTicker() {
 		m.waiter.Done()
 	}()
 	running := true
-	xlog.Infof("Maker(%v) ticker runner is starting by %v", m.symbol, delay)
+	m.logger.Infof("Maker(%v) ticker runner is starting by %v", m.symbol, delay)
 	for running {
 		select {
 		case <-m.tickerExiter:
@@ -467,13 +515,13 @@ func (m *Maker) loopTicker() {
 			m.makerQueue <- 2
 		}
 	}
-	xlog.Infof("Maker(%v) ticker runner is stopped", m.symbol)
+	m.logger.Infof("Maker(%v) ticker runner is stopped", m.symbol)
 }
 
 func (m *Maker) loopMake() {
 	defer m.waiter.Done()
 	running := true
-	xlog.Infof("Maker(%v) maker runner is starting", m.symbol)
+	m.logger.Infof("Maker(%v) maker runner is starting", m.symbol)
 	for running {
 		v := <-m.makerQueue
 		if v < 1 {
@@ -482,7 +530,7 @@ func (m *Maker) loopMake() {
 			m.procMake(v > 1)
 		}
 	}
-	xlog.Infof("Maker(%v) maker runner is stopped", m.symbol)
+	m.logger.Infof("Maker(%v) maker runner is stopped", m.symbol)
 }
 
 func (m *Maker) procMake(next bool) (err error) {
@@ -527,7 +575,7 @@ func (m *Maker) randomNext() {
 	m.nextBid = m.next.Sub(diff).RoundDown(m.symbol.PrecisionPrice)
 	m.nextGen++
 	if time.Since(m.nextShow) > time.Minute {
-		xlog.Infof("Maker(%v) random gen %v price in past %v, latest next:%v,ask:%v,bid:%v", m.symbol, m.nextGen, time.Since(m.nextShow), m.next, m.nextAsk, m.nextBid)
+		m.logger.Infof("Maker(%v) random gen %v price in past %v, latest next:%v,ask:%v,bid:%v", m.symbol, m.nextGen, time.Since(m.nextShow), m.next, m.nextAsk, m.nextBid)
 		m.nextGen = 0
 		m.nextShow = time.Now()
 	}
@@ -612,18 +660,18 @@ func (m *Maker) procCancle(ctx context.Context, ask, bid decimal.Decimal) {
 		}
 	}
 	if m.Verbose && len(cancelIDs) > 0 {
-		xlog.Infof("Maker(%v) start cancle %v/%v order by new ask:%v,bid:%v", m.symbol, len(cancelIDs), len(allIDs), ask, bid)
+		m.logger.Infof("Maker(%v) start cancle %v/%v order by new ask:%v,bid:%v", m.symbol, len(cancelIDs), len(allIDs), ask, bid)
 	}
 	canceledIDs := map[string]gexdb.OrderStatus{}
 	for _, orderID := range cancelIDs {
 		order, err := matcher.ProcessCancel(ctx, m.Config.UserID, m.symbol.Symbol, orderID)
 		if err != nil {
-			xlog.Warnf("Maker(%v) cancle order %v fail with\n%v", m.symbol, orderID, matcher.ErrStack(err))
+			m.logger.Warnf("Maker(%v) cancle order %v fail with\n%v", m.symbol, orderID, matcher.ErrStack(err))
 			m.procSyncOrder(ctx, orderID)
 			continue
 		}
 		if m.Verbose {
-			xlog.Infof("Maker(%v) cancle order is done with %v", m.symbol, order.Info())
+			m.logger.Infof("Maker(%v) cancle order is done with %v", m.symbol, order.Info())
 		}
 		if order.Status != gexdb.OrderStatusPartialled && order.Status != gexdb.OrderStatusPending {
 			canceledIDs[orderID] = order.Status
@@ -642,11 +690,11 @@ func (m *Maker) procPlace(ctx context.Context, side gexdb.OrderSide, price decim
 	}
 	order, err := matcher.ProcessLimit(ctx, m.Config.UserID, m.symbol.Symbol, side, qty, price)
 	if err != nil {
-		xlog.Warnf("Maker(%v) place order by symbol:%v,side:%v,qty:%v,price:%v fail with\n%v", m.symbol, m.symbol.Symbol, side, qty, price, matcher.ErrStack(err))
+		m.logger.Warnf("Maker(%v) place order by symbol:%v,side:%v,qty:%v,price:%v fail with\n%v", m.symbol, m.symbol.Symbol, side, qty, price, matcher.ErrStack(err))
 		return
 	}
 	if m.Verbose {
-		xlog.Infof("Maker(%v) place order is done with %v", m.symbol, order.Info())
+		m.logger.Infof("Maker(%v) place order is done with %v", m.symbol, order.Info())
 	}
 }
 
@@ -657,12 +705,12 @@ func (m *Maker) procClear(ctx context.Context) {
 	m.clearLast = time.Now()
 	cleared, err := gexdb.ClearCanceledOrder(ctx, m.Config.UserID, m.symbol.Symbol, time.Now())
 	if err != nil {
-		xlog.Warnf("Maker(%v) clear canceled order fail with %v", m.symbol, err)
+		m.logger.Warnf("Maker(%v) clear canceled order fail with %v", m.symbol, err)
 		return
 	}
 	m.clearRemoved = cleared
 	if time.Since(m.clearShow) > time.Minute {
-		xlog.Infof("Maker(%v) clear %v canceled order in past %v", m.symbol, m.clearRemoved, time.Since(m.clearShow))
+		m.logger.Infof("Maker(%v) clear %v canceled order in past %v", m.symbol, m.clearRemoved, time.Since(m.clearShow))
 		m.clearRemoved = 0
 		m.clearShow = time.Now()
 	}
@@ -671,10 +719,10 @@ func (m *Maker) procClear(ctx context.Context) {
 func (m *Maker) procSyncOrder(ctx context.Context, orderID string) {
 	order, err := gexdb.FindOrderByOrderID(ctx, m.Config.UserID, orderID)
 	if err != nil {
-		xlog.Warnf("Maker(%v) sync order by %v fail with %v", m.symbol, orderID, err)
+		m.logger.Warnf("Maker(%v) sync order by %v fail with %v", m.symbol, orderID, err)
 		return
 	}
-	xlog.Infof("Maker(%v) sync order is done with %v", m.symbol, order.Info())
+	m.logger.Infof("Maker(%v) sync order is done with %v", m.symbol, order.Info())
 	m.locker.Lock()
 	defer m.locker.Unlock()
 	m.procOrder(order)

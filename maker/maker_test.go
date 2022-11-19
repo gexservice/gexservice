@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	_ "net/http/pprof"
+	"os/exec"
 	"strings"
 	"sync"
 	"testing"
@@ -18,6 +19,7 @@ import (
 	"github.com/codingeasygo/util/xsql"
 	"github.com/gexservice/gexservice/base/basedb"
 	"github.com/gexservice/gexservice/base/baseupgrade"
+	"github.com/gexservice/gexservice/base/xlog"
 	"github.com/gexservice/gexservice/gexdb"
 	"github.com/gexservice/gexservice/gexupgrade"
 	"github.com/gexservice/gexservice/matcher"
@@ -90,6 +92,10 @@ func clear() {
 	}
 }
 
+func clearLog() {
+	exec.Command("bash", "-c", "rm -f *.log").Output()
+}
+
 func testAddUser(prefix string) (user *gexdb.User) {
 	account, phone, password := prefix+"_acc", prefix+"_123", "123"
 	image := prefix + "_image"
@@ -114,8 +120,10 @@ func testAddUser(prefix string) (user *gexdb.User) {
 
 func TestControl(t *testing.T) {
 	clear()
+	defer clearLog()
 	pgx.MockerStart()
 	defer pgx.MockerStop()
+	Log = "stdout"
 	area := gexdb.BalanceAreaSpot
 	userMaker := testAddUser("TestMakerSpot-Maker")
 	userTaker := testAddUser("TestMakerSpot-Taker")
@@ -198,6 +206,11 @@ func TestControl(t *testing.T) {
 		t.Error(err)
 		return
 	}
+	err = maker.Start(ctx)
+	if err == nil {
+		t.Error(err)
+		return
+	}
 	makers, _ := List(ctx)
 	if len(makers) < 1 {
 		t.Error(err)
@@ -223,6 +236,13 @@ func TestControl(t *testing.T) {
 		t.Error(err)
 		return
 	}
+	maker.Log = "xxx/xxx/xx.log"
+	err = maker.Start(ctx)
+	if err == nil {
+		t.Error(err)
+		return
+	}
+	maker.Log = ""
 	maker.Config.Symbol = "xx"
 	err = maker.Start(ctx)
 	if err == nil {
@@ -249,6 +269,7 @@ func TestControl(t *testing.T) {
 }
 
 func TestConfig(t *testing.T) {
+	defer clearLog()
 	config := &Config{}
 	config.Open = decimal.NewFromFloat(1000)
 	config.Close.Min = decimal.NewFromFloat(-0.01)
@@ -288,6 +309,7 @@ var futuresBalanceAll = []string{futuresBalanceQuote}
 
 func TestMakerSpot(t *testing.T) {
 	clear()
+	defer clearLog()
 	pgx.MockerStart()
 	defer pgx.MockerStop()
 	area := gexdb.BalanceAreaSpot
@@ -398,6 +420,7 @@ func TestMakerSpot(t *testing.T) {
 
 	//error
 	maker.balances[spotBalanceQuote].Free = decimal.NewFromFloat(100000000000000)
+	maker.logger = xlog.SugaredLogger
 	maker.procPlace(ctx, gexdb.OrderSideBuy, decimal.NewFromFloat(10000000))
 
 	maker.makingOrder["xxx"] = &gexdb.Order{OrderID: "xxx", Side: gexdb.OrderSideBuy, Price: decimal.NewFromFloat(10)}
@@ -431,6 +454,7 @@ func TestMakerSpot(t *testing.T) {
 
 func TestMakerFutures(t *testing.T) {
 	clear()
+	defer clearLog()
 	pgx.MockerStart()
 	defer pgx.MockerStop()
 	area := gexdb.BalanceAreaFutures
