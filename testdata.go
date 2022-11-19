@@ -139,7 +139,7 @@ func CheckSetupTestMaker(ctx context.Context) (err error) {
 	newConfig := func() *maker.Config {
 		config := &maker.Config{}
 		config.ON = 1
-		config.Delay = 500
+		config.Delay = 1000
 		config.UserID = user.TID
 		config.Open = decimal.NewFromFloat(1000)
 		config.Close.Min = decimal.NewFromFloat(-0.01)
