@@ -181,7 +181,7 @@ func TransferBalanceH(s *web.Session) web.Result {
 //ChangeUserBalanceH is http handler
 /**
  *
- * @api {GET} /admin/changeUserBalanceH Change User Balance
+ * @api {GET} /admin/changeUserBalance Change User Balance
  * @apiName ChangeUserBalance
  * @apiGroup Balance
  *
