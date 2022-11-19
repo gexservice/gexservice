@@ -6,6 +6,7 @@ if [ ! -f /app/conf/gexservice.properties ];then
     cp -f /app/gexservice/conf/gexservice.properties /app/conf/gexservice.properties
 fi
 
+mkdir -p /app/log/maker /app/log/matcher
 cd /app/gexservice/
 if [ "$1" != "" ];then
     /app/gexservice/service $1
