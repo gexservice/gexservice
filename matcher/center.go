@@ -1,8 +1,10 @@
 package matcher
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -14,6 +16,8 @@ import (
 	"github.com/gexservice/gexservice/base/xlog"
 	"github.com/gexservice/gexservice/gexdb"
 	"github.com/shopspring/decimal"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 /**
@@ -165,11 +169,134 @@ func (m *MatcherBalancePreparer) PrepareFuturesMatcher(ctx context.Context, matc
 	return
 }
 
+type MatcherLogger struct {
+	Filename   string
+	DepthMax   int
+	Next       MatcherMonitor
+	level      zap.AtomicLevel
+	core       zapcore.Core
+	logger     *zap.SugaredLogger
+	out        *os.File
+	eventQueue chan *MatcherEvent
+	waiter     sync.WaitGroup
+}
+
+func NewMatcherLogger(next MatcherMonitor, filename string) (logger *MatcherLogger) {
+	logger = &MatcherLogger{
+		Filename:   filename,
+		DepthMax:   10,
+		Next:       next,
+		eventQueue: make(chan *MatcherEvent, 4096),
+		waiter:     sync.WaitGroup{},
+	}
+	return
+}
+
+func (m *MatcherLogger) Start() (err error) {
+	if m.out != nil {
+		err = fmt.Errorf("started")
+		return
+	}
+	if m.Filename == "stdout" {
+		m.out = os.Stdout
+	} else {
+		m.out, err = os.OpenFile(m.Filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, os.ModePerm)
+	}
+	if err != nil {
+		return
+	}
+	config := zapcore.EncoderConfig{
+		TimeKey:          "time",
+		MessageKey:       "msg",
+		LevelKey:         "level",
+		EncodeLevel:      zapcore.CapitalLevelEncoder,
+		EncodeTime:       zapcore.TimeEncoderOfLayout("2006-01-02 15:04:05.000"),
+		ConsoleSeparator: " ",
+	}
+	m.level = zap.NewAtomicLevel()
+	m.core = zapcore.NewCore(zapcore.NewConsoleEncoder(config), m.out, m.level)
+	m.logger = zap.New(m.core, zap.AddCaller()).Sugar()
+	m.waiter.Add(1)
+	go m.loopMatcherEvent()
+	return
+}
+
+func (m *MatcherLogger) Stop() {
+	m.eventQueue <- nil
+	m.waiter.Wait()
+	if m.out != nil && m.Filename != "stdout" {
+		m.out.Close()
+	}
+	m.core = nil
+	m.out = nil
+	m.logger = nil
+}
+
+func (m *MatcherLogger) loopMatcherEvent() {
+	defer m.waiter.Done()
+	xlog.Infof("MatcherLogger matcher event running is starting")
+	for {
+		event := <-m.eventQueue
+		if event == nil {
+			break
+		}
+		m.procMatcherEvent(event)
+	}
+	xlog.Infof("MatcherLogger matcher event running is stopped")
+}
+
+func (m *MatcherLogger) procMatcherEvent(event *MatcherEvent) {
+	buff := bytes.NewBuffer(nil)
+	fmt.Fprintf(buff, "->Orders:\n")
+	for _, order := range event.Orders {
+		fmt.Fprintf(buff, "  %v\n", converter.JSON(order))
+	}
+	fmt.Fprintf(buff, "->Balances:\n")
+	for _, balance := range event.Balances {
+		fmt.Fprintf(buff, "  %v\n", converter.JSON(balance))
+	}
+	fmt.Fprintf(buff, "->Holdings:\n")
+	for _, holding := range event.Holdings {
+		fmt.Fprintf(buff, "  %v\n", converter.JSON(holding))
+	}
+	fmt.Fprintf(buff, "->Blowups:\n")
+	for _, blowup := range event.Blowups {
+		fmt.Fprintf(buff, "  %v\n", converter.JSON(blowup))
+	}
+	fmt.Fprintf(buff, "->Depth:\n")
+	var asks, bids [][]decimal.Decimal
+	if event.Depth != nil {
+		asks = event.Depth.Asks
+		if len(asks) > m.DepthMax {
+			asks = asks[:m.DepthMax]
+		}
+		bids = event.Depth.Bids
+		if len(bids) > m.DepthMax {
+			bids = bids[:m.DepthMax]
+		}
+	}
+	fmt.Fprintf(buff, "  asks:%v\n", asks)
+	fmt.Fprintf(buff, "  bids:%v\n", bids)
+	if m.logger != nil {
+		m.logger.Infof("Matcher(%v) receive matcher event\n%v", event.Symbol, buff.String())
+	}
+}
+
+func (m *MatcherLogger) OnMatched(ctx context.Context, event *MatcherEvent) {
+	select {
+	case m.eventQueue <- event:
+	default:
+		xlog.Warnf("MatcherLogger matcher event queue is full, skip one for %v", event.Symbol)
+	}
+	m.Next.OnMatched(ctx, event)
+}
+
 type MatcherCenter struct {
 	Symbols      map[string]*SymbolInfo
 	FeeCache     *MatcherFeeCache
 	Preparer     *MatcherBalancePreparer
 	TriggerDelay time.Duration
+	loggerAll    map[string]*MatcherLogger
 	matcherAll   map[string]Matcher
 	matcherLock  sync.RWMutex
 	monitorAll   map[string]map[string]MatcherMonitor
@@ -186,6 +313,7 @@ func NewMatcherCenter(eventRun, eventMax, cacheMax int) (center *MatcherCenter) 
 		Symbols:      map[string]*SymbolInfo{},
 		FeeCache:     NewMatcherFeeCache(cacheMax),
 		Preparer:     NewMatcherBalancePreparer(cacheMax),
+		loggerAll:    map[string]*MatcherLogger{},
 		matcherAll:   map[string]Matcher{},
 		matcherLock:  sync.RWMutex{},
 		monitorAll:   map[string]map[string]MatcherMonitor{},
@@ -210,6 +338,7 @@ func BootstrapMatcherCenterByConfig(ctx context.Context, config *xprop.Config) (
 		if config.StrDef("0", sec+"/on") != "1" {
 			continue
 		}
+		var log string
 		info := &SymbolInfo{
 			PrecisionQuantity: 2,
 			PrecisionPrice:    2,
@@ -228,14 +357,19 @@ func BootstrapMatcherCenterByConfig(ctx context.Context, config *xprop.Config) (
 				_S/fee,0|f,r:-1~1;
 				_S/margin_max,o|f,r:0~1;
 				_S/margin_add,o|f,r:0~1;
+				_S/log,o|s,l:0;
 			`, "_S", sec),
-			&info.PrecisionQuantity, &info.PrecisionPrice, &info.Type, &info.Symbol, &info.Base, &info.Quote, &info.Fee, &info.MarginMax, &info.MarginAdd,
+			&info.PrecisionQuantity, &info.PrecisionPrice, &info.Type, &info.Symbol, &info.Base, &info.Quote, &info.Fee, &info.MarginMax, &info.MarginAdd, &log,
 		)
 		if err != nil {
 			break
 		}
+		if len(log) < 1 {
+			log = fmt.Sprintf("%v.log", info.Symbol)
+		}
 		if info.Type == "spot" {
-			spot := NewSpotMatcher(info.Symbol, info.Base, info.Quote, center)
+			logger := NewMatcherLogger(center, log)
+			spot := NewSpotMatcher(info.Symbol, info.Base, info.Quote, logger)
 			spot.Fee = center.FeeCache
 			spot.PrecisionPrice = info.PrecisionPrice
 			spot.PrecisionQuantity = info.PrecisionQuantity
@@ -246,10 +380,11 @@ func BootstrapMatcherCenterByConfig(ctx context.Context, config *xprop.Config) (
 				break
 			}
 			center.FeeCache.Default[info.Symbol] = info.Fee
-			center.AddMatcher(info, spot)
+			center.AddMatcher(info, logger, spot)
 			xlog.Infof("Bootstrap register spot matcher by symbol %v", info.Symbol)
 		} else if strings.HasPrefix(info.Symbol, "futures.") {
-			futures := NewFuturesMatcher(info.Symbol, info.Quote, center)
+			logger := NewMatcherLogger(center, log)
+			futures := NewFuturesMatcher(info.Symbol, info.Quote, logger)
 			futures.Fee = center.FeeCache
 			futures.PrecisionPrice = info.PrecisionPrice
 			futures.PrecisionQuantity = info.PrecisionQuantity
@@ -262,7 +397,7 @@ func BootstrapMatcherCenterByConfig(ctx context.Context, config *xprop.Config) (
 				break
 			}
 			center.FeeCache.Default[info.Symbol] = info.Fee
-			center.AddMatcher(info, futures)
+			center.AddMatcher(info, logger, futures)
 			xlog.Infof("Bootstrap register futures matcher by symbol %v", info.Symbol)
 		} else {
 			err = fmt.Errorf("symbol %v is not supported, it must be started with spot. or futures. ", info.Symbol)
@@ -272,13 +407,23 @@ func BootstrapMatcherCenterByConfig(ctx context.Context, config *xprop.Config) (
 	return
 }
 
-func (m *MatcherCenter) Start() {
+func (m *MatcherCenter) Start() (err error) {
+	for _, logger := range m.loggerAll {
+		err = logger.Start()
+		if err != nil {
+			break
+		}
+	}
+	if err != nil {
+		return
+	}
 	for i := 0; i < m.eventRun; i++ {
 		m.waiter.Add(1)
 		go m.loopMatcherEvent()
 	}
 	m.waiter.Add(1)
 	go m.loopTriggerOrder(m.TriggerDelay)
+	return
 }
 
 func (m *MatcherCenter) Stop() {
@@ -287,15 +432,21 @@ func (m *MatcherCenter) Stop() {
 	}
 	m.exiter <- 0
 	m.waiter.Wait()
+	for _, logger := range m.loggerAll {
+		logger.Stop()
+	}
 }
 
-func (m *MatcherCenter) AddMatcher(symbol *SymbolInfo, matcher Matcher) {
+func (m *MatcherCenter) AddMatcher(symbol *SymbolInfo, logger *MatcherLogger, matcher Matcher) {
 	m.matcherLock.Lock()
 	defer m.matcherLock.Unlock()
 	if m.matcherAll[symbol.Symbol] != nil {
 		panic(fmt.Sprintf("matcher %v exists", symbol.Symbol))
 	}
 	m.Symbols[symbol.Symbol] = symbol
+	if logger != nil {
+		m.loggerAll[symbol.Symbol] = logger
+	}
 	m.matcherAll[symbol.Symbol] = matcher
 }
 

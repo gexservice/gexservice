@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/centny/orderbook"
 	"github.com/codingeasygo/crud/pgx"
 	"github.com/codingeasygo/util/xmap"
 	"github.com/codingeasygo/util/xprop"
@@ -73,6 +74,45 @@ func TestMatcherFeeCache(t *testing.T) {
 	})
 }
 
+func TestMatcherLogger(t *testing.T) {
+	waiter := make(chan int, 1)
+	logger := NewMatcherLogger(MatcherMonitorF(func(ctx context.Context, event *MatcherEvent) {
+		waiter <- 1
+	}), "stdout")
+	logger.DepthMax = 1
+	err := logger.Start()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	err = logger.Start()
+	if err == nil {
+		t.Error(err)
+		return
+	}
+	logger.OnMatched(ctx, &MatcherEvent{
+		Orders: []*gexdb.Order{{}},
+		Balances: map[string]*gexdb.Balance{
+			"test": {},
+		},
+		Holdings: map[string]*gexdb.Holding{
+			"test": {},
+		},
+		Blowups: map[string]*gexdb.Holding{
+			"test": {},
+		},
+		Depth: &orderbook.Depth{
+			Asks: [][]decimal.Decimal{{}, {}},
+			Bids: [][]decimal.Decimal{{}, {}},
+		},
+	})
+	<-waiter
+	logger.Stop()
+	logger.eventQueue = make(chan *MatcherEvent, 1)
+	logger.eventQueue <- nil
+	logger.OnMatched(ctx, &MatcherEvent{})
+}
+
 func TestMatcherCenter(t *testing.T) {
 	clear()
 	config := xprop.NewConfig()
@@ -82,7 +122,11 @@ func TestMatcherCenter(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	center.Start()
+	err = center.Start()
+	if err != nil {
+		t.Error(err)
+		return
+	}
 	center.TriggerDelay = 10 * time.Millisecond
 	center.eventQueue = make(chan *MatcherEvent, 1)
 	eventWaiter := make(chan int, 1)
@@ -511,6 +555,13 @@ func TestMatcherCenter(t *testing.T) {
 	defer pgx.MockerStop()
 	if testCount++; enabled[0] || enabled[testCount] {
 		fmt.Printf("\n\n==>start case %v: error\n", testCount)
+		//start error
+		center.loggerAll["xx"] = NewMatcherLogger(MatcherMonitorF(func(ctx context.Context, event *MatcherEvent) {}), "xxx/xxx/xxx.log")
+		err = center.Start()
+		if err == nil {
+			t.Error(err)
+			return
+		}
 		//args eror
 		_, err = center.ProcessOrder(ctx, &gexdb.Order{
 			Type:   gexdb.OrderTypeBlowup,
@@ -551,7 +602,7 @@ func TestMatcherCenter(t *testing.T) {
 				recover()
 			}()
 			symbo := center.Symbols["spot.YWEUSDT"]
-			center.AddMatcher(symbo, &SpotMatcher{})
+			center.AddMatcher(symbo, nil, &SpotMatcher{})
 		}()
 		pgx.MockerClear()
 
