@@ -46,7 +46,7 @@ type FuturesMatcher struct {
 	Monitor           MatcherMonitor
 	BestAsk           []decimal.Decimal
 	BestBid           []decimal.Decimal
-	bookUser          map[int64]map[int64]int
+	bookUser          map[int64]map[int64]int //user limit order id cache, mapping userID=>orderID=>1
 	bookVal           *orderbook.OrderBook
 	bookLock          sync.RWMutex
 }
@@ -1041,6 +1041,7 @@ func (f *FuturesMatcher) doneBookOrder(tx *pgx.Tx, ctx context.Context, changed 
 			err = NewErrMatcher(err, "[doneBookOrder] update order by %v fail", converter.JSON(order))
 			break
 		}
+		changed.AddOrder(order)
 		changed.DoneOrderIDs[order.UserID] = append(changed.DoneOrderIDs[order.UserID], order.TID)
 	}
 	return

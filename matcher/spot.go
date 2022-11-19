@@ -742,6 +742,7 @@ func (s *SpotMatcher) doneBookOrder(tx *pgx.Tx, ctx context.Context, changed *Ma
 			err = NewErrMatcher(err, "[doneBookOrder] sync balance by order %v fail", converter.JSON(order))
 			break
 		}
+		changed.AddOrder(order)
 	}
 	return
 }
