@@ -365,7 +365,7 @@ func BootstrapMatcherCenterByConfig(ctx context.Context, config *xprop.Config) (
 			break
 		}
 		if len(log) < 1 {
-			log = fmt.Sprintf("%v.log", info.Symbol)
+			log = fmt.Sprintf("matcher-%v.log", info.Symbol)
 		}
 		if info.Type == "spot" {
 			logger := NewMatcherLogger(center, log)
