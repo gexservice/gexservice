@@ -215,7 +215,7 @@ func TestShared(t *testing.T) {
 	clear()
 	config := xprop.NewConfig()
 	config.LoadPropString(matcherConfig)
-	err := Bootstrap(config)
+	err := Bootstrap(ctx, config)
 	if err != nil {
 		t.Error(err)
 		return

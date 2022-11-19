@@ -8,3 +8,4 @@ www/*
 header_.md
 gexservice
 _deploy.sh
+*.log

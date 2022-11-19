@@ -77,7 +77,7 @@ func TestMatcherCenter(t *testing.T) {
 	clear()
 	config := xprop.NewConfig()
 	config.LoadPropString(matcherConfig)
-	center, err := BootstrapMatcherCenterByConfig(config)
+	center, err := BootstrapMatcherCenterByConfig(ctx, config)
 	if err != nil {
 		t.Error(err)
 		return
@@ -507,6 +507,8 @@ func TestMatcherCenter(t *testing.T) {
 			return
 		}
 	}
+	pgx.MockerStart()
+	defer pgx.MockerStop()
 	if testCount++; enabled[0] || enabled[testCount] {
 		fmt.Printf("\n\n==>start case %v: error\n", testCount)
 		//args eror
@@ -551,6 +553,12 @@ func TestMatcherCenter(t *testing.T) {
 			symbo := center.Symbols["spot.YWEUSDT"]
 			center.AddMatcher(symbo, &SpotMatcher{})
 		}()
+		pgx.MockerClear()
+
+		pgx.MockerSetCall("Pool.Query", 1, 2).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
+			_, err = BootstrapMatcherCenterByConfig(ctx, config)
+			return
+		})
 
 		config1 := xprop.NewConfig()
 		config1.LoadPropString(`
@@ -558,7 +566,7 @@ func TestMatcherCenter(t *testing.T) {
 on=1
 symbol=futures.YWEUSDT
 		`)
-		_, err = BootstrapMatcherCenterByConfig(config1)
+		_, err = BootstrapMatcherCenterByConfig(ctx, config1)
 		if err == nil {
 			t.Error(err)
 			return
@@ -573,7 +581,7 @@ base=YWE
 quote=USDT
 fee=0.002
 		`)
-		_, err = BootstrapMatcherCenterByConfig(config2)
+		_, err = BootstrapMatcherCenterByConfig(ctx, config2)
 		if err == nil {
 			t.Error(err)
 			return
@@ -589,7 +597,7 @@ base=YWE
 quote=USDT
 fee=0.002
 		`)
-		_, err = BootstrapMatcherCenterByConfig(config3)
+		_, err = BootstrapMatcherCenterByConfig(ctx, config3)
 		if err == nil {
 			t.Error(err)
 			return

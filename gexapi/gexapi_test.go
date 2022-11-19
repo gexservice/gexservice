@@ -222,7 +222,7 @@ func initMarket() {
 	//bootstrap matcher
 	config := xprop.NewConfig()
 	config.LoadPropString(matcherConfig)
-	err := matcher.Bootstrap(config)
+	err := matcher.Bootstrap(ctx, config)
 	if err != nil {
 		panic(err)
 	}

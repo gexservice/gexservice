@@ -239,8 +239,8 @@ type Matcher interface {
 
 var Shared *MatcherCenter
 
-func Bootstrap(conf *xprop.Config) (err error) {
-	Shared, err = BootstrapMatcherCenterByConfig(conf)
+func Bootstrap(ctx context.Context, conf *xprop.Config) (err error) {
+	Shared, err = BootstrapMatcherCenterByConfig(ctx, conf)
 	if err == nil {
 		Shared.Start()
 	}

@@ -78,7 +78,7 @@ func (f *FuturesMatcher) Bootstrap(ctx context.Context) (changed *MatcherEvent, 
 	f.bookLock.Lock()
 	defer func() {
 		if rerr := recover(); rerr != nil {
-			xlog.Errorf("FuturesMatcher bootstrap is panic with %v,\n%v", rerr, debug.CallStatck())
+			xlog.Errorf("FuturesMatcher(%v) bootstrap is panic with %v,\n%v", f.Symbol, rerr, debug.CallStatck())
 			err = fmt.Errorf("%v", rerr)
 		}
 		if tx != nil {
@@ -93,17 +93,17 @@ func (f *FuturesMatcher) Bootstrap(ctx context.Context) (changed *MatcherEvent, 
 
 	tx, err = gexdb.Pool().Begin(ctx)
 	if err != nil {
-		err = NewErrMatcher(err, "[ProcessCancel] begin tx fail")
+		err = NewErrMatcher(err, "[Bootstrap] begin tx fail")
 		return
 	}
 	var orders []*gexdb.Order
 	err = gexdb.ScanOrderFilterWheref(ctx, "#all", "symbol=$%v,status=any($%v)", []interface{}{f.Symbol, gexdb.OrderStatusArray{gexdb.OrderStatusPending, gexdb.OrderStatusPartialled}}, "", &orders)
 	if err != nil {
-		err = NewErrMatcher(err, "[ProcessCancel] query pending order by %v fail", converter.JSON([]interface{}{f.Symbol, gexdb.OrderStatusArray{gexdb.OrderStatusPending, gexdb.OrderStatusPartialled}}))
+		err = NewErrMatcher(err, "[Bootstrap] query pending order by %v fail", converter.JSON([]interface{}{f.Symbol, gexdb.OrderStatusArray{gexdb.OrderStatusPending, gexdb.OrderStatusPartialled}}))
 		return
 	}
 	for _, order := range orders {
-		xlog.Infof("SpotMatcher bootstrap start cancel pending order %v", converter.JSON(order))
+		xlog.Infof("FuturesMatcher(%v) bootstrap start cancel pending order %v", f.Symbol, converter.JSON(order))
 		if order.Filled.IsPositive() {
 			order.Status = gexdb.OrderStatusPartCanceled
 		} else {
@@ -113,18 +113,18 @@ func (f *FuturesMatcher) Bootstrap(ctx context.Context) (changed *MatcherEvent, 
 		//sync balance
 		err = f.syncBalanceByOrderCancel(tx, ctx, changed, order)
 		if err != nil {
-			err = NewErrMatcher(err, "[ProcessCancel] sync balance by %v fail", converter.JSON(order))
+			err = NewErrMatcher(err, "[Bootstrap] sync balance by %v fail", converter.JSON(order))
 			return
 		}
 
 		//change status
 		err = order.UpdateFilter(tx, ctx, "status")
 		if err != nil {
-			err = NewErrMatcher(err, "[ProcessCancel] update order by %v fail", converter.JSON(order))
+			err = NewErrMatcher(err, "[Bootstrap] update order by %v fail", converter.JSON(order))
 			return
 		}
 
-		xlog.Infof("SpotMatcher bootstrap cancel pending order %v is success", order.OrderID)
+		xlog.Infof("FuturesMatcher(%v) bootstrap cancel pending order %v is success", f.Symbol, order.OrderID)
 		changed.AddOrder(order)
 	}
 	return

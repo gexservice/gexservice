@@ -608,17 +608,17 @@ func (m *Maker) procCancle(ctx context.Context, ask, bid decimal.Decimal) {
 		}
 	}
 	if m.Verbose && len(cancelIDs) > 0 {
-		xlog.Infof("Maker start cancle %v/%v order by new ask:%v,bid:%v", len(cancelIDs), len(allIDs), ask, bid)
+		xlog.Infof("Maker(%v) start cancle %v/%v order by new ask:%v,bid:%v", m.symbol, len(cancelIDs), len(allIDs), ask, bid)
 	}
 	canceledIDs := map[string]gexdb.OrderStatus{}
 	for _, orderID := range cancelIDs {
 		order, err := matcher.ProcessCancel(ctx, m.Config.UserID, m.symbol.Symbol, orderID)
 		if err != nil {
-			xlog.Warnf("Maker cancle order %v fail with\n%v", orderID, matcher.ErrStack(err))
+			xlog.Warnf("Maker(%v) cancle order %v fail with\n%v", m.symbol, orderID, matcher.ErrStack(err))
 			continue
 		}
 		if m.Verbose {
-			xlog.Infof("Maker cancle order is done with %v", order.Info())
+			xlog.Infof("Maker(%v) cancle order is done with %v", m.symbol, order.Info())
 		}
 		if order.Status != gexdb.OrderStatusPartialled && order.Status != gexdb.OrderStatusPending {
 			canceledIDs[orderID] = order.Status
@@ -637,11 +637,11 @@ func (m *Maker) procPlace(ctx context.Context, side gexdb.OrderSide, price decim
 	}
 	order, err := matcher.ProcessLimit(ctx, m.Config.UserID, m.symbol.Symbol, side, qty, price)
 	if err != nil {
-		xlog.Warnf("Maker place order by symbol:%v,side:%v,qty:%v,price:%v fail with\n%v", m.symbol.Symbol, side, qty, price, matcher.ErrStack(err))
+		xlog.Warnf("Maker(%v) place order by symbol:%v,side:%v,qty:%v,price:%v fail with\n%v", m.symbol, m.symbol.Symbol, side, qty, price, matcher.ErrStack(err))
 		return
 	}
 	if m.Verbose {
-		xlog.Infof("Maker place order is done with %v", order.Info())
+		xlog.Infof("Maker(%v) place order is done with %v", m.symbol, order.Info())
 	}
 }
 

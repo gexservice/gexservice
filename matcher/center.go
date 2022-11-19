@@ -198,7 +198,7 @@ func NewMatcherCenter(eventRun, eventMax, cacheMax int) (center *MatcherCenter) 
 	return
 }
 
-func BootstrapMatcherCenterByConfig(config *xprop.Config) (center *MatcherCenter, err error) {
+func BootstrapMatcherCenterByConfig(ctx context.Context, config *xprop.Config) (center *MatcherCenter, err error) {
 	eventRun := config.IntDef(1, "matcher/matcher_event_run")
 	eventMax := config.IntDef(4096, "matcher/matcher_event_max")
 	cacheMax := config.IntDef(10000, "matcher/balance_cache_max")
@@ -240,6 +240,11 @@ func BootstrapMatcherCenterByConfig(config *xprop.Config) (center *MatcherCenter
 			spot.PrecisionPrice = info.PrecisionPrice
 			spot.PrecisionQuantity = info.PrecisionQuantity
 			spot.PrepareProcess = center.Preparer.PrepareSpotMatcher
+			_, err = spot.Bootstrap(ctx)
+			if err != nil {
+				xlog.Errorf("Bootstrap init spot matcher by symbol %v fail with \n%v", info.Symbol, ErrStack(err))
+				break
+			}
 			center.FeeCache.Default[info.Symbol] = info.Fee
 			center.AddMatcher(info, spot)
 			xlog.Infof("Bootstrap register spot matcher by symbol %v", info.Symbol)
@@ -251,6 +256,11 @@ func BootstrapMatcherCenterByConfig(config *xprop.Config) (center *MatcherCenter
 			futures.MarginMax = info.MarginMax
 			futures.MarginAdd = info.MarginAdd
 			futures.PrepareProcess = center.Preparer.PrepareFuturesMatcher
+			_, err = futures.Bootstrap(ctx)
+			if err != nil {
+				xlog.Errorf("Bootstrap init futures matcher by symbol %v fail with \n%v", info.Symbol, ErrStack(err))
+				break
+			}
 			center.FeeCache.Default[info.Symbol] = info.Fee
 			center.AddMatcher(info, futures)
 			xlog.Infof("Bootstrap register futures matcher by symbol %v", info.Symbol)
