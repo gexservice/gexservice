@@ -6,6 +6,7 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -526,12 +527,20 @@ func TestMakerFutures(t *testing.T) {
 	maker.clearShow = time.Time{}
 	maker.nextShow = time.Time{}
 	time.Sleep(500 * time.Millisecond)
-	order, err := matcher.ProcessMarket(ctx, userTaker.TID, config.Symbol, gexdb.OrderSideBuy, decimal.NewFromFloat(10), decimal.Zero)
-	if err != nil || order.Status == gexdb.OrderStatusCanceled {
-		t.Error(err)
-		return
+	waiter := sync.WaitGroup{}
+	for i := 0; i < 10; i++ {
+		waiter.Add(1)
+		go func() {
+			defer waiter.Done()
+			order, err := matcher.ProcessMarket(ctx, userTaker.TID, config.Symbol, gexdb.OrderSideBuy, decimal.Zero, decimal.NewFromFloat(100))
+			if err != nil || order.TID < 1 {
+				t.Error(err)
+				return
+			}
+		}()
 	}
-	time.Sleep(100 * time.Millisecond)
+	waiter.Wait()
+	time.Sleep(1000 * time.Millisecond)
 	maker.Stop()
 	fmt.Printf("--->%v\n", maker.next)
 	fmt.Printf("--->%v\n", converter.JSON(maker.depth))

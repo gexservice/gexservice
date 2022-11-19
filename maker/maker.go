@@ -291,7 +291,7 @@ type Maker struct {
 	Clear        time.Duration
 	symbol       *matcher.SymbolInfo
 	depth        *orderbook.Depth
-	makingAll    map[string]decimal.Decimal
+	makingAll    map[string]decimal.Decimal //all making price=>qty
 	makingOrder  map[string]*gexdb.Order
 	balances     map[string]*gexdb.Balance
 	holding      *gexdb.Holding
@@ -396,28 +396,7 @@ func (m *Maker) OnMatched(ctx context.Context, event *matcher.MatcherEvent) {
 		if order.UserID != m.Config.UserID || order.Price.Sign() <= 0 {
 			continue
 		}
-		key := order.Price.String()
-		switch order.Status {
-		case gexdb.OrderStatusPending:
-			m.makingAll[key] = m.makingAll[key].Add(order.Quantity)
-			m.makingOrder[order.OrderID] = order
-		case gexdb.OrderStatusPartialled:
-			if m.makingOrder[order.OrderID] != nil {
-				reduced := order.Filled.Sub(m.makingOrder[order.OrderID].Filled)
-				m.makingAll[key] = m.makingAll[key].Sub(reduced)
-			}
-			m.makingOrder[order.OrderID] = order
-		case gexdb.OrderStatusCanceled, gexdb.OrderStatusDone, gexdb.OrderStatusPartCanceled:
-			if m.makingOrder[order.OrderID] != nil {
-				reduced := order.Filled.Sub(m.makingOrder[order.OrderID].Filled)
-				remain := order.Quantity.Sub(order.Filled)
-				m.makingAll[key] = m.makingAll[key].Sub(reduced.Add(remain))
-			}
-			if m.makingAll[key].Sign() <= 0 {
-				delete(m.makingAll, key)
-			}
-			delete(m.makingOrder, order.OrderID)
-		}
+		m.procOrder(order)
 	}
 	for _, balance := range event.Balances {
 		if balance.UserID != m.Config.UserID {
@@ -442,6 +421,31 @@ func (m *Maker) OnMatched(ctx context.Context, event *matcher.MatcherEvent) {
 		case m.makerQueue <- 1:
 		default:
 		}
+	}
+}
+
+func (m *Maker) procOrder(order *gexdb.Order) {
+	key := order.Price.String()
+	switch order.Status {
+	case gexdb.OrderStatusPending:
+		m.makingAll[key] = m.makingAll[key].Add(order.Quantity)
+		m.makingOrder[order.OrderID] = order
+	case gexdb.OrderStatusPartialled:
+		if m.makingOrder[order.OrderID] != nil {
+			reduced := order.Filled.Sub(m.makingOrder[order.OrderID].Filled)
+			m.makingAll[key] = m.makingAll[key].Sub(reduced)
+		}
+		m.makingOrder[order.OrderID] = order
+	case gexdb.OrderStatusCanceled, gexdb.OrderStatusDone, gexdb.OrderStatusPartCanceled:
+		if m.makingOrder[order.OrderID] != nil {
+			reduced := order.Filled.Sub(m.makingOrder[order.OrderID].Filled)
+			remain := order.Quantity.Sub(order.Filled)
+			m.makingAll[key] = m.makingAll[key].Sub(reduced.Add(remain))
+		}
+		if m.makingAll[key].Sign() <= 0 {
+			delete(m.makingAll, key)
+		}
+		delete(m.makingOrder, order.OrderID)
 	}
 }
 
@@ -615,6 +619,7 @@ func (m *Maker) procCancle(ctx context.Context, ask, bid decimal.Decimal) {
 		order, err := matcher.ProcessCancel(ctx, m.Config.UserID, m.symbol.Symbol, orderID)
 		if err != nil {
 			xlog.Warnf("Maker(%v) cancle order %v fail with\n%v", m.symbol, orderID, matcher.ErrStack(err))
+			m.procSyncOrder(ctx, orderID)
 			continue
 		}
 		if m.Verbose {
@@ -661,4 +666,16 @@ func (m *Maker) procClear(ctx context.Context) {
 		m.clearRemoved = 0
 		m.clearShow = time.Now()
 	}
+}
+
+func (m *Maker) procSyncOrder(ctx context.Context, orderID string) {
+	order, err := gexdb.FindOrderByOrderID(ctx, m.Config.UserID, orderID)
+	if err != nil {
+		xlog.Warnf("Maker(%v) sync order by %v fail with %v", m.symbol, orderID, err)
+		return
+	}
+	xlog.Infof("Maker(%v) sync order is done with %v", m.symbol, order.Info())
+	m.locker.Lock()
+	defer m.locker.Unlock()
+	m.procOrder(order)
 }
