@@ -61,6 +61,17 @@
 * 市价单：只需要传入数量，买入市价单还支持传买入总价`total_price`，总价必须小于钱包余额`total_price<=usdt`，另外最少总价为最小单位的10倍数量乘以当前最新卖价
 * 列出当前用户的正在交易订单使用<a href="#api-Order-SearchOrder">列出订单接口</a>，传入`type=OrderTypeTrade&status=OrderStatusPending,OrderStatusPartialled`，也可以加上`side=OrderSideBuy`或`side=OrderSideSell`只列出买卖订单
 * 用户在交易界面时，正常进行中的订单有变化时需要刷新钱包信息
+* 止盈止损单
+  * 下单有`type/side/quantity/price/trigger_type/trigger_price`组合使用，`type=OrderTypeTrigger&quantity=仓位数量`，`price`为空时为市价止盈止损，不为空时为指定价格止盈止损
+  * 下单时前端需要根据用户输入的触发价格与仓位的开仓价格(`holding.open`)比较来确定是止盈还是止损单
+
+    |当前仓位|触发类型|触发价格|
+    |:------|:----|:--|
+    |空仓|止盈|trigger_price < open|
+    |空仓|止损|trigger_price > open|
+    |多仓|止盈|trigger_price > open|
+    |多仓|止损|trigger_price < open|
+
 * 订单中字段的详细说明
   * `quantity/price` 为本次交易中用户期望的数量为价格，在市价单时价格都为0
   * `avg_price/total_price` 为本次交易中成交的平均价格和总价格
