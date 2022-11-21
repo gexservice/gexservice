@@ -135,6 +135,9 @@ func main() {
 	}
 	market.Bootstrap()
 	gexapi.Handle("", web.Shared)
+	if conf.StrDef("0", "/server/test") == "1" {
+		gexapi.HandleDebug("", web.Shared)
+	}
 	uploader := baseapi.NewUploadH(conf.StrDef("upload", "/server/upload"), "/upload")
 	web.Handle("^/usr/upload(\\?.*)?$", uploader)
 	web.Shared.HandleNormal("^/upload.*$", http.StripPrefix("/upload", http.FileServer(http.Dir(conf.StrDef("upload", "/server/upload")))))
