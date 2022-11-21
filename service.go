@@ -92,6 +92,7 @@ func main() {
 	// 	panic(err)
 	// }
 	// email.SendEmail = emailSender.SendEmail
+	email.Redis = rediscache.C
 	email.SendEmail = func(v *email.VerifyEmail, email string, templateParam xmap.M) (err error) {
 		return
 	}
@@ -99,6 +100,7 @@ func main() {
 		err = captcha.CaptchaVerify(id, code)
 		return
 	}
+	sms.Redis = rediscache.C
 	sms.SendSms = func(v *sms.VerifyPhone, phoneNumber string, templateParam xmap.M) (err error) {
 		return
 	}
