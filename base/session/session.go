@@ -23,6 +23,7 @@ type DbSessionBuilder struct {
 	Domain     string
 	MaxAge     int
 	Key        string
+	Sync       bool
 	ShowLog    bool
 	sessionLck sync.RWMutex
 	sessiones  map[string]*DbSession
@@ -108,15 +109,17 @@ func (d *DbSessionBuilder) FindSessionByKey(key string) (session *DbSession, err
 	d.sessionLck.RLock()
 	session = d.sessiones[key]
 	d.sessionLck.RUnlock()
-	if session != nil {
+	if session != nil && !d.Sync {
 		return
+	}
+	if session == nil {
+		session = NewDbSession(d)
 	}
 	conn := d.Redis()
 	defer conn.Close()
 	var data []byte
 	data, err = redis.Bytes(conn.Do("GET", d.Key+"_"+key))
 	if err == nil && len(data) > 0 {
-		session = NewDbSession(d)
 		buf := bytes.NewBuffer(data)
 		decoder := gob.NewDecoder(buf)
 		err = decoder.Decode(session)
