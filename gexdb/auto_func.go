@@ -840,6 +840,10 @@ func (balanceRecord *BalanceRecord) Valid() (err error) {
 //Insert will add gex_balance_record to database
 func (balanceRecord *BalanceRecord) Insert(caller interface{}, ctx context.Context) (err error) {
 
+	if len(balanceRecord.Transaction) < 1 {
+		balanceRecord.Transaction = xsql.M{}
+	}
+
 	if balanceRecord.UpdateTime.Timestamp() < 1 {
 		balanceRecord.UpdateTime = xsql.TimeNow()
 	}
@@ -2871,6 +2875,358 @@ func ScanUserFilterWherefCall(caller interface{}, ctx context.Context, filter st
 	return
 }
 
+//WalletFilterOptional is crud filter
+const WalletFilterOptional = ""
+
+//WalletFilterRequired is crud filter
+const WalletFilterRequired = ""
+
+//WalletFilterInsert is crud filter
+const WalletFilterInsert = ""
+
+//WalletFilterUpdate is crud filter
+const WalletFilterUpdate = "update_time"
+
+//WalletFilterFind is crud filter
+const WalletFilterFind = "#all"
+
+//WalletFilterScan is crud filter
+const WalletFilterScan = "#all"
+
+//EnumValid will valid value by WalletMethod
+func (o *WalletMethod) EnumValid(v interface{}) (err error) {
+	var target WalletMethod
+	targetType := reflect.TypeOf(WalletMethod(""))
+	targetValue := reflect.ValueOf(v)
+	if targetValue.CanConvert(targetType) {
+		target = targetValue.Convert(targetType).Interface().(WalletMethod)
+	}
+	for _, value := range WalletMethodAll {
+		if target == value {
+			return nil
+		}
+	}
+	return fmt.Errorf("must be in %v", WalletMethodAll)
+}
+
+//EnumValid will valid value by WalletMethodArray
+func (o *WalletMethodArray) EnumValid(v interface{}) (err error) {
+	var target WalletMethod
+	targetType := reflect.TypeOf(WalletMethod(""))
+	targetValue := reflect.ValueOf(v)
+	if targetValue.CanConvert(targetType) {
+		target = targetValue.Convert(targetType).Interface().(WalletMethod)
+	}
+	for _, value := range WalletMethodAll {
+		if target == value {
+			return nil
+		}
+	}
+	return fmt.Errorf("must be in %v", WalletMethodAll)
+}
+
+//DbArray will join value to database array
+func (o WalletMethodArray) DbArray() (res string) {
+	res = "{" + converter.JoinSafe(o, ",", converter.JoinPolicyDefault) + "}"
+	return
+}
+
+//InArray will join value to database array
+func (o WalletMethodArray) InArray() (res string) {
+	res = "'" + converter.JoinSafe(o, "','", converter.JoinPolicyDefault) + "'"
+	return
+}
+
+//EnumValid will valid value by WalletStatus
+func (o *WalletStatus) EnumValid(v interface{}) (err error) {
+	var target WalletStatus
+	targetType := reflect.TypeOf(WalletStatus(0))
+	targetValue := reflect.ValueOf(v)
+	if targetValue.CanConvert(targetType) {
+		target = targetValue.Convert(targetType).Interface().(WalletStatus)
+	}
+	for _, value := range WalletStatusAll {
+		if target == value {
+			return nil
+		}
+	}
+	return fmt.Errorf("must be in %v", WalletStatusAll)
+}
+
+//EnumValid will valid value by WalletStatusArray
+func (o *WalletStatusArray) EnumValid(v interface{}) (err error) {
+	var target WalletStatus
+	targetType := reflect.TypeOf(WalletStatus(0))
+	targetValue := reflect.ValueOf(v)
+	if targetValue.CanConvert(targetType) {
+		target = targetValue.Convert(targetType).Interface().(WalletStatus)
+	}
+	for _, value := range WalletStatusAll {
+		if target == value {
+			return nil
+		}
+	}
+	return fmt.Errorf("must be in %v", WalletStatusAll)
+}
+
+//DbArray will join value to database array
+func (o WalletStatusArray) DbArray() (res string) {
+	res = "{" + converter.JoinSafe(o, ",", converter.JoinPolicyDefault) + "}"
+	return
+}
+
+//InArray will join value to database array
+func (o WalletStatusArray) InArray() (res string) {
+	res = "" + converter.JoinSafe(o, ",", converter.JoinPolicyDefault) + ""
+	return
+}
+
+//MetaWithWallet will return gex_wallet meta data
+func MetaWithWallet(fields ...interface{}) (v []interface{}) {
+	v = crud.MetaWith(string("gex_wallet"), fields...)
+	return
+}
+
+//MetaWith will return gex_wallet meta data
+func (wallet *Wallet) MetaWith(fields ...interface{}) (v []interface{}) {
+	v = crud.MetaWith(string("gex_wallet"), fields...)
+	return
+}
+
+//Meta will return gex_wallet meta data
+func (wallet *Wallet) Meta() (table string, fileds []string) {
+	table, fileds = crud.QueryField(wallet, "#all")
+	return
+}
+
+//Valid will valid by filter
+func (wallet *Wallet) Valid() (err error) {
+	if reflect.ValueOf(wallet.TID).IsZero() {
+		err = attrvalid.Valid(wallet, WalletFilterInsert+"#all", WalletFilterOptional)
+	} else {
+		err = attrvalid.Valid(wallet, WalletFilterUpdate, "")
+	}
+	return
+}
+
+//Insert will add gex_wallet to database
+func (wallet *Wallet) Insert(caller interface{}, ctx context.Context) (err error) {
+
+	if wallet.UpdateTime.Timestamp() < 1 {
+		wallet.UpdateTime = xsql.TimeNow()
+	}
+
+	if wallet.CreateTime.Timestamp() < 1 {
+		wallet.CreateTime = xsql.TimeNow()
+	}
+
+	_, err = crud.InsertFilter(caller, ctx, wallet, "^tid#all", "returning", "tid#all")
+	return
+}
+
+//UpdateFilter will update gex_wallet to database
+func (wallet *Wallet) UpdateFilter(caller interface{}, ctx context.Context, filter string) (err error) {
+	err = wallet.UpdateFilterWheref(caller, ctx, filter, "")
+	return
+}
+
+//UpdateWheref will update gex_wallet to database
+func (wallet *Wallet) UpdateWheref(caller interface{}, ctx context.Context, formats string, formatArgs ...interface{}) (err error) {
+	err = wallet.UpdateFilterWheref(caller, ctx, WalletFilterUpdate, formats, formatArgs...)
+	return
+}
+
+//UpdateFilterWheref will update gex_wallet to database
+func (wallet *Wallet) UpdateFilterWheref(caller interface{}, ctx context.Context, filter string, formats string, formatArgs ...interface{}) (err error) {
+	wallet.UpdateTime = xsql.TimeNow()
+	sql, args := crud.UpdateSQL(wallet, filter, nil)
+	where, args := crud.AppendWheref(nil, args, "tid=$%v", wallet.TID)
+	if len(formats) > 0 {
+		where, args = crud.AppendWheref(where, args, formats, formatArgs...)
+	}
+	err = crud.UpdateRow(caller, ctx, wallet, sql, where, "and", args)
+	return
+}
+
+//UpdateWalletFilter will update gex_wallet to database
+func UpdateWalletFilter(ctx context.Context, wallet *Wallet, filter string) (err error) {
+	err = UpdateWalletFilterCall(GetQueryer, ctx, wallet, filter)
+	return
+}
+
+//UpdateWalletFilterCall will update gex_wallet to database
+func UpdateWalletFilterCall(caller interface{}, ctx context.Context, wallet *Wallet, filter string) (err error) {
+	err = wallet.UpdateFilter(caller, ctx, filter)
+	return
+}
+
+//UpdateWalletWheref will update gex_wallet to database
+func UpdateWalletWheref(ctx context.Context, wallet *Wallet, formats string, formatArgs ...interface{}) (err error) {
+	err = UpdateWalletWherefCall(GetQueryer, ctx, wallet, formats, formatArgs...)
+	return
+}
+
+//UpdateWalletWherefCall will update gex_wallet to database
+func UpdateWalletWherefCall(caller interface{}, ctx context.Context, wallet *Wallet, formats string, formatArgs ...interface{}) (err error) {
+	err = wallet.UpdateWheref(caller, ctx, formats, formatArgs...)
+	return
+}
+
+//UpdateWalletFilterWheref will update gex_wallet to database
+func UpdateWalletFilterWheref(ctx context.Context, wallet *Wallet, filter string, formats string, formatArgs ...interface{}) (err error) {
+	err = UpdateWalletFilterWherefCall(GetQueryer, ctx, wallet, filter, formats, formatArgs...)
+	return
+}
+
+//UpdateWalletFilterWherefCall will update gex_wallet to database
+func UpdateWalletFilterWherefCall(caller interface{}, ctx context.Context, wallet *Wallet, filter string, formats string, formatArgs ...interface{}) (err error) {
+	err = wallet.UpdateFilterWheref(caller, ctx, filter, formats, formatArgs...)
+	return
+}
+
+//FindWalletCall will find gex_wallet by id from database
+func FindWallet(ctx context.Context, walletID int64) (wallet *Wallet, err error) {
+	wallet, err = FindWalletCall(GetQueryer, ctx, walletID, false)
+	return
+}
+
+//FindWalletCall will find gex_wallet by id from database
+func FindWalletCall(caller interface{}, ctx context.Context, walletID int64, lock bool) (wallet *Wallet, err error) {
+	where, args := crud.AppendWhere(nil, nil, true, "tid=$%v", walletID)
+	wallet, err = FindWalletWhereCall(caller, ctx, lock, "and", where, args)
+	return
+}
+
+//FindWalletWhereCall will find gex_wallet by where from database
+func FindWalletWhereCall(caller interface{}, ctx context.Context, lock bool, join string, where []string, args []interface{}) (wallet *Wallet, err error) {
+	querySQL := crud.QuerySQL(&Wallet{}, "#all")
+	querySQL = crud.JoinWhere(querySQL, where, join)
+	if lock {
+		querySQL += " for update "
+	}
+	err = crud.QueryRow(caller, ctx, &Wallet{}, "#all", querySQL, args, &wallet)
+	return
+}
+
+//FindWalletWheref will find gex_wallet by where from database
+func FindWalletWheref(ctx context.Context, format string, args ...interface{}) (wallet *Wallet, err error) {
+	wallet, err = FindWalletWherefCall(GetQueryer, ctx, false, format, args...)
+	return
+}
+
+//FindWalletWherefCall will find gex_wallet by where from database
+func FindWalletWherefCall(caller interface{}, ctx context.Context, lock bool, format string, args ...interface{}) (wallet *Wallet, err error) {
+	wallet, err = FindWalletFilterWherefCall(GetQueryer, ctx, lock, "#all", format, args...)
+	return
+}
+
+//FindWalletFilterWheref will find gex_wallet by where from database
+func FindWalletFilterWheref(ctx context.Context, filter string, format string, args ...interface{}) (wallet *Wallet, err error) {
+	wallet, err = FindWalletFilterWherefCall(GetQueryer, ctx, false, filter, format, args...)
+	return
+}
+
+//FindWalletFilterWherefCall will find gex_wallet by where from database
+func FindWalletFilterWherefCall(caller interface{}, ctx context.Context, lock bool, filter string, format string, args ...interface{}) (wallet *Wallet, err error) {
+	querySQL := crud.QuerySQL(&Wallet{}, filter)
+	where, queryArgs := crud.AppendWheref(nil, nil, format, args...)
+	querySQL = crud.JoinWhere(querySQL, where, "and")
+	if lock {
+		querySQL += " for update "
+	}
+	err = crud.QueryRow(caller, ctx, &Wallet{}, filter, querySQL, queryArgs, &wallet)
+	return
+}
+
+//ListWalletByID will list gex_wallet by id from database
+func ListWalletByID(ctx context.Context, walletIDs ...int64) (walletList []*Wallet, walletMap map[int64]*Wallet, err error) {
+	walletList, walletMap, err = ListWalletByIDCall(GetQueryer, ctx, walletIDs...)
+	return
+}
+
+//ListWalletByIDCall will list gex_wallet by id from database
+func ListWalletByIDCall(caller interface{}, ctx context.Context, walletIDs ...int64) (walletList []*Wallet, walletMap map[int64]*Wallet, err error) {
+	if len(walletIDs) < 1 {
+		walletMap = map[int64]*Wallet{}
+		return
+	}
+	err = ScanWalletByIDCall(caller, ctx, walletIDs, &walletList, &walletMap, "tid")
+	return
+}
+
+//ListWalletFilterByID will list gex_wallet by id from database
+func ListWalletFilterByID(ctx context.Context, filter string, walletIDs ...int64) (walletList []*Wallet, walletMap map[int64]*Wallet, err error) {
+	walletList, walletMap, err = ListWalletFilterByIDCall(GetQueryer, ctx, filter, walletIDs...)
+	return
+}
+
+//ListWalletFilterByIDCall will list gex_wallet by id from database
+func ListWalletFilterByIDCall(caller interface{}, ctx context.Context, filter string, walletIDs ...int64) (walletList []*Wallet, walletMap map[int64]*Wallet, err error) {
+	if len(walletIDs) < 1 {
+		walletMap = map[int64]*Wallet{}
+		return
+	}
+	err = ScanWalletFilterByIDCall(caller, ctx, filter, walletIDs, &walletList, &walletMap, "tid")
+	return
+}
+
+//ScanWalletByID will list gex_wallet by id from database
+func ScanWalletByID(ctx context.Context, walletIDs []int64, dest ...interface{}) (err error) {
+	err = ScanWalletByIDCall(GetQueryer, ctx, walletIDs, dest...)
+	return
+}
+
+//ScanWalletByIDCall will list gex_wallet by id from database
+func ScanWalletByIDCall(caller interface{}, ctx context.Context, walletIDs []int64, dest ...interface{}) (err error) {
+	err = ScanWalletFilterByIDCall(caller, ctx, "#all", walletIDs, dest...)
+	return
+}
+
+//ScanWalletFilterByID will list gex_wallet by id from database
+func ScanWalletFilterByID(ctx context.Context, filter string, walletIDs []int64, dest ...interface{}) (err error) {
+	err = ScanWalletFilterByIDCall(GetQueryer, ctx, filter, walletIDs, dest...)
+	return
+}
+
+//ScanWalletFilterByIDCall will list gex_wallet by id from database
+func ScanWalletFilterByIDCall(caller interface{}, ctx context.Context, filter string, walletIDs []int64, dest ...interface{}) (err error) {
+	querySQL := crud.QuerySQL(&Wallet{}, filter)
+	where := append([]string{}, fmt.Sprintf("tid in (%v)", xsql.Int64Array(walletIDs).InArray()))
+	querySQL = crud.JoinWhere(querySQL, where, " and ")
+	err = crud.Query(caller, ctx, &Wallet{}, filter, querySQL, nil, dest...)
+	return
+}
+
+//ScanWalletWherefCall will list gex_wallet by format from database
+func ScanWalletWheref(ctx context.Context, format string, args []interface{}, suffix string, dest ...interface{}) (err error) {
+	err = ScanWalletWherefCall(GetQueryer, ctx, format, args, suffix, dest...)
+	return
+}
+
+//ScanWalletWherefCall will list gex_wallet by format from database
+func ScanWalletWherefCall(caller interface{}, ctx context.Context, format string, args []interface{}, suffix string, dest ...interface{}) (err error) {
+	err = ScanWalletFilterWherefCall(caller, ctx, "#all", format, args, suffix, dest...)
+	return
+}
+
+//ScanWalletFilterWheref will list gex_wallet by format from database
+func ScanWalletFilterWheref(ctx context.Context, filter string, format string, args []interface{}, suffix string, dest ...interface{}) (err error) {
+	err = ScanWalletFilterWherefCall(GetQueryer, ctx, filter, format, args, suffix, dest...)
+	return
+}
+
+//ScanWalletFilterWherefCall will list gex_wallet by format from database
+func ScanWalletFilterWherefCall(caller interface{}, ctx context.Context, filter string, format string, args []interface{}, suffix string, dest ...interface{}) (err error) {
+	querySQL := crud.QuerySQL(&Wallet{}, filter)
+	var where []string
+	if len(format) > 0 {
+		where, args = crud.AppendWheref(nil, nil, format, args...)
+	}
+	querySQL = crud.JoinWhere(querySQL, where, " and ", suffix)
+	err = crud.Query(caller, ctx, &Wallet{}, filter, querySQL, args, dest...)
+	return
+}
+
 //WithdrawFilterOptional is crud filter
 const WithdrawFilterOptional = ""
 
@@ -2881,7 +3237,7 @@ const WithdrawFilterRequired = ""
 const WithdrawFilterInsert = ""
 
 //WithdrawFilterUpdate is crud filter
-const WithdrawFilterUpdate = "update_time"
+const WithdrawFilterUpdate = "update_time,method,asset,quantity,receiver"
 
 //WithdrawFilterFind is crud filter
 const WithdrawFilterFind = "#all"
@@ -2930,6 +3286,50 @@ func (o WithdrawTypeArray) DbArray() (res string) {
 //InArray will join value to database array
 func (o WithdrawTypeArray) InArray() (res string) {
 	res = "" + converter.JoinSafe(o, ",", converter.JoinPolicyDefault) + ""
+	return
+}
+
+//EnumValid will valid value by WithdrawMethod
+func (o *WithdrawMethod) EnumValid(v interface{}) (err error) {
+	var target WithdrawMethod
+	targetType := reflect.TypeOf(WithdrawMethod(""))
+	targetValue := reflect.ValueOf(v)
+	if targetValue.CanConvert(targetType) {
+		target = targetValue.Convert(targetType).Interface().(WithdrawMethod)
+	}
+	for _, value := range WithdrawMethodAll {
+		if target == value {
+			return nil
+		}
+	}
+	return fmt.Errorf("must be in %v", WithdrawMethodAll)
+}
+
+//EnumValid will valid value by WithdrawMethodArray
+func (o *WithdrawMethodArray) EnumValid(v interface{}) (err error) {
+	var target WithdrawMethod
+	targetType := reflect.TypeOf(WithdrawMethod(""))
+	targetValue := reflect.ValueOf(v)
+	if targetValue.CanConvert(targetType) {
+		target = targetValue.Convert(targetType).Interface().(WithdrawMethod)
+	}
+	for _, value := range WithdrawMethodAll {
+		if target == value {
+			return nil
+		}
+	}
+	return fmt.Errorf("must be in %v", WithdrawMethodAll)
+}
+
+//DbArray will join value to database array
+func (o WithdrawMethodArray) DbArray() (res string) {
+	res = "{" + converter.JoinSafe(o, ",", converter.JoinPolicyDefault) + "}"
+	return
+}
+
+//InArray will join value to database array
+func (o WithdrawMethodArray) InArray() (res string) {
+	res = "'" + converter.JoinSafe(o, "','", converter.JoinPolicyDefault) + "'"
 	return
 }
 
@@ -3008,8 +3408,8 @@ func (withdraw *Withdraw) Valid() (err error) {
 //Insert will add gex_withdraw to database
 func (withdraw *Withdraw) Insert(caller interface{}, ctx context.Context) (err error) {
 
-	if len(withdraw.Transaction) < 1 {
-		withdraw.Transaction = xsql.M{}
+	if len(withdraw.Result) < 1 {
+		withdraw.Result = xsql.M{}
 	}
 
 	if withdraw.UpdateTime.Timestamp() < 1 {

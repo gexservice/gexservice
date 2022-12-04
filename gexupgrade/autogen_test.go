@@ -64,6 +64,9 @@ var PgGen = gen.AutoGen{
 			gen.FieldsOptional: "tid,quantity,price,total_price,trigger_type,trigger_price,status",
 			gen.FieldsScan:     "^transaction#all",
 		},
+		"gex_withdraw": {
+			gen.FieldsUpdate: "method,asset,quantity,receiver",
+		},
 	},
 	CodeAddInit:  map[string]string{},
 	CodeTestInit: map[string]string{},

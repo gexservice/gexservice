@@ -25,6 +25,7 @@ import (
 	"github.com/gexservice/gexservice/base/xlog"
 	"github.com/gexservice/gexservice/gexapi"
 	"github.com/gexservice/gexservice/gexdb"
+	"github.com/gexservice/gexservice/gexpay"
 	"github.com/gexservice/gexservice/maker"
 	"github.com/gexservice/gexservice/market"
 	"github.com/gexservice/gexservice/matcher"
@@ -108,6 +109,13 @@ func main() {
 		err = captcha.CaptchaVerify(id, code)
 		return
 	}
+	//
+	//merch
+	gexpay.AccessToken = conf.StrDef("", "/merch/access_token")
+	gexpay.AgentAddr = conf.StrDef("", "/merch/agent")
+	gexpay.MerchAddr[gexdb.WalletMethodTron] = conf.StrDef("", "/merch/tron")
+	gexpay.MerchAddr[gexdb.WalletMethodEthereum] = conf.StrDef("", "/merch/ethereum")
+
 	//base handler
 	web.Shared.Filter("^.*$", filter.NewAllCORS())
 	web.Shared.FilterFunc("^/(index.html)?(\\?.*)?$", filter.NoCacheF)
@@ -137,6 +145,7 @@ func main() {
 	}
 	market.Bootstrap()
 	gexapi.Handle("", web.Shared)
+	gexpay.Handle("", web.Shared)
 	if conf.StrDef("0", "/server/test") == "1" {
 		gexapi.HandleDebug("", web.Shared)
 	}

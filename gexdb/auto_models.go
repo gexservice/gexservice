@@ -94,42 +94,46 @@ const (
 	BalanceRecordTypeBlowup   BalanceRecordType = 210 //is blowup
 	BalanceRecordTypeTransfer BalanceRecordType = 300 //is transfer
 	BalanceRecordTypeChange   BalanceRecordType = 400 //is manual change type
+	BalanceRecordTypeTopup    BalanceRecordType = 500 //is topup
+	BalanceRecordTypeWithdraw BalanceRecordType = 600 //is withdraw
 )
 
 //BalanceRecordTypeAll is the balance record type
-var BalanceRecordTypeAll = BalanceRecordTypeArray{BalanceRecordTypeTrade, BalanceRecordTypeTradeFee, BalanceRecordTypeProfit, BalanceRecordTypeBlowup, BalanceRecordTypeTransfer, BalanceRecordTypeChange}
+var BalanceRecordTypeAll = BalanceRecordTypeArray{BalanceRecordTypeTrade, BalanceRecordTypeTradeFee, BalanceRecordTypeProfit, BalanceRecordTypeBlowup, BalanceRecordTypeTransfer, BalanceRecordTypeChange, BalanceRecordTypeTopup, BalanceRecordTypeWithdraw}
 
 //BalanceRecordTypeShow is the balance record type
-var BalanceRecordTypeShow = BalanceRecordTypeArray{BalanceRecordTypeTrade, BalanceRecordTypeTradeFee, BalanceRecordTypeProfit, BalanceRecordTypeBlowup, BalanceRecordTypeTransfer, BalanceRecordTypeChange}
+var BalanceRecordTypeShow = BalanceRecordTypeArray{BalanceRecordTypeTrade, BalanceRecordTypeTradeFee, BalanceRecordTypeProfit, BalanceRecordTypeBlowup, BalanceRecordTypeTransfer, BalanceRecordTypeChange, BalanceRecordTypeTopup, BalanceRecordTypeWithdraw}
 
 type BalanceRecordStatus int
 type BalanceRecordStatusArray []BalanceRecordStatus
 
 const (
-	BalanceRecordStatusNormal BalanceRecordStatus = 100 //is normal
+	BalanceRecordStatusPending BalanceRecordStatus = 90  //is pending
+	BalanceRecordStatusNormal  BalanceRecordStatus = 100 //is normal
 )
 
 //BalanceRecordStatusAll is the balance status
-var BalanceRecordStatusAll = BalanceRecordStatusArray{BalanceRecordStatusNormal}
+var BalanceRecordStatusAll = BalanceRecordStatusArray{BalanceRecordStatusPending, BalanceRecordStatusNormal}
 
 //BalanceRecordStatusShow is the balance status
-var BalanceRecordStatusShow = BalanceRecordStatusArray{BalanceRecordStatusNormal}
+var BalanceRecordStatusShow = BalanceRecordStatusArray{BalanceRecordStatusPending, BalanceRecordStatusNormal}
 
 /*
  * BalanceRecord  represents gex_balance_record
- * BalanceRecord Fields:tid,creator,balance_id,type,target,changed,update_time,create_time,status,
+ * BalanceRecord Fields:tid,creator,balance_id,type,target,changed,transaction,update_time,create_time,status,
  */
 type BalanceRecord struct {
-	T          string              `json:"-" table:"gex_balance_record"`                       /* the table name tag */
-	TID        int64               `json:"tid,omitempty" valid:"tid,r|i,r:0;"`                 /* the primary key */
-	Creator    int64               `json:"creator,omitempty" valid:"creator,r|i,r:0;"`         /* the balance creator */
-	BalanceID  int64               `json:"balance_id,omitempty" valid:"balance_id,r|i,r:0;"`   /* the balance id */
-	Type       BalanceRecordType   `json:"type,omitempty" valid:"type,r|i,e:0;"`               /* the balance record type, Trade=100: is trade type, TradeFee=110:is trade fee, Profit=200:is close profit, Blowup=210:is blowup, Transfer=300:is transfer, Change=400: is manual change type */
-	Target     int                 `json:"target,omitempty" valid:"target,r|i,r:0;"`           /* the balance target type */
-	Changed    decimal.Decimal     `json:"changed,omitempty" valid:"changed,r|f,r:0;"`         /* the balance change value */
-	UpdateTime xsql.Time           `json:"update_time,omitempty" valid:"update_time,r|i,r:1;"` /* the balance last update time */
-	CreateTime xsql.Time           `json:"create_time,omitempty" valid:"create_time,r|i,r:1;"` /* the balance create time */
-	Status     BalanceRecordStatus `json:"status,omitempty" valid:"status,r|i,e:0;"`           /* the balance status, Normal=100: is normal */
+	T           string              `json:"-" table:"gex_balance_record"`                       /* the table name tag */
+	TID         int64               `json:"tid,omitempty" valid:"tid,r|i,r:0;"`                 /* the primary key */
+	Creator     int64               `json:"creator,omitempty" valid:"creator,r|i,r:0;"`         /* the balance creator */
+	BalanceID   int64               `json:"balance_id,omitempty" valid:"balance_id,r|i,r:0;"`   /* the balance id */
+	Type        BalanceRecordType   `json:"type,omitempty" valid:"type,r|i,e:0;"`               /* the balance record type, Trade=100: is trade type, TradeFee=110:is trade fee, Profit=200:is close profit, Blowup=210:is blowup, Transfer=300:is transfer, Change=400: is manual change type, Topup=500: is topup, Withdraw=600: is withdraw */
+	Target      int                 `json:"target,omitempty" valid:"target,r|i,r:0;"`           /* the balance target type */
+	Changed     decimal.Decimal     `json:"changed,omitempty" valid:"changed,r|f,r:0;"`         /* the balance change value */
+	Transaction xsql.M              `json:"transaction,omitempty" valid:"transaction,r|s,l:0;"` /* the balance record transaction info */
+	UpdateTime  xsql.Time           `json:"update_time,omitempty" valid:"update_time,r|i,r:1;"` /* the balance last update time */
+	CreateTime  xsql.Time           `json:"create_time,omitempty" valid:"create_time,r|i,r:1;"` /* the balance create time */
+	Status      BalanceRecordStatus `json:"status,omitempty" valid:"status,r|i,e:0;"`           /* the balance status, Pending=90:is pending, Normal=100: is normal */
 }
 
 /***** metadata:Holding *****/
@@ -411,6 +415,49 @@ type User struct {
 	Status     UserStatus    `json:"status,omitempty" valid:"status,o|i,e:0;"`           /* the user status, Normal=100:is normal, Locked=200:is locked, Removed=-1:is deleted */
 }
 
+/***** metadata:Wallet *****/
+type WalletMethod string
+type WalletMethodArray []WalletMethod
+
+const (
+	WalletMethodTron     WalletMethod = "tron"     //is tron method
+	WalletMethodEthereum WalletMethod = "ethereum" //is ethereum method
+)
+
+//WalletMethodAll is the wallet type
+var WalletMethodAll = WalletMethodArray{WalletMethodTron, WalletMethodEthereum}
+
+//WalletMethodShow is the wallet type
+var WalletMethodShow = WalletMethodArray{WalletMethodTron, WalletMethodEthereum}
+
+type WalletStatus int
+type WalletStatusArray []WalletStatus
+
+const (
+	WalletStatusNormal WalletStatus = 100 //is normal
+)
+
+//WalletStatusAll is the wallet status
+var WalletStatusAll = WalletStatusArray{WalletStatusNormal}
+
+//WalletStatusShow is the wallet status
+var WalletStatusShow = WalletStatusArray{WalletStatusNormal}
+
+/*
+ * Wallet  represents gex_wallet
+ * Wallet Fields:tid,user_id,method,address,update_time,create_time,status,
+ */
+type Wallet struct {
+	T          string       `json:"-" table:"gex_wallet"`                               /* the table name tag */
+	TID        int64        `json:"tid,omitempty" valid:"tid,r|i,r:0;"`                 /* the wallet primary key */
+	UserID     int64        `json:"user_id,omitempty" valid:"user_id,r|i,r:0;"`         /* the wallet user id */
+	Method     WalletMethod `json:"method,omitempty" valid:"method,r|s,e:0;"`           /* the wallet type, Tron=tron: is tron method, Ethereum=ethereum: is ethereum method */
+	Address    string       `json:"address,omitempty" valid:"address,r|s,l:0;"`         /* the wallet address */
+	UpdateTime xsql.Time    `json:"update_time,omitempty" valid:"update_time,r|i,r:1;"` /* the wallet update time */
+	CreateTime xsql.Time    `json:"create_time,omitempty" valid:"create_time,r|i,r:1;"` /* the wallet create time */
+	Status     WalletStatus `json:"status,omitempty" valid:"status,r|i,e:0;"`           /* the wallet status, Normal=100:is normal */
+}
+
 /***** metadata:Withdraw *****/
 type WithdrawType int
 type WithdrawTypeArray []WithdrawType
@@ -426,6 +473,20 @@ var WithdrawTypeAll = WithdrawTypeArray{WithdrawTypeWithdraw, WithdrawTypeTopup,
 
 //WithdrawTypeShow is the withdraw order type
 var WithdrawTypeShow = WithdrawTypeArray{WithdrawTypeWithdraw, WithdrawTypeTopup, WithdrawTypeGoldbar}
+
+type WithdrawMethod string
+type WithdrawMethodArray []WithdrawMethod
+
+const (
+	WithdrawMethodTron     WithdrawMethod = "tron"     //is tron method
+	WithdrawMethodEthereum WithdrawMethod = "ethereum" //is ethereum method
+)
+
+//WithdrawMethodAll is the withdraw metod
+var WithdrawMethodAll = WithdrawMethodArray{WithdrawMethodTron, WithdrawMethodEthereum}
+
+//WithdrawMethodShow is the withdraw metod
+var WithdrawMethodShow = WithdrawMethodArray{WithdrawMethodTron, WithdrawMethodEthereum}
 
 type WithdrawStatus int
 type WithdrawStatusArray []WithdrawStatus
@@ -445,19 +506,22 @@ var WithdrawStatusShow = WithdrawStatusArray{WithdrawStatusPending, WithdrawStat
 
 /*
  * Withdraw  represents gex_withdraw
- * Withdraw Fields:tid,order_id,type,user_id,creator,asset,quantity,transaction,update_time,create_time,status,
+ * Withdraw Fields:tid,order_id,type,user_id,creator,method,asset,quantity,receiver,processed,result,update_time,create_time,status,
  */
 type Withdraw struct {
-	T           string          `json:"-" table:"gex_withdraw"`                             /* the table name tag */
-	TID         int64           `json:"tid,omitempty" valid:"tid,r|i,r:0;"`                 /* the primary key */
-	OrderID     string          `json:"order_id,omitempty" valid:"order_id,r|s,l:0;"`       /* the withdraw order string id */
-	Type        WithdrawType    `json:"type,omitempty" valid:"type,r|i,e:0;"`               /* the withdraw order type, Withdraw=100: is withdraw type, Topup=200: is topup type, Goldbar=300: is goldbar bar */
-	UserID      int64           `json:"user_id,omitempty" valid:"user_id,r|i,r:0;"`         /* the withdraw order user id */
-	Creator     int64           `json:"creator,omitempty" valid:"creator,r|i,r:0;"`         /* the withdraw order creator user id */
-	Asset       string          `json:"asset,omitempty" valid:"asset,r|s,l:0;"`             /* the withdraw asset */
-	Quantity    decimal.Decimal `json:"quantity,omitempty" valid:"quantity,r|f,r:0;"`       /* the withdraw order quantity */
-	Transaction xsql.M          `json:"transaction,omitempty" valid:"transaction,r|s,l:0;"` /* the withdraw order transaction info */
-	UpdateTime  xsql.Time       `json:"update_time,omitempty" valid:"update_time,r|i,r:1;"` /* the withdraw order update time */
-	CreateTime  xsql.Time       `json:"create_time,omitempty" valid:"create_time,r|i,r:1;"` /* the withdraw order create time */
-	Status      WithdrawStatus  `json:"status,omitempty" valid:"status,r|i,e:0;"`           /* the withdraw order status, Pending=100:is pending, Confirmed=200:is confirmed, Done=300:is done, Canceled=320: is canceled */
+	T          string          `json:"-" table:"gex_withdraw"`                             /* the table name tag */
+	TID        int64           `json:"tid,omitempty" valid:"tid,r|i,r:0;"`                 /* the primary key */
+	OrderID    string          `json:"order_id,omitempty" valid:"order_id,r|s,l:0;"`       /* the withdraw order string id */
+	Type       WithdrawType    `json:"type,omitempty" valid:"type,r|i,e:0;"`               /* the withdraw order type, Withdraw=100: is withdraw type, Topup=200: is topup type, Goldbar=300: is goldbar bar */
+	UserID     int64           `json:"user_id,omitempty" valid:"user_id,r|i,r:0;"`         /* the withdraw order user id */
+	Creator    int64           `json:"creator,omitempty" valid:"creator,r|i,r:0;"`         /* the withdraw order creator user id */
+	Method     WithdrawMethod  `json:"method,omitempty" valid:"method,r|s,e:0;"`           /* the withdraw metod, Tron=tron: is tron method, Ethereum=ethereum: is ethereum method */
+	Asset      string          `json:"asset,omitempty" valid:"asset,r|s,l:0;"`             /* the withdraw asset */
+	Quantity   decimal.Decimal `json:"quantity,omitempty" valid:"quantity,r|f,r:0;"`       /* the withdraw order quantity */
+	Receiver   string          `json:"receiver,omitempty" valid:"receiver,r|s,l:0;"`       /* the widhdraw receiver */
+	Processed  int             `json:"processed,omitempty" valid:"processed,r|i,r:0;"`     /* the withdraw if processed */
+	Result     xsql.M          `json:"result,omitempty" valid:"result,r|s,l:0;"`           /* the withdraw order transaction info */
+	UpdateTime xsql.Time       `json:"update_time,omitempty" valid:"update_time,r|i,r:1;"` /* the withdraw order update time */
+	CreateTime xsql.Time       `json:"create_time,omitempty" valid:"create_time,r|i,r:1;"` /* the withdraw order create time */
+	Status     WithdrawStatus  `json:"status,omitempty" valid:"status,r|i,e:0;"`           /* the withdraw order status, Pending=100:is pending, Confirmed=200:is confirmed, Done=300:is done, Canceled=320: is canceled */
 }

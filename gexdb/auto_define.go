@@ -43,6 +43,7 @@ package gexdb
  * @apiSuccess (BalanceRecord) {BalanceRecordType} BalanceRecord.type the balance record type, all suported is <a href="#metadata-BalanceRecord">BalanceRecordTypeAll</a>
  * @apiSuccess (BalanceRecord) {Int} BalanceRecord.target the balance target type
  * @apiSuccess (BalanceRecord) {Decimal} BalanceRecord.changed the balance change value
+ * @apiSuccess (BalanceRecord) {Object} BalanceRecord.transaction the balance record transaction info
  * @apiSuccess (BalanceRecord) {Time} BalanceRecord.update_time the balance last update time
  * @apiSuccess (BalanceRecord) {Time} BalanceRecord.create_time the balance create time
  * @apiSuccess (BalanceRecord) {BalanceRecordStatus} BalanceRecord.status the balance status, all suported is <a href="#metadata-BalanceRecord">BalanceRecordStatusAll</a>
@@ -182,7 +183,25 @@ package gexdb
  */
 
 /**
+ * @apiDefine WalletUpdate
+ */
+/**
+ * @apiDefine WalletObject
+ * @apiSuccess (Wallet) {Int64} Wallet.tid the wallet primary key
+ * @apiSuccess (Wallet) {Int64} Wallet.user_id the wallet user id
+ * @apiSuccess (Wallet) {WalletMethod} Wallet.method the wallet type, all suported is <a href="#metadata-Wallet">WalletMethodAll</a>
+ * @apiSuccess (Wallet) {String} Wallet.address the wallet address
+ * @apiSuccess (Wallet) {Time} Wallet.update_time the wallet update time
+ * @apiSuccess (Wallet) {Time} Wallet.create_time the wallet create time
+ * @apiSuccess (Wallet) {WalletStatus} Wallet.status the wallet status, all suported is <a href="#metadata-Wallet">WalletStatusAll</a>
+ */
+
+/**
  * @apiDefine WithdrawUpdate
+ * @apiParam (Withdraw) {WithdrawMethod} Withdraw.method only required when add, the withdraw metod, all suported is <a href="#metadata-Withdraw">WithdrawMethodAll</a>
+ * @apiParam (Withdraw) {String} Withdraw.asset only required when add, the withdraw asset
+ * @apiParam (Withdraw) {Decimal} Withdraw.quantity only required when add, the withdraw order quantity
+ * @apiParam (Withdraw) {String} Withdraw.receiver only required when add, the widhdraw receiver
  */
 /**
  * @apiDefine WithdrawObject
@@ -191,9 +210,12 @@ package gexdb
  * @apiSuccess (Withdraw) {WithdrawType} Withdraw.type the withdraw order type, all suported is <a href="#metadata-Withdraw">WithdrawTypeAll</a>
  * @apiSuccess (Withdraw) {Int64} Withdraw.user_id the withdraw order user id
  * @apiSuccess (Withdraw) {Int64} Withdraw.creator the withdraw order creator user id
+ * @apiSuccess (Withdraw) {WithdrawMethod} Withdraw.method the withdraw metod, all suported is <a href="#metadata-Withdraw">WithdrawMethodAll</a>
  * @apiSuccess (Withdraw) {String} Withdraw.asset the withdraw asset
  * @apiSuccess (Withdraw) {Decimal} Withdraw.quantity the withdraw order quantity
- * @apiSuccess (Withdraw) {Object} Withdraw.transaction the withdraw order transaction info
+ * @apiSuccess (Withdraw) {String} Withdraw.receiver the widhdraw receiver
+ * @apiSuccess (Withdraw) {Int} Withdraw.processed the withdraw if processed
+ * @apiSuccess (Withdraw) {Object} Withdraw.result the withdraw order transaction info
  * @apiSuccess (Withdraw) {Time} Withdraw.update_time the withdraw order update time
  * @apiSuccess (Withdraw) {Time} Withdraw.create_time the withdraw order create time
  * @apiSuccess (Withdraw) {WithdrawStatus} Withdraw.status the withdraw order status, all suported is <a href="#metadata-Withdraw">WithdrawStatusAll</a>

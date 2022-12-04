@@ -53,6 +53,8 @@ func Handle(pre string, mux *web.SessionMux) {
 	mux.HandleFunc("^"+pre+"/usr/createWithdraw(\\?.*)?$", CreateWithdrawH)
 	mux.HandleFunc("^"+pre+"/usr/cancelWithdraw(\\?.*)?$", CancelWithdrawH)
 	mux.HandleFunc("^"+pre+"/usr/listWithdraw(\\?.*)?$", ListWithdrawH)
+	mux.HandleFunc("^"+pre+"/usr/confirmWithdraw(\\?.*)?$", ConfirmWithdrawH)
+	mux.HandleFunc("^"+pre+"/usr/loadTopupAddress(\\?.*)?$", LoadTopupAddressH)
 	//holding
 	mux.HandleFunc("^"+pre+"/usr/listHolding(\\?.*)?$", ListHoldingH)
 	mux.HandleFunc("^"+pre+"/usr/loadHolding(\\?.*)?$", LoadHoldingH)

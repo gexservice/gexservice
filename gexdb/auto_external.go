@@ -13,6 +13,7 @@ import (
 const (
 	ConfigWelcomeMessage = "welcome_message"
 	ConfigWithdrawMax    = "withdraw_max"
+	ConfigWithdrawReview = "withdraw_review"
 	ConfigGoldbarAddress = "goldbar_address"
 	ConfigGoldbarExplain = "goldbar_explain"
 	ConfigGoldbarRate    = "goldbar_rate"

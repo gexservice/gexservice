@@ -10,8 +10,12 @@ DROP INDEX IF EXISTS gex_withdraw_user_id_idx;
 DROP INDEX IF EXISTS gex_withdraw_update_time_idx;
 DROP INDEX IF EXISTS gex_withdraw_type_idx;
 DROP INDEX IF EXISTS gex_withdraw_status_idx;
+DROP INDEX IF EXISTS gex_withdraw_processed_idx;
 DROP INDEX IF EXISTS gex_withdraw_order_id_idx;
 DROP INDEX IF EXISTS gex_withdraw_asset_idx;
+DROP INDEX IF EXISTS gex_wallet_user_method_idx;
+DROP INDEX IF EXISTS gex_wallet_status_idx;
+DROP INDEX IF EXISTS gex_wallet_method_address_idx;
 DROP INDEX IF EXISTS gex_user_update_time_idx;
 DROP INDEX IF EXISTS gex_user_type_idx;
 DROP INDEX IF EXISTS gex_user_status_idx;
@@ -48,6 +52,7 @@ DROP INDEX IF EXISTS gex_balance_record_type_idx;
 DROP INDEX IF EXISTS gex_balance_record_balance_id_idx;
 DROP INDEX IF EXISTS gex_balance_history_user_asset_idx;
 DROP INDEX IF EXISTS gex_balance_history_status_idx;
+ALTER TABLE IF EXISTS gex_wallet ALTER COLUMN tid DROP DEFAULT;
 ALTER TABLE IF EXISTS gex_user ALTER COLUMN tid DROP DEFAULT;
 ALTER TABLE IF EXISTS gex_order_comm ALTER COLUMN tid DROP DEFAULT;
 ALTER TABLE IF EXISTS gex_order ALTER COLUMN tid DROP DEFAULT;
@@ -57,6 +62,8 @@ ALTER TABLE IF EXISTS gex_balance_record ALTER COLUMN tid DROP DEFAULT;
 ALTER TABLE IF EXISTS gex_balance_history ALTER COLUMN tid DROP DEFAULT;
 ALTER TABLE IF EXISTS gex_balance ALTER COLUMN tid DROP DEFAULT;
 DROP TABLE IF EXISTS gex_withdraw;
+DROP SEQUENCE IF EXISTS gex_wallet_tid_seq;
+DROP TABLE IF EXISTS gex_wallet;
 DROP SEQUENCE IF EXISTS gex_user_tid_seq;
 DROP TABLE IF EXISTS gex_user;
 DROP SEQUENCE IF EXISTS gex_order_tid_seq;
@@ -257,6 +264,7 @@ CREATE TABLE gex_balance_record (
     type integer NOT NULL,
     target integer DEFAULT 0 NOT NULL,
     changed double precision NOT NULL,
+    transaction jsonb DEFAULT '{}'::jsonb NOT NULL,
     update_time timestamp(6) with time zone NOT NULL,
     create_time timestamp(6) with time zone NOT NULL,
     status integer NOT NULL
@@ -288,7 +296,7 @@ COMMENT ON COLUMN gex_balance_record.balance_id IS 'the balance id';
 -- Name: COLUMN gex_balance_record.type; Type: COMMENT; Schema: public;
 --
 
-COMMENT ON COLUMN gex_balance_record.type IS 'the balance record type, Trade=100: is trade type, TradeFee=110:is trade fee, Profit=200:is close profit, Blowup=210:is blowup, Transfer=300:is transfer, Change=400: is manual change type';
+COMMENT ON COLUMN gex_balance_record.type IS 'the balance record type, Trade=100: is trade type, TradeFee=110:is trade fee, Profit=200:is close profit, Blowup=210:is blowup, Transfer=300:is transfer, Change=400: is manual change type, Topup=500: is topup, Withdraw=600: is withdraw';
 
 
 --
@@ -303,6 +311,13 @@ COMMENT ON COLUMN gex_balance_record.target IS 'the balance target type';
 --
 
 COMMENT ON COLUMN gex_balance_record.changed IS 'the balance change value';
+
+
+--
+-- Name: COLUMN gex_balance_record.transaction; Type: COMMENT; Schema: public;
+--
+
+COMMENT ON COLUMN gex_balance_record.transaction IS 'the balance record transaction info';
 
 
 --
@@ -323,7 +338,7 @@ COMMENT ON COLUMN gex_balance_record.create_time IS 'the balance create time';
 -- Name: COLUMN gex_balance_record.status; Type: COMMENT; Schema: public;
 --
 
-COMMENT ON COLUMN gex_balance_record.status IS 'the balance status, Normal=100: is normal';
+COMMENT ON COLUMN gex_balance_record.status IS 'the balance status, Pending=90:is pending, Normal=100: is normal';
 
 
 --
@@ -1141,18 +1156,104 @@ ALTER SEQUENCE gex_user_tid_seq OWNED BY gex_user.tid;
 
 
 --
+-- Name: gex_wallet; Type: TABLE; Schema: public;
+--
+
+CREATE TABLE gex_wallet (
+    tid bigint NOT NULL,
+    user_id bigint NOT NULL,
+    method character varying(255) NOT NULL,
+    address character varying(255) NOT NULL,
+    update_time timestamp with time zone NOT NULL,
+    create_time timestamp with time zone NOT NULL,
+    status integer NOT NULL
+);
+
+
+--
+-- Name: COLUMN gex_wallet.tid; Type: COMMENT; Schema: public;
+--
+
+COMMENT ON COLUMN gex_wallet.tid IS 'the wallet primary key';
+
+
+--
+-- Name: COLUMN gex_wallet.user_id; Type: COMMENT; Schema: public;
+--
+
+COMMENT ON COLUMN gex_wallet.user_id IS 'the wallet user id';
+
+
+--
+-- Name: COLUMN gex_wallet.method; Type: COMMENT; Schema: public;
+--
+
+COMMENT ON COLUMN gex_wallet.method IS 'the wallet type, Tron=tron: is tron method, Ethereum=ethereum: is ethereum method';
+
+
+--
+-- Name: COLUMN gex_wallet.address; Type: COMMENT; Schema: public;
+--
+
+COMMENT ON COLUMN gex_wallet.address IS 'the wallet address';
+
+
+--
+-- Name: COLUMN gex_wallet.update_time; Type: COMMENT; Schema: public;
+--
+
+COMMENT ON COLUMN gex_wallet.update_time IS 'the wallet update time';
+
+
+--
+-- Name: COLUMN gex_wallet.create_time; Type: COMMENT; Schema: public;
+--
+
+COMMENT ON COLUMN gex_wallet.create_time IS 'the wallet create time';
+
+
+--
+-- Name: COLUMN gex_wallet.status; Type: COMMENT; Schema: public;
+--
+
+COMMENT ON COLUMN gex_wallet.status IS 'the wallet status, Normal=100:is normal';
+
+
+--
+-- Name: gex_wallet_tid_seq; Type: SEQUENCE; Schema: public;
+--
+
+CREATE SEQUENCE gex_wallet_tid_seq
+    START WITH 1000
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: gex_wallet_tid_seq; Type: SEQUENCE OWNED BY; Schema: public;
+--
+
+ALTER SEQUENCE gex_wallet_tid_seq OWNED BY gex_wallet.tid;
+
+
+--
 -- Name: gex_withdraw; Type: TABLE; Schema: public;
 --
 
 CREATE TABLE gex_withdraw (
     tid bigint DEFAULT nextval('gex_order_tid_seq'::regclass) NOT NULL,
-    order_id character varying(64) NOT NULL,
+    order_id character varying(255) NOT NULL,
     type integer NOT NULL,
     user_id bigint NOT NULL,
     creator bigint NOT NULL,
+    method character varying(255) NOT NULL,
     asset character varying(16) NOT NULL,
     quantity double precision DEFAULT 0 NOT NULL,
-    transaction jsonb DEFAULT '{}'::jsonb NOT NULL,
+    receiver character varying(255) NOT NULL,
+    processed integer DEFAULT 0 NOT NULL,
+    result jsonb DEFAULT '{}'::jsonb NOT NULL,
     update_time timestamp(6) with time zone NOT NULL,
     create_time timestamp(6) with time zone NOT NULL,
     status integer NOT NULL
@@ -1195,6 +1296,13 @@ COMMENT ON COLUMN gex_withdraw.creator IS 'the withdraw order creator user id';
 
 
 --
+-- Name: COLUMN gex_withdraw.method; Type: COMMENT; Schema: public;
+--
+
+COMMENT ON COLUMN gex_withdraw.method IS 'the withdraw metod, Tron=tron: is tron method, Ethereum=ethereum: is ethereum method';
+
+
+--
 -- Name: COLUMN gex_withdraw.asset; Type: COMMENT; Schema: public;
 --
 
@@ -1209,10 +1317,24 @@ COMMENT ON COLUMN gex_withdraw.quantity IS 'the withdraw order quantity';
 
 
 --
--- Name: COLUMN gex_withdraw.transaction; Type: COMMENT; Schema: public;
+-- Name: COLUMN gex_withdraw.receiver; Type: COMMENT; Schema: public;
 --
 
-COMMENT ON COLUMN gex_withdraw.transaction IS 'the withdraw order transaction info';
+COMMENT ON COLUMN gex_withdraw.receiver IS 'the widhdraw receiver';
+
+
+--
+-- Name: COLUMN gex_withdraw.processed; Type: COMMENT; Schema: public;
+--
+
+COMMENT ON COLUMN gex_withdraw.processed IS 'the withdraw if processed';
+
+
+--
+-- Name: COLUMN gex_withdraw.result; Type: COMMENT; Schema: public;
+--
+
+COMMENT ON COLUMN gex_withdraw.result IS 'the withdraw order transaction info';
 
 
 --
@@ -1293,6 +1415,13 @@ ALTER TABLE IF EXISTS ONLY gex_user ALTER COLUMN tid SET DEFAULT nextval('gex_us
 
 
 --
+-- Name: gex_wallet tid; Type: DEFAULT; Schema: public;
+--
+
+ALTER TABLE IF EXISTS ONLY gex_wallet ALTER COLUMN tid SET DEFAULT nextval('gex_wallet_tid_seq'::regclass);
+
+
+--
 -- Name: gex_balance_history gex_balance_history_pkey; Type: CONSTRAINT; Schema: public;
 --
 
@@ -1362,6 +1491,14 @@ ALTER TABLE IF EXISTS ONLY gex_order
 
 ALTER TABLE IF EXISTS ONLY gex_user
     ADD CONSTRAINT gex_user_pkey PRIMARY KEY (tid);
+
+
+--
+-- Name: gex_wallet gex_wallet_pkey; Type: CONSTRAINT; Schema: public;
+--
+
+ALTER TABLE IF EXISTS ONLY gex_wallet
+    ADD CONSTRAINT gex_wallet_pkey PRIMARY KEY (tid);
 
 
 --
@@ -1617,6 +1754,27 @@ CREATE INDEX gex_user_update_time_idx ON gex_user USING btree (update_time);
 
 
 --
+-- Name: gex_wallet_method_address_idx; Type: INDEX; Schema: public;
+--
+
+CREATE UNIQUE INDEX gex_wallet_method_address_idx ON gex_wallet USING btree (method, address);
+
+
+--
+-- Name: gex_wallet_status_idx; Type: INDEX; Schema: public;
+--
+
+CREATE INDEX gex_wallet_status_idx ON gex_wallet USING btree (status);
+
+
+--
+-- Name: gex_wallet_user_method_idx; Type: INDEX; Schema: public;
+--
+
+CREATE UNIQUE INDEX gex_wallet_user_method_idx ON gex_wallet USING btree (user_id, method);
+
+
+--
 -- Name: gex_withdraw_asset_idx; Type: INDEX; Schema: public;
 --
 
@@ -1628,6 +1786,13 @@ CREATE INDEX gex_withdraw_asset_idx ON gex_withdraw USING btree (asset);
 --
 
 CREATE UNIQUE INDEX gex_withdraw_order_id_idx ON gex_withdraw USING btree (order_id);
+
+
+--
+-- Name: gex_withdraw_processed_idx; Type: INDEX; Schema: public;
+--
+
+CREATE INDEX gex_withdraw_processed_idx ON gex_withdraw USING btree (processed);
 
 
 --

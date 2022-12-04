@@ -1713,6 +1713,222 @@ func TestAutoUser(t *testing.T) {
 	}
 }
 
+func TestAutoWallet(t *testing.T) {
+	var err error
+	for _, value := range WalletMethodAll {
+		if value.EnumValid(string(value)) != nil {
+			t.Error("not enum valid")
+			return
+		}
+		if value.EnumValid(string("this should invalid")) == nil {
+			t.Error("not enum valid")
+			return
+		}
+		if WalletMethodAll.EnumValid(string(value)) != nil {
+			t.Error("not enum valid")
+			return
+		}
+		if WalletMethodAll.EnumValid(string("this should invalid")) == nil {
+			t.Error("not enum valid")
+			return
+		}
+	}
+	if len(WalletMethodAll.DbArray()) < 1 {
+		t.Error("not array")
+		return
+	}
+	if len(WalletMethodAll.InArray()) < 1 {
+		t.Error("not array")
+		return
+	}
+	for _, value := range WalletStatusAll {
+		if value.EnumValid(int(value)) != nil {
+			t.Error("not enum valid")
+			return
+		}
+		if value.EnumValid(int(-321654)) == nil {
+			t.Error("not enum valid")
+			return
+		}
+		if WalletStatusAll.EnumValid(int(value)) != nil {
+			t.Error("not enum valid")
+			return
+		}
+		if WalletStatusAll.EnumValid(int(-321654)) == nil {
+			t.Error("not enum valid")
+			return
+		}
+	}
+	if len(WalletStatusAll.DbArray()) < 1 {
+		t.Error("not array")
+		return
+	}
+	if len(WalletStatusAll.InArray()) < 1 {
+		t.Error("not array")
+		return
+	}
+	metav := MetaWithWallet()
+	if len(metav) < 1 {
+		t.Error("not meta")
+		return
+	}
+	wallet := &Wallet{}
+	wallet.Valid()
+
+	table, fields := wallet.Meta()
+	if len(table) < 1 || len(fields) < 1 {
+		t.Error("not meta")
+		return
+	}
+	fmt.Println(table, "---->", strings.Join(fields, ","))
+	if table := crud.Table(wallet.MetaWith(int64(0))); len(table) < 1 {
+		t.Error("not table")
+		return
+	}
+	err = wallet.Insert(GetQueryer, context.Background())
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if reflect.ValueOf(wallet.TID).IsZero() {
+		t.Error("not id")
+		return
+	}
+	wallet.Valid()
+	err = UpdateWalletFilter(context.Background(), wallet, "")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	err = UpdateWalletWheref(context.Background(), wallet, "")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	err = UpdateWalletFilterWheref(context.Background(), wallet, WalletFilterUpdate, "tid=$%v", wallet.TID)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	findWallet, err := FindWallet(context.Background(), wallet.TID)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if wallet.TID != findWallet.TID {
+		t.Error("find id error")
+		return
+	}
+	findWallet, err = FindWalletWheref(context.Background(), "tid=$%v", wallet.TID)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if wallet.TID != findWallet.TID {
+		t.Error("find id error")
+		return
+	}
+	findWallet, err = FindWalletFilterWheref(context.Background(), "#all", "tid=$%v", wallet.TID)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if wallet.TID != findWallet.TID {
+		t.Error("find id error")
+		return
+	}
+	findWallet, err = FindWalletWhereCall(GetQueryer, context.Background(), true, "and", []string{"tid=$1"}, []interface{}{wallet.TID})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if wallet.TID != findWallet.TID {
+		t.Error("find id error")
+		return
+	}
+	findWallet, err = FindWalletWherefCall(GetQueryer, context.Background(), true, "tid=$%v", wallet.TID)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if wallet.TID != findWallet.TID {
+		t.Error("find id error")
+		return
+	}
+	walletList, walletMap, err := ListWalletByID(context.Background())
+	if err != nil || len(walletList) > 0 || walletMap == nil || len(walletMap) > 0 {
+		t.Error(err)
+		return
+	}
+	walletList, walletMap, err = ListWalletByID(context.Background(), wallet.TID)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if len(walletList) != 1 || walletList[0].TID != wallet.TID || len(walletMap) != 1 || walletMap[wallet.TID] == nil || walletMap[wallet.TID].TID != wallet.TID {
+		t.Error("list id error")
+		return
+	}
+	walletList, walletMap, err = ListWalletFilterByID(context.Background(), "#all")
+	if err != nil || len(walletList) > 0 || walletMap == nil || len(walletMap) > 0 {
+		t.Error(err)
+		return
+	}
+	walletList, walletMap, err = ListWalletFilterByID(context.Background(), "#all", wallet.TID)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if len(walletList) != 1 || walletList[0].TID != wallet.TID || len(walletMap) != 1 || walletMap[wallet.TID] == nil || walletMap[wallet.TID].TID != wallet.TID {
+		t.Error("list id error")
+		return
+	}
+	walletList = nil
+	walletMap = nil
+	err = ScanWalletByID(context.Background(), []int64{wallet.TID}, &walletList, &walletMap, "tid")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if len(walletList) != 1 || walletList[0].TID != wallet.TID || len(walletMap) != 1 || walletMap[wallet.TID] == nil || walletMap[wallet.TID].TID != wallet.TID {
+		t.Error("list id error")
+		return
+	}
+	walletList = nil
+	walletMap = nil
+	err = ScanWalletFilterByID(context.Background(), "#all", []int64{wallet.TID}, &walletList, &walletMap, "tid")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if len(walletList) != 1 || walletList[0].TID != wallet.TID || len(walletMap) != 1 || walletMap[wallet.TID] == nil || walletMap[wallet.TID].TID != wallet.TID {
+		t.Error("list id error")
+		return
+	}
+	walletList = nil
+	walletMap = nil
+	err = ScanWalletWheref(context.Background(), "tid=$%v", []interface{}{wallet.TID}, "", &walletList, &walletMap, "tid")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if len(walletList) != 1 || walletList[0].TID != wallet.TID || len(walletMap) != 1 || walletMap[wallet.TID] == nil || walletMap[wallet.TID].TID != wallet.TID {
+		t.Error("list id error")
+		return
+	}
+	walletList = nil
+	walletMap = nil
+	err = ScanWalletFilterWheref(context.Background(), "#all", "tid=$%v", []interface{}{wallet.TID}, "", &walletList, &walletMap, "tid")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if len(walletList) != 1 || walletList[0].TID != wallet.TID || len(walletMap) != 1 || walletMap[wallet.TID] == nil || walletMap[wallet.TID].TID != wallet.TID {
+		t.Error("list id error")
+		return
+	}
+}
+
 func TestAutoWithdraw(t *testing.T) {
 	var err error
 	for _, value := range WithdrawTypeAll {
@@ -1738,6 +1954,32 @@ func TestAutoWithdraw(t *testing.T) {
 		return
 	}
 	if len(WithdrawTypeAll.InArray()) < 1 {
+		t.Error("not array")
+		return
+	}
+	for _, value := range WithdrawMethodAll {
+		if value.EnumValid(string(value)) != nil {
+			t.Error("not enum valid")
+			return
+		}
+		if value.EnumValid(string("this should invalid")) == nil {
+			t.Error("not enum valid")
+			return
+		}
+		if WithdrawMethodAll.EnumValid(string(value)) != nil {
+			t.Error("not enum valid")
+			return
+		}
+		if WithdrawMethodAll.EnumValid(string("this should invalid")) == nil {
+			t.Error("not enum valid")
+			return
+		}
+	}
+	if len(WithdrawMethodAll.DbArray()) < 1 {
+		t.Error("not array")
+		return
+	}
+	if len(WithdrawMethodAll.InArray()) < 1 {
 		t.Error("not array")
 		return
 	}

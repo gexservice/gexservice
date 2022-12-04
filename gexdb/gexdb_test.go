@@ -64,7 +64,11 @@ func init() {
 }
 
 func clear() {
-	_, _, err := Pool().Exec(ctx, gexupgrade.CLEAR)
+	_, _, err := Pool().Exec(ctx, strings.ReplaceAll(baseupgrade.CLEAR, "_sys_", "gex_"))
+	if err != nil {
+		panic(err)
+	}
+	_, _, err = Pool().Exec(ctx, gexupgrade.CLEAR)
 	if err != nil {
 		panic(err)
 	}
