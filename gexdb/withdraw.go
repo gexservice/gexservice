@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/codingeasygo/crud"
+	"github.com/codingeasygo/util/converter"
 	"github.com/codingeasygo/util/xmap"
 	"github.com/codingeasygo/util/xsql"
 	"github.com/gexservice/gexservice/base/define"
@@ -172,6 +174,11 @@ func DoneWithdraw(ctx context.Context, orderID string, success bool, result xmap
 	if err != nil {
 		return
 	}
+	messageEnv := xmap.M{
+		"_amount": withdraw.Quantity,
+		"_asset":  withdraw.Asset,
+		"_time":   time.Now().UTC().Format("2006-01-02 15:04:05(MST)"),
+	}
 	if success {
 		_, err = AddBalanceRecordCall(tx, ctx, &BalanceRecord{
 			Creator:   withdraw.UserID,
@@ -183,6 +190,13 @@ func DoneWithdraw(ctx context.Context, orderID string, success bool, result xmap
 				"withdraw": withdraw.TID,
 			},
 		})
+		if err != nil {
+			return
+		}
+		_, err = AddTemplateMessageCall(tx, ctx, MessageTypeUser, messageEnv, MessageKeyWithdrawDone, withdraw.UserID)
+	} else {
+		messageEnv["_message"] = converter.JSON(withdraw.Result)
+		_, err = AddTemplateMessageCall(tx, ctx, MessageTypeUser, messageEnv, MessageKeyWithdrawFail, withdraw.UserID)
 	}
 	return
 }
@@ -254,6 +268,15 @@ func ReceiveTopup(ctx context.Context, method WalletMethod, address string, txid
 			"topup": topup.TID,
 		},
 	})
+	if err != nil {
+		return
+	}
+	messageEnv := xmap.M{
+		"_amount": topup.Quantity,
+		"_asset":  topup.Asset,
+		"_time":   time.Now().UTC().Format("2006-01-02 15:04:05(MST)"),
+	}
+	_, err = AddTemplateMessageCall(tx, ctx, MessageTypeUser, messageEnv, MessageKeyTopup, topup.UserID)
 	return
 }
 

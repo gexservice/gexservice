@@ -67,6 +67,9 @@ var PgGen = gen.AutoGen{
 		"gex_withdraw": {
 			gen.FieldsUpdate: "method,asset,quantity,receiver",
 		},
+		"gex_message": {
+			gen.FieldsUpdate: "type,title,content,to_user_id",
+		},
 	},
 	CodeAddInit:  map[string]string{},
 	CodeTestInit: map[string]string{},
@@ -80,6 +83,7 @@ var PgGen = gen.AutoGen{
 		"gex_order_comm",
 		"gex_withdraw",
 		"gex_user",
+		"gex_message",
 	},
 	TableNotValid: xsql.StringArray{},
 	TableInclude:  xsql.StringArray{},

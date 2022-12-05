@@ -11,6 +11,7 @@ import (
 	"github.com/codingeasygo/crud/pgx"
 	"github.com/codingeasygo/util/converter"
 	"github.com/codingeasygo/util/debug"
+	"github.com/codingeasygo/util/xmap"
 	"github.com/codingeasygo/util/xsort"
 	"github.com/codingeasygo/util/xsql"
 	"github.com/gexservice/gexservice/base/define"
@@ -951,7 +952,19 @@ func (f *FuturesMatcher) blowupHolding(tx *pgx.Tx, ctx context.Context, changed 
 	}
 	_, err = gexdb.AddBalanceRecordCall(tx, ctx, record)
 	if err != nil {
-		err = NewErrMatcher(err, "[syncHoldingByPartDone] add balance record by %v fail", converter.JSON(record))
+		err = NewErrMatcher(err, "[blowupHolding] add balance record by %v fail", converter.JSON(record))
+		return
+	}
+	messageEnv := xmap.M{
+		"_amount":    holding.Amount,
+		"_symbol":    holding.Symbol,
+		"_openPrice": holding.Open.String(),
+		"_markPrice": holding.Blowup.String(),
+		"_time":      time.Now().UTC().Format("2006-01-02 15:04:05(MST)"),
+	}
+	_, err = gexdb.AddTemplateMessageCall(tx, ctx, gexdb.MessageTypeUser, messageEnv, gexdb.MessageKeyBlowup, holding.UserID)
+	if err != nil {
+		err = NewErrMatcher(err, "[blowupHolding] add template message by %v fail", converter.JSON(messageEnv))
 		return
 	}
 

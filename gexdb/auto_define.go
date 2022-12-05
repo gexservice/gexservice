@@ -88,6 +88,25 @@ package gexdb
  */
 
 /**
+ * @apiDefine MessageUpdate
+ * @apiParam (Message) {MessageType} Message.type only required when add, the message type, all suported is <a href="#metadata-Message">MessageTypeAll</a>
+ * @apiParam (Message) {Object} Message.title only required when add, the message title
+ * @apiParam (Message) {Object} Message.content only required when add, the message content
+ * @apiParam (Message) {Int64} Message.to_user_id only required when add,
+ */
+/**
+ * @apiDefine MessageObject
+ * @apiSuccess (Message) {Int64} Message.tid the primary key
+ * @apiSuccess (Message) {MessageType} Message.type the message type, all suported is <a href="#metadata-Message">MessageTypeAll</a>
+ * @apiSuccess (Message) {Object} Message.title the message title
+ * @apiSuccess (Message) {Object} Message.content the message content
+ * @apiSuccess (Message) {Int64} Message.to_user_id
+ * @apiSuccess (Message) {Time} Message.update_time the message update time
+ * @apiSuccess (Message) {Time} Message.create_time the message create time
+ * @apiSuccess (Message) {MessageStatus} Message.status the message status, all suported is <a href="#metadata-Message">MessageStatusAll</a>
+ */
+
+/**
  * @apiDefine OrderUpdate
  * @apiParam (Order) {Int64} [Order.tid] the primary key
  * @apiParam (Order) {Decimal} [Order.quantity] the order expected quantity

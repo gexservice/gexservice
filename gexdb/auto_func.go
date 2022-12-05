@@ -1639,6 +1639,378 @@ func ScanKLineFilterWherefCall(caller interface{}, ctx context.Context, filter s
 	return
 }
 
+//MessageFilterOptional is crud filter
+const MessageFilterOptional = ""
+
+//MessageFilterRequired is crud filter
+const MessageFilterRequired = ""
+
+//MessageFilterInsert is crud filter
+const MessageFilterInsert = ""
+
+//MessageFilterUpdate is crud filter
+const MessageFilterUpdate = "update_time,type,title,content,to_user_id"
+
+//MessageFilterFind is crud filter
+const MessageFilterFind = "#all"
+
+//MessageFilterScan is crud filter
+const MessageFilterScan = "#all"
+
+//EnumValid will valid value by MessageType
+func (o *MessageType) EnumValid(v interface{}) (err error) {
+	var target MessageType
+	targetType := reflect.TypeOf(MessageType(0))
+	targetValue := reflect.ValueOf(v)
+	if targetValue.CanConvert(targetType) {
+		target = targetValue.Convert(targetType).Interface().(MessageType)
+	}
+	for _, value := range MessageTypeAll {
+		if target == value {
+			return nil
+		}
+	}
+	return fmt.Errorf("must be in %v", MessageTypeAll)
+}
+
+//EnumValid will valid value by MessageTypeArray
+func (o *MessageTypeArray) EnumValid(v interface{}) (err error) {
+	var target MessageType
+	targetType := reflect.TypeOf(MessageType(0))
+	targetValue := reflect.ValueOf(v)
+	if targetValue.CanConvert(targetType) {
+		target = targetValue.Convert(targetType).Interface().(MessageType)
+	}
+	for _, value := range MessageTypeAll {
+		if target == value {
+			return nil
+		}
+	}
+	return fmt.Errorf("must be in %v", MessageTypeAll)
+}
+
+//DbArray will join value to database array
+func (o MessageTypeArray) DbArray() (res string) {
+	res = "{" + converter.JoinSafe(o, ",", converter.JoinPolicyDefault) + "}"
+	return
+}
+
+//InArray will join value to database array
+func (o MessageTypeArray) InArray() (res string) {
+	res = "" + converter.JoinSafe(o, ",", converter.JoinPolicyDefault) + ""
+	return
+}
+
+//EnumValid will valid value by MessageStatus
+func (o *MessageStatus) EnumValid(v interface{}) (err error) {
+	var target MessageStatus
+	targetType := reflect.TypeOf(MessageStatus(0))
+	targetValue := reflect.ValueOf(v)
+	if targetValue.CanConvert(targetType) {
+		target = targetValue.Convert(targetType).Interface().(MessageStatus)
+	}
+	for _, value := range MessageStatusAll {
+		if target == value {
+			return nil
+		}
+	}
+	return fmt.Errorf("must be in %v", MessageStatusAll)
+}
+
+//EnumValid will valid value by MessageStatusArray
+func (o *MessageStatusArray) EnumValid(v interface{}) (err error) {
+	var target MessageStatus
+	targetType := reflect.TypeOf(MessageStatus(0))
+	targetValue := reflect.ValueOf(v)
+	if targetValue.CanConvert(targetType) {
+		target = targetValue.Convert(targetType).Interface().(MessageStatus)
+	}
+	for _, value := range MessageStatusAll {
+		if target == value {
+			return nil
+		}
+	}
+	return fmt.Errorf("must be in %v", MessageStatusAll)
+}
+
+//DbArray will join value to database array
+func (o MessageStatusArray) DbArray() (res string) {
+	res = "{" + converter.JoinSafe(o, ",", converter.JoinPolicyDefault) + "}"
+	return
+}
+
+//InArray will join value to database array
+func (o MessageStatusArray) InArray() (res string) {
+	res = "" + converter.JoinSafe(o, ",", converter.JoinPolicyDefault) + ""
+	return
+}
+
+//MetaWithMessage will return gex_message meta data
+func MetaWithMessage(fields ...interface{}) (v []interface{}) {
+	v = crud.MetaWith(string("gex_message"), fields...)
+	return
+}
+
+//MetaWith will return gex_message meta data
+func (message *Message) MetaWith(fields ...interface{}) (v []interface{}) {
+	v = crud.MetaWith(string("gex_message"), fields...)
+	return
+}
+
+//Meta will return gex_message meta data
+func (message *Message) Meta() (table string, fileds []string) {
+	table, fileds = crud.QueryField(message, "#all")
+	return
+}
+
+//Valid will valid by filter
+func (message *Message) Valid() (err error) {
+	if reflect.ValueOf(message.TID).IsZero() {
+		err = attrvalid.Valid(message, MessageFilterInsert+"#all", MessageFilterOptional)
+	} else {
+		err = attrvalid.Valid(message, MessageFilterUpdate, "")
+	}
+	return
+}
+
+//Insert will add gex_message to database
+func (message *Message) Insert(caller interface{}, ctx context.Context) (err error) {
+
+	if len(message.Title) < 1 {
+		message.Title = xsql.M{}
+	}
+
+	if len(message.Content) < 1 {
+		message.Content = xsql.M{}
+	}
+
+	if message.UpdateTime.Timestamp() < 1 {
+		message.UpdateTime = xsql.TimeNow()
+	}
+
+	if message.CreateTime.Timestamp() < 1 {
+		message.CreateTime = xsql.TimeNow()
+	}
+
+	_, err = crud.InsertFilter(caller, ctx, message, "^tid#all", "returning", "tid#all")
+	return
+}
+
+//UpdateFilter will update gex_message to database
+func (message *Message) UpdateFilter(caller interface{}, ctx context.Context, filter string) (err error) {
+	err = message.UpdateFilterWheref(caller, ctx, filter, "")
+	return
+}
+
+//UpdateWheref will update gex_message to database
+func (message *Message) UpdateWheref(caller interface{}, ctx context.Context, formats string, formatArgs ...interface{}) (err error) {
+	err = message.UpdateFilterWheref(caller, ctx, MessageFilterUpdate, formats, formatArgs...)
+	return
+}
+
+//UpdateFilterWheref will update gex_message to database
+func (message *Message) UpdateFilterWheref(caller interface{}, ctx context.Context, filter string, formats string, formatArgs ...interface{}) (err error) {
+	message.UpdateTime = xsql.TimeNow()
+	sql, args := crud.UpdateSQL(message, filter, nil)
+	where, args := crud.AppendWheref(nil, args, "tid=$%v", message.TID)
+	if len(formats) > 0 {
+		where, args = crud.AppendWheref(where, args, formats, formatArgs...)
+	}
+	err = crud.UpdateRow(caller, ctx, message, sql, where, "and", args)
+	return
+}
+
+//AddMessage will add gex_message to database
+func AddMessage(ctx context.Context, message *Message) (err error) {
+	err = AddMessageCall(GetQueryer, ctx, message)
+	return
+}
+
+//AddMessage will add gex_message to database
+func AddMessageCall(caller interface{}, ctx context.Context, message *Message) (err error) {
+	err = message.Insert(caller, ctx)
+	return
+}
+
+//UpdateMessageFilter will update gex_message to database
+func UpdateMessageFilter(ctx context.Context, message *Message, filter string) (err error) {
+	err = UpdateMessageFilterCall(GetQueryer, ctx, message, filter)
+	return
+}
+
+//UpdateMessageFilterCall will update gex_message to database
+func UpdateMessageFilterCall(caller interface{}, ctx context.Context, message *Message, filter string) (err error) {
+	err = message.UpdateFilter(caller, ctx, filter)
+	return
+}
+
+//UpdateMessageWheref will update gex_message to database
+func UpdateMessageWheref(ctx context.Context, message *Message, formats string, formatArgs ...interface{}) (err error) {
+	err = UpdateMessageWherefCall(GetQueryer, ctx, message, formats, formatArgs...)
+	return
+}
+
+//UpdateMessageWherefCall will update gex_message to database
+func UpdateMessageWherefCall(caller interface{}, ctx context.Context, message *Message, formats string, formatArgs ...interface{}) (err error) {
+	err = message.UpdateWheref(caller, ctx, formats, formatArgs...)
+	return
+}
+
+//UpdateMessageFilterWheref will update gex_message to database
+func UpdateMessageFilterWheref(ctx context.Context, message *Message, filter string, formats string, formatArgs ...interface{}) (err error) {
+	err = UpdateMessageFilterWherefCall(GetQueryer, ctx, message, filter, formats, formatArgs...)
+	return
+}
+
+//UpdateMessageFilterWherefCall will update gex_message to database
+func UpdateMessageFilterWherefCall(caller interface{}, ctx context.Context, message *Message, filter string, formats string, formatArgs ...interface{}) (err error) {
+	err = message.UpdateFilterWheref(caller, ctx, filter, formats, formatArgs...)
+	return
+}
+
+//FindMessageCall will find gex_message by id from database
+func FindMessage(ctx context.Context, messageID int64) (message *Message, err error) {
+	message, err = FindMessageCall(GetQueryer, ctx, messageID, false)
+	return
+}
+
+//FindMessageCall will find gex_message by id from database
+func FindMessageCall(caller interface{}, ctx context.Context, messageID int64, lock bool) (message *Message, err error) {
+	where, args := crud.AppendWhere(nil, nil, true, "tid=$%v", messageID)
+	message, err = FindMessageWhereCall(caller, ctx, lock, "and", where, args)
+	return
+}
+
+//FindMessageWhereCall will find gex_message by where from database
+func FindMessageWhereCall(caller interface{}, ctx context.Context, lock bool, join string, where []string, args []interface{}) (message *Message, err error) {
+	querySQL := crud.QuerySQL(&Message{}, "#all")
+	querySQL = crud.JoinWhere(querySQL, where, join)
+	if lock {
+		querySQL += " for update "
+	}
+	err = crud.QueryRow(caller, ctx, &Message{}, "#all", querySQL, args, &message)
+	return
+}
+
+//FindMessageWheref will find gex_message by where from database
+func FindMessageWheref(ctx context.Context, format string, args ...interface{}) (message *Message, err error) {
+	message, err = FindMessageWherefCall(GetQueryer, ctx, false, format, args...)
+	return
+}
+
+//FindMessageWherefCall will find gex_message by where from database
+func FindMessageWherefCall(caller interface{}, ctx context.Context, lock bool, format string, args ...interface{}) (message *Message, err error) {
+	message, err = FindMessageFilterWherefCall(GetQueryer, ctx, lock, "#all", format, args...)
+	return
+}
+
+//FindMessageFilterWheref will find gex_message by where from database
+func FindMessageFilterWheref(ctx context.Context, filter string, format string, args ...interface{}) (message *Message, err error) {
+	message, err = FindMessageFilterWherefCall(GetQueryer, ctx, false, filter, format, args...)
+	return
+}
+
+//FindMessageFilterWherefCall will find gex_message by where from database
+func FindMessageFilterWherefCall(caller interface{}, ctx context.Context, lock bool, filter string, format string, args ...interface{}) (message *Message, err error) {
+	querySQL := crud.QuerySQL(&Message{}, filter)
+	where, queryArgs := crud.AppendWheref(nil, nil, format, args...)
+	querySQL = crud.JoinWhere(querySQL, where, "and")
+	if lock {
+		querySQL += " for update "
+	}
+	err = crud.QueryRow(caller, ctx, &Message{}, filter, querySQL, queryArgs, &message)
+	return
+}
+
+//ListMessageByID will list gex_message by id from database
+func ListMessageByID(ctx context.Context, messageIDs ...int64) (messageList []*Message, messageMap map[int64]*Message, err error) {
+	messageList, messageMap, err = ListMessageByIDCall(GetQueryer, ctx, messageIDs...)
+	return
+}
+
+//ListMessageByIDCall will list gex_message by id from database
+func ListMessageByIDCall(caller interface{}, ctx context.Context, messageIDs ...int64) (messageList []*Message, messageMap map[int64]*Message, err error) {
+	if len(messageIDs) < 1 {
+		messageMap = map[int64]*Message{}
+		return
+	}
+	err = ScanMessageByIDCall(caller, ctx, messageIDs, &messageList, &messageMap, "tid")
+	return
+}
+
+//ListMessageFilterByID will list gex_message by id from database
+func ListMessageFilterByID(ctx context.Context, filter string, messageIDs ...int64) (messageList []*Message, messageMap map[int64]*Message, err error) {
+	messageList, messageMap, err = ListMessageFilterByIDCall(GetQueryer, ctx, filter, messageIDs...)
+	return
+}
+
+//ListMessageFilterByIDCall will list gex_message by id from database
+func ListMessageFilterByIDCall(caller interface{}, ctx context.Context, filter string, messageIDs ...int64) (messageList []*Message, messageMap map[int64]*Message, err error) {
+	if len(messageIDs) < 1 {
+		messageMap = map[int64]*Message{}
+		return
+	}
+	err = ScanMessageFilterByIDCall(caller, ctx, filter, messageIDs, &messageList, &messageMap, "tid")
+	return
+}
+
+//ScanMessageByID will list gex_message by id from database
+func ScanMessageByID(ctx context.Context, messageIDs []int64, dest ...interface{}) (err error) {
+	err = ScanMessageByIDCall(GetQueryer, ctx, messageIDs, dest...)
+	return
+}
+
+//ScanMessageByIDCall will list gex_message by id from database
+func ScanMessageByIDCall(caller interface{}, ctx context.Context, messageIDs []int64, dest ...interface{}) (err error) {
+	err = ScanMessageFilterByIDCall(caller, ctx, "#all", messageIDs, dest...)
+	return
+}
+
+//ScanMessageFilterByID will list gex_message by id from database
+func ScanMessageFilterByID(ctx context.Context, filter string, messageIDs []int64, dest ...interface{}) (err error) {
+	err = ScanMessageFilterByIDCall(GetQueryer, ctx, filter, messageIDs, dest...)
+	return
+}
+
+//ScanMessageFilterByIDCall will list gex_message by id from database
+func ScanMessageFilterByIDCall(caller interface{}, ctx context.Context, filter string, messageIDs []int64, dest ...interface{}) (err error) {
+	querySQL := crud.QuerySQL(&Message{}, filter)
+	where := append([]string{}, fmt.Sprintf("tid in (%v)", xsql.Int64Array(messageIDs).InArray()))
+	querySQL = crud.JoinWhere(querySQL, where, " and ")
+	err = crud.Query(caller, ctx, &Message{}, filter, querySQL, nil, dest...)
+	return
+}
+
+//ScanMessageWherefCall will list gex_message by format from database
+func ScanMessageWheref(ctx context.Context, format string, args []interface{}, suffix string, dest ...interface{}) (err error) {
+	err = ScanMessageWherefCall(GetQueryer, ctx, format, args, suffix, dest...)
+	return
+}
+
+//ScanMessageWherefCall will list gex_message by format from database
+func ScanMessageWherefCall(caller interface{}, ctx context.Context, format string, args []interface{}, suffix string, dest ...interface{}) (err error) {
+	err = ScanMessageFilterWherefCall(caller, ctx, "#all", format, args, suffix, dest...)
+	return
+}
+
+//ScanMessageFilterWheref will list gex_message by format from database
+func ScanMessageFilterWheref(ctx context.Context, filter string, format string, args []interface{}, suffix string, dest ...interface{}) (err error) {
+	err = ScanMessageFilterWherefCall(GetQueryer, ctx, filter, format, args, suffix, dest...)
+	return
+}
+
+//ScanMessageFilterWherefCall will list gex_message by format from database
+func ScanMessageFilterWherefCall(caller interface{}, ctx context.Context, filter string, format string, args []interface{}, suffix string, dest ...interface{}) (err error) {
+	querySQL := crud.QuerySQL(&Message{}, filter)
+	var where []string
+	if len(format) > 0 {
+		where, args = crud.AppendWheref(nil, nil, format, args...)
+	}
+	querySQL = crud.JoinWhere(querySQL, where, " and ", suffix)
+	err = crud.Query(caller, ctx, &Message{}, filter, querySQL, args, dest...)
+	return
+}
+
 //OrderFilterOptional is crud filter
 const OrderFilterOptional = "tid,quantity,price,total_price,trigger_type,trigger_price,status"
 

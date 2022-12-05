@@ -210,7 +210,7 @@ func TestWithdraw(t *testing.T) {
 		_, err = CancelWithdraw(ctx, user.TID, withdraw2.OrderID)
 		return
 	})
-	pgx.MockerSetCall("Pool.Begin", 1, "Rows.Scan", 1, 2, "Tx.Exec", 1).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
+	pgx.MockerSetCall("Pool.Begin", 1, "Rows.Scan", 1, 2, 3, "Tx.Exec", 1, 2, 3).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
 		_, err = DoneWithdraw(ctx, withdraw3.OrderID, true, xmap.M{"A": 123})
 		return
 	})
@@ -363,7 +363,7 @@ func TestTopup(t *testing.T) {
 	pgx.MockerClear()
 	txid = uuid.New()
 
-	pgx.MockerSetCall("Pool.Begin", 1, "Tx.Exec", 1, "Rows.Scan", 1, 2, 3, 4).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
+	pgx.MockerSetCall("Pool.Begin", 1, "Tx.Exec", 1, 2, 3, "Rows.Scan", 1, 2, 3, 4).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
 		_, _, err = ReceiveTopup(ctx, wallet.Method, wallet.Address, txid, "TEST", decimal.NewFromFloat(100), xmap.M{})
 		return
 	})

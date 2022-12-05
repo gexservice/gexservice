@@ -84,6 +84,10 @@ func Handle(pre string, mux *web.SessionMux) {
 	mux.HandleFunc("^"+pre+"/admin/updateSymbolMaker", UpdateSymbolMakerH)
 	mux.HandleFunc("^"+pre+"/admin/startSymbolMaker", StartSymbolMakerH)
 	mux.HandleFunc("^"+pre+"/admin/stopSymbolMaker", StopSymbolMakerH)
+	//message
+	mux.HandleFunc("^"+pre+"/usr/addMessage(\\?.*)?$", AddMessageH)
+	mux.HandleFunc("^"+pre+"/usr/removeMessage(\\?.*)?$", RemoveMessageH)
+	mux.HandleFunc("^"+pre+"/usr/searchMessage(\\?.*)?$", SearchMessageH)
 	//sms
 	sms.Hand(pre, mux)
 	//email

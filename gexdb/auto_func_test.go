@@ -987,6 +987,222 @@ func TestAutoKLine(t *testing.T) {
 	}
 }
 
+func TestAutoMessage(t *testing.T) {
+	var err error
+	for _, value := range MessageTypeAll {
+		if value.EnumValid(int(value)) != nil {
+			t.Error("not enum valid")
+			return
+		}
+		if value.EnumValid(int(-321654)) == nil {
+			t.Error("not enum valid")
+			return
+		}
+		if MessageTypeAll.EnumValid(int(value)) != nil {
+			t.Error("not enum valid")
+			return
+		}
+		if MessageTypeAll.EnumValid(int(-321654)) == nil {
+			t.Error("not enum valid")
+			return
+		}
+	}
+	if len(MessageTypeAll.DbArray()) < 1 {
+		t.Error("not array")
+		return
+	}
+	if len(MessageTypeAll.InArray()) < 1 {
+		t.Error("not array")
+		return
+	}
+	for _, value := range MessageStatusAll {
+		if value.EnumValid(int(value)) != nil {
+			t.Error("not enum valid")
+			return
+		}
+		if value.EnumValid(int(-321654)) == nil {
+			t.Error("not enum valid")
+			return
+		}
+		if MessageStatusAll.EnumValid(int(value)) != nil {
+			t.Error("not enum valid")
+			return
+		}
+		if MessageStatusAll.EnumValid(int(-321654)) == nil {
+			t.Error("not enum valid")
+			return
+		}
+	}
+	if len(MessageStatusAll.DbArray()) < 1 {
+		t.Error("not array")
+		return
+	}
+	if len(MessageStatusAll.InArray()) < 1 {
+		t.Error("not array")
+		return
+	}
+	metav := MetaWithMessage()
+	if len(metav) < 1 {
+		t.Error("not meta")
+		return
+	}
+	message := &Message{}
+	message.Valid()
+
+	table, fields := message.Meta()
+	if len(table) < 1 || len(fields) < 1 {
+		t.Error("not meta")
+		return
+	}
+	fmt.Println(table, "---->", strings.Join(fields, ","))
+	if table := crud.Table(message.MetaWith(int64(0))); len(table) < 1 {
+		t.Error("not table")
+		return
+	}
+	err = AddMessage(context.Background(), message)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if reflect.ValueOf(message.TID).IsZero() {
+		t.Error("not id")
+		return
+	}
+	message.Valid()
+	err = UpdateMessageFilter(context.Background(), message, "")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	err = UpdateMessageWheref(context.Background(), message, "")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	err = UpdateMessageFilterWheref(context.Background(), message, MessageFilterUpdate, "tid=$%v", message.TID)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	findMessage, err := FindMessage(context.Background(), message.TID)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if message.TID != findMessage.TID {
+		t.Error("find id error")
+		return
+	}
+	findMessage, err = FindMessageWheref(context.Background(), "tid=$%v", message.TID)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if message.TID != findMessage.TID {
+		t.Error("find id error")
+		return
+	}
+	findMessage, err = FindMessageFilterWheref(context.Background(), "#all", "tid=$%v", message.TID)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if message.TID != findMessage.TID {
+		t.Error("find id error")
+		return
+	}
+	findMessage, err = FindMessageWhereCall(GetQueryer, context.Background(), true, "and", []string{"tid=$1"}, []interface{}{message.TID})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if message.TID != findMessage.TID {
+		t.Error("find id error")
+		return
+	}
+	findMessage, err = FindMessageWherefCall(GetQueryer, context.Background(), true, "tid=$%v", message.TID)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if message.TID != findMessage.TID {
+		t.Error("find id error")
+		return
+	}
+	messageList, messageMap, err := ListMessageByID(context.Background())
+	if err != nil || len(messageList) > 0 || messageMap == nil || len(messageMap) > 0 {
+		t.Error(err)
+		return
+	}
+	messageList, messageMap, err = ListMessageByID(context.Background(), message.TID)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if len(messageList) != 1 || messageList[0].TID != message.TID || len(messageMap) != 1 || messageMap[message.TID] == nil || messageMap[message.TID].TID != message.TID {
+		t.Error("list id error")
+		return
+	}
+	messageList, messageMap, err = ListMessageFilterByID(context.Background(), "#all")
+	if err != nil || len(messageList) > 0 || messageMap == nil || len(messageMap) > 0 {
+		t.Error(err)
+		return
+	}
+	messageList, messageMap, err = ListMessageFilterByID(context.Background(), "#all", message.TID)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if len(messageList) != 1 || messageList[0].TID != message.TID || len(messageMap) != 1 || messageMap[message.TID] == nil || messageMap[message.TID].TID != message.TID {
+		t.Error("list id error")
+		return
+	}
+	messageList = nil
+	messageMap = nil
+	err = ScanMessageByID(context.Background(), []int64{message.TID}, &messageList, &messageMap, "tid")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if len(messageList) != 1 || messageList[0].TID != message.TID || len(messageMap) != 1 || messageMap[message.TID] == nil || messageMap[message.TID].TID != message.TID {
+		t.Error("list id error")
+		return
+	}
+	messageList = nil
+	messageMap = nil
+	err = ScanMessageFilterByID(context.Background(), "#all", []int64{message.TID}, &messageList, &messageMap, "tid")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if len(messageList) != 1 || messageList[0].TID != message.TID || len(messageMap) != 1 || messageMap[message.TID] == nil || messageMap[message.TID].TID != message.TID {
+		t.Error("list id error")
+		return
+	}
+	messageList = nil
+	messageMap = nil
+	err = ScanMessageWheref(context.Background(), "tid=$%v", []interface{}{message.TID}, "", &messageList, &messageMap, "tid")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if len(messageList) != 1 || messageList[0].TID != message.TID || len(messageMap) != 1 || messageMap[message.TID] == nil || messageMap[message.TID].TID != message.TID {
+		t.Error("list id error")
+		return
+	}
+	messageList = nil
+	messageMap = nil
+	err = ScanMessageFilterWheref(context.Background(), "#all", "tid=$%v", []interface{}{message.TID}, "", &messageList, &messageMap, "tid")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if len(messageList) != 1 || messageList[0].TID != message.TID || len(messageMap) != 1 || messageMap[message.TID] == nil || messageMap[message.TID].TID != message.TID {
+		t.Error("list id error")
+		return
+	}
+}
+
 func TestAutoOrder(t *testing.T) {
 	var err error
 	for _, value := range OrderTypeAll {

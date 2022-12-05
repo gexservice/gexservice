@@ -56,6 +56,7 @@ ALTER TABLE IF EXISTS gex_wallet ALTER COLUMN tid DROP DEFAULT;
 ALTER TABLE IF EXISTS gex_user ALTER COLUMN tid DROP DEFAULT;
 ALTER TABLE IF EXISTS gex_order_comm ALTER COLUMN tid DROP DEFAULT;
 ALTER TABLE IF EXISTS gex_order ALTER COLUMN tid DROP DEFAULT;
+ALTER TABLE IF EXISTS gex_message ALTER COLUMN tid DROP DEFAULT;
 ALTER TABLE IF EXISTS gex_kline ALTER COLUMN tid DROP DEFAULT;
 ALTER TABLE IF EXISTS gex_holding ALTER COLUMN tid DROP DEFAULT;
 ALTER TABLE IF EXISTS gex_balance_record ALTER COLUMN tid DROP DEFAULT;
@@ -70,6 +71,8 @@ DROP SEQUENCE IF EXISTS gex_order_tid_seq;
 DROP SEQUENCE IF EXISTS gex_order_comm_tid_seq;
 DROP TABLE IF EXISTS gex_order_comm;
 DROP TABLE IF EXISTS gex_order;
+DROP SEQUENCE IF EXISTS gex_message_tid_seq;
+DROP TABLE IF EXISTS gex_message;
 DROP SEQUENCE IF EXISTS gex_kline_tid_seq;
 DROP TABLE IF EXISTS gex_kline;
 DROP SEQUENCE IF EXISTS gex_holding_tid_seq;
@@ -623,6 +626,90 @@ CREATE SEQUENCE gex_kline_tid_seq
 --
 
 ALTER SEQUENCE gex_kline_tid_seq OWNED BY gex_kline.tid;
+
+
+--
+-- Name: gex_message; Type: TABLE; Schema: public;
+--
+
+CREATE TABLE gex_message (
+    tid bigint NOT NULL,
+    type integer NOT NULL,
+    title jsonb DEFAULT '{}'::jsonb NOT NULL,
+    content jsonb NOT NULL,
+    to_user_id bigint NOT NULL,
+    update_time timestamp with time zone NOT NULL,
+    create_time timestamp with time zone NOT NULL,
+    status integer NOT NULL
+);
+
+
+--
+-- Name: COLUMN gex_message.tid; Type: COMMENT; Schema: public;
+--
+
+COMMENT ON COLUMN gex_message.tid IS 'the primary key';
+
+
+--
+-- Name: COLUMN gex_message.type; Type: COMMENT; Schema: public;
+--
+
+COMMENT ON COLUMN gex_message.type IS 'the message type, User=100:is user type, Global=200:is global type';
+
+
+--
+-- Name: COLUMN gex_message.title; Type: COMMENT; Schema: public;
+--
+
+COMMENT ON COLUMN gex_message.title IS 'the message title';
+
+
+--
+-- Name: COLUMN gex_message.content; Type: COMMENT; Schema: public;
+--
+
+COMMENT ON COLUMN gex_message.content IS 'the message content';
+
+
+--
+-- Name: COLUMN gex_message.update_time; Type: COMMENT; Schema: public;
+--
+
+COMMENT ON COLUMN gex_message.update_time IS 'the message update time';
+
+
+--
+-- Name: COLUMN gex_message.create_time; Type: COMMENT; Schema: public;
+--
+
+COMMENT ON COLUMN gex_message.create_time IS 'the message create time';
+
+
+--
+-- Name: COLUMN gex_message.status; Type: COMMENT; Schema: public;
+--
+
+COMMENT ON COLUMN gex_message.status IS 'the message status, Normal=100: is normal status, Removed=-1:is removed';
+
+
+--
+-- Name: gex_message_tid_seq; Type: SEQUENCE; Schema: public;
+--
+
+CREATE SEQUENCE gex_message_tid_seq
+    START WITH 1000
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: gex_message_tid_seq; Type: SEQUENCE OWNED BY; Schema: public;
+--
+
+ALTER SEQUENCE gex_message_tid_seq OWNED BY gex_message.tid;
 
 
 --
@@ -1394,6 +1481,13 @@ ALTER TABLE IF EXISTS ONLY gex_kline ALTER COLUMN tid SET DEFAULT nextval('gex_k
 
 
 --
+-- Name: gex_message tid; Type: DEFAULT; Schema: public;
+--
+
+ALTER TABLE IF EXISTS ONLY gex_message ALTER COLUMN tid SET DEFAULT nextval('gex_message_tid_seq'::regclass);
+
+
+--
 -- Name: gex_order tid; Type: DEFAULT; Schema: public;
 --
 
@@ -1459,6 +1553,14 @@ ALTER TABLE IF EXISTS ONLY gex_holding
 
 ALTER TABLE IF EXISTS ONLY gex_kline
     ADD CONSTRAINT gex_kline_pkey PRIMARY KEY (tid);
+
+
+--
+-- Name: gex_message gex_message_pkey; Type: CONSTRAINT; Schema: public;
+--
+
+ALTER TABLE IF EXISTS ONLY gex_message
+    ADD CONSTRAINT gex_message_pkey PRIMARY KEY (tid);
 
 
 --

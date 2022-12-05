@@ -193,6 +193,51 @@ type KLine struct {
 	UpdateTime xsql.Time       `json:"update_time,omitempty" valid:"update_time,r|i,r:1;"` /* the kline update time */
 }
 
+/***** metadata:Message *****/
+type MessageType int
+type MessageTypeArray []MessageType
+
+const (
+	MessageTypeUser   MessageType = 100 //is user type
+	MessageTypeGlobal MessageType = 200 //is global type
+)
+
+//MessageTypeAll is the message type
+var MessageTypeAll = MessageTypeArray{MessageTypeUser, MessageTypeGlobal}
+
+//MessageTypeShow is the message type
+var MessageTypeShow = MessageTypeArray{MessageTypeUser, MessageTypeGlobal}
+
+type MessageStatus int
+type MessageStatusArray []MessageStatus
+
+const (
+	MessageStatusNormal  MessageStatus = 100 //is normal status
+	MessageStatusRemoved MessageStatus = -1  //is removed
+)
+
+//MessageStatusAll is the message status
+var MessageStatusAll = MessageStatusArray{MessageStatusNormal, MessageStatusRemoved}
+
+//MessageStatusShow is the message status
+var MessageStatusShow = MessageStatusArray{MessageStatusNormal}
+
+/*
+ * Message  represents gex_message
+ * Message Fields:tid,type,title,content,to_user_id,update_time,create_time,status,
+ */
+type Message struct {
+	T          string        `json:"-" table:"gex_message"`                              /* the table name tag */
+	TID        int64         `json:"tid,omitempty" valid:"tid,r|i,r:0;"`                 /* the primary key */
+	Type       MessageType   `json:"type,omitempty" valid:"type,r|i,e:0;"`               /* the message type, User=100:is user type, Global=200:is global type */
+	Title      xsql.M        `json:"title,omitempty" valid:"title,r|s,l:0;"`             /* the message title */
+	Content    xsql.M        `json:"content,omitempty" valid:"content,r|s,l:0;"`         /* the message content */
+	ToUserID   int64         `json:"to_user_id,omitempty" valid:"to_user_id,r|i,r:0;"`   /*  */
+	UpdateTime xsql.Time     `json:"update_time,omitempty" valid:"update_time,r|i,r:1;"` /* the message update time */
+	CreateTime xsql.Time     `json:"create_time,omitempty" valid:"create_time,r|i,r:1;"` /* the message create time */
+	Status     MessageStatus `json:"status,omitempty" valid:"status,r|i,e:0;"`           /* the message status, Normal=100: is normal status, Removed=-1:is removed */
+}
+
 /***** metadata:Order *****/
 type OrderType int
 type OrderTypeArray []OrderType

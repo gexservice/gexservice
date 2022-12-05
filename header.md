@@ -82,17 +82,16 @@
   * `fee_balance` 为本次交易系统扣除的手续费单位，现货时与`in_balance`相同，合约时固定为`USDT`相同
   * `fee_filled` 为本次交易系统扣除的手续费
 
+## 关于通知
+* 列出通知使用<a href="#api-Message-SearchMessage">列出通知</a>
+* 后台发布通知使用<a href="#api-Message-AddMessage">添加通知</a>
+
 ## 关于黄金提取
 * 提取申请：使用<a href="#api-Order-CreateGoldbarOrder">创建黄金订单接口</a>申请，获得提取码，申请后可以使用<a href="#api-Order-CancelGoldbarOrder">取消黄金订单接口</a>取消
 * 列出申请：使用<a href="#api-Order-SearchOrder">列出订单接口</a>，类型传入`OrderTypeGoldbar`列出黄金订单，
 * 提取管理：使用<a href="#api-Order-SearchOrder">列出订单接口</a>，类型传入`OrderTypeGoldbar`列出黄金订单，状态为`OrderStatusPending`
 * 黄金对账单：使用<a href="#api-Order-SearchOrder">列出订单接口</a>，类型传入`OrderTypeGoldbar`和`OrderTypeChangeYWE`列出黄金订单，状态为`OrderStatusDone`
 * 提取配置：使用<a href="#api-Conf-ConfGoldbar">黄金提取配置接口</a>
-
-## 关于经纪人
-* 列出我的用户使用，使用<a href="#api-User-SearchMyUser">列出我的用户接口</a>
-* 列出我的用户交易记录，使用<a href="#api-User-SearchMyUserOrder">列出我的用户交易记录接口</a>，手续费使用`order`里面的`fee_filled`
-* 列出我的交易费收，使用<a href="#api-User-SearchMyUserOrder">列出我的用户交易记录接口</a>，收入使用`comms`里面的`in_fee`
 
 ## 关于公告
 * <a href="#api-Announce">公告接口</a>
