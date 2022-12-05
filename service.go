@@ -8,6 +8,7 @@ import (
 	_ "net/http/pprof"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/Centny/rediscache"
 	"github.com/codingeasygo/crud/pgx"
@@ -22,6 +23,7 @@ import (
 	"github.com/gexservice/gexservice/base/session"
 	"github.com/gexservice/gexservice/base/sms"
 	"github.com/gexservice/gexservice/base/transport"
+	"github.com/gexservice/gexservice/base/util"
 	"github.com/gexservice/gexservice/base/xlog"
 	"github.com/gexservice/gexservice/gexapi"
 	"github.com/gexservice/gexservice/gexdb"
@@ -115,6 +117,8 @@ func main() {
 	gexpay.AgentAddr = conf.StrDef("", "/merch/agent")
 	gexpay.MerchAddr[gexdb.WalletMethodTron] = conf.StrDef("", "/merch/tron")
 	gexpay.MerchAddr[gexdb.WalletMethodEthereum] = conf.StrDef("", "/merch/ethereum")
+	gexdb.AssignWallet = gexpay.AssignWallet
+	gexdb.ApplyWithdraw = gexpay.ApplyWithdraw
 
 	//base handler
 	web.Shared.Filter("^.*$", filter.NewAllCORS())
@@ -169,7 +173,11 @@ func main() {
 		}
 	})
 	go web.HandleSignal()
-	xlog.Infof("start harvester service on %v", conf.Str("/server/listen"))
+	var running = true
+	{ //runner
+		go util.NamedRunner("ProcWithdraw", time.Second, &running, gexdb.ProcWithdraw)
+	}
+	xlog.Infof("start gex service on %v", conf.Str("/server/listen"))
 	err = web.ListenAndServe(conf.Str("/server/listen"))
 	if err != nil {
 		panic(err)

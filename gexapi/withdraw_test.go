@@ -45,7 +45,7 @@ func TestWithdraw(t *testing.T) {
 }
 
 func TestLoadTopupAddress(t *testing.T) {
-	gexdb.ApplyWallet = func(method gexdb.WalletMethod) (address string, err error) {
+	gexdb.AssignWallet = func(method gexdb.WalletMethod) (address string, err error) {
 		address = uuid.New()
 		return
 	}

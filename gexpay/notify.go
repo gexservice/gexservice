@@ -28,14 +28,14 @@ func NotifyTransactionH(s *web.Session) web.Result {
 		return s.SendJSON(xmap.M{"code": define.Success})
 	}
 	method := gexdb.WalletMethodTron
-	if body.Type != WalletTypeTron {
+	if body.Merch.Type != WalletTypeTron {
 		method = gexdb.WalletMethodEthereum
 	}
-	withdraw, err := gexdb.ReceiveTopup(s.R.Context(), method, body.Transaction.ToAddr, *body.Transaction.Txid, body.Transaction.Asset, body.Transaction.Amount, xmap.M{"from_addr": body.Transaction.FromAddr})
-	if err == nil {
-		xlog.Infof("NotifyTransactionH receive topup by err:%v,withdraw:%v", err, converter.JSON(withdraw))
-	} else {
+	withdraw, skip, err := gexdb.ReceiveTopup(s.R.Context(), method, body.Transaction.ToAddr, *body.Transaction.Txid, body.Transaction.Asset, body.Transaction.Amount, xmap.M{"from_addr": body.Transaction.FromAddr})
+	if err != nil {
 		xlog.Errorf("NotifyTransactionH receive topup by err:%v,withdraw:%v", err, converter.JSON(withdraw))
+	} else if !skip {
+		xlog.Infof("NotifyTransactionH receive topup by err:%v,withdraw:%v", err, converter.JSON(withdraw))
 	}
 	return s.SendJSON(xmap.M{"code": 0})
 }
@@ -55,7 +55,7 @@ func NotifyProcessorH(s *web.Session) web.Result {
 		return s.SendJSON(xmap.M{"code": define.SignInvalid, "message": err.Error()})
 	}
 	xlog.Infof("NotifyProcessorH receive processor by %v", converter.JSON(body))
-	if body.Processor.Type != ProcessorTypeUserWithdraw || body.Processor.Status == ProcessorStatusPending {
+	if (body.Processor.Type != ProcessorTypeMerchWithdraw && body.Processor.Type != ProcessorTypeUserWithdraw) || body.Processor.Status == ProcessorStatusPending {
 		return s.SendJSON(xmap.M{"code": define.Success})
 	}
 	var withdraw *gexdb.Withdraw

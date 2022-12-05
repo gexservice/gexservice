@@ -31,7 +31,7 @@ func ProcWithdraw() (err error) {
 	return
 }
 
-var ApplyWallet = func(method WalletMethod) (address string, err error) {
+var AssignWallet = func(method WalletMethod) (address string, err error) {
 	panic("not init")
 }
 
@@ -58,7 +58,7 @@ func LoadWalletByMethod(ctx context.Context, userID int64, method WalletMethod) 
 	if err == nil {
 		return
 	}
-	address, err := ApplyWallet(method)
+	address, err := AssignWallet(method)
 	if err != nil {
 		return
 	}

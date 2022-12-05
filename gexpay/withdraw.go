@@ -17,6 +17,7 @@ func ApplyWithdraw(withdraw *gexdb.Withdraw) (err error) {
 		"%v/usr/applyUserWithdraw?merch_type=%v&merch_addr=%v&user_addr=%v&to_addr=%v&asset=%v&amount=%v&try_count=1&uuid=%v&sign=%v&timestamp=%v",
 		AgentAddr, MerchType[method], MerchAddr[method], MerchAddr[method], withdraw.Receiver, withdraw.Asset, withdraw.Quantity, withdraw.OrderID, sign, timestamp,
 	)
+	xlog.Infof("ApplyWithdraw apply withdraw is starting by %v", applyURL)
 	res, err := xhttp.GetMap("%v", applyURL)
 	if err != nil {
 		xlog.Errorf("ApplyWithdraw apply withdraw fail with %v by %v", err, applyURL)
@@ -27,5 +28,6 @@ func ApplyWithdraw(withdraw *gexdb.Withdraw) (err error) {
 		xlog.Errorf("ApplyWithdraw apply withdraw fail with %v by %v", err, applyURL)
 		return
 	}
+	xlog.Infof("ApplyWithdraw apply withdraw done with %v by %v", converter.JSON(res), applyURL)
 	return
 }

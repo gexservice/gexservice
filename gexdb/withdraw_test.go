@@ -58,47 +58,63 @@ func TestWithdraw(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	withdraw = &Withdraw{
+	withdraw00 := &Withdraw{
 		UserID:   user.TID,
 		Asset:    asset,
 		Quantity: decimal.NewFromFloat(100),
 	}
-	err = CreateWithdraw(ctx, withdraw)
-	if err != nil || withdraw.Status != WithdrawStatusPending {
+	err = CreateWithdraw(ctx, withdraw00)
+	if err != nil || withdraw00.Status != WithdrawStatusPending {
 		t.Error(err)
 		return
 	}
-	err = ConfirmWithdraw(ctx, withdraw.OrderID)
+	err = ConfirmWithdraw(ctx, withdraw00.OrderID)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	_, err = DoneWithdraw(ctx, withdraw.OrderID, false, xmap.M{"A": 123})
+	_, err = DoneWithdraw(ctx, withdraw00.OrderID, false, xmap.M{"A": 123})
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	withdraw = &Withdraw{
+	_, err = DoneWithdraw(ctx, withdraw00.OrderID, false, xmap.M{"A": 123})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	withdraw01 := &Withdraw{
 		UserID:   user.TID,
 		Asset:    asset,
 		Quantity: decimal.NewFromFloat(100),
 	}
-	err = CreateWithdraw(ctx, withdraw)
-	if err != nil || withdraw.Status != WithdrawStatusPending {
+	err = CreateWithdraw(ctx, withdraw01)
+	if err != nil || withdraw01.Status != WithdrawStatusPending {
 		t.Error(err)
 		return
 	}
-	err = ConfirmWithdraw(ctx, withdraw.OrderID)
+	err = ConfirmWithdraw(ctx, withdraw01.OrderID)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	_, err = DoneWithdraw(ctx, withdraw.OrderID, true, xmap.M{"A": 123})
+	_, err = DoneWithdraw(ctx, withdraw01.OrderID, true, xmap.M{"A": 123})
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	_, err = DoneWithdraw(ctx, withdraw.OrderID, true, xmap.M{"A": 123})
+	_, err = DoneWithdraw(ctx, withdraw01.OrderID, true, xmap.M{"A": 123})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	_, err = DoneWithdraw(ctx, withdraw00.OrderID, true, xmap.M{"A": 123})
+	if err == nil {
+		t.Error(err)
+		return
+	}
+	_, err = DoneWithdraw(ctx, withdraw01.OrderID, false, xmap.M{"A": 123})
 	if err == nil {
 		t.Error(err)
 		return
@@ -194,7 +210,7 @@ func TestWithdraw(t *testing.T) {
 		_, err = CancelWithdraw(ctx, user.TID, withdraw2.OrderID)
 		return
 	})
-	pgx.MockerSetCall("Pool.Begin", 1, "Rows.Scan", 1, 2).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
+	pgx.MockerSetCall("Pool.Begin", 1, "Rows.Scan", 1, 2, "Tx.Exec", 1).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
 		_, err = DoneWithdraw(ctx, withdraw3.OrderID, true, xmap.M{"A": 123})
 		return
 	})
@@ -282,9 +298,9 @@ func TestLoadWallet(t *testing.T) {
 		defer func() {
 			recover()
 		}()
-		ApplyWallet(WalletMethodTron)
+		AssignWallet(WalletMethodTron)
 	}()
-	ApplyWallet = func(method WalletMethod) (address string, err error) { return "xxx", nil }
+	AssignWallet = func(method WalletMethod) (address string, err error) { return "xxx", nil }
 	user := testAddUser("TestLoadWallet")
 	wallet1, err := LoadWalletByMethod(ctx, user.TID, WalletMethodTron)
 	if err != nil || wallet1.TID < 1 {
@@ -308,7 +324,7 @@ func TestLoadWallet(t *testing.T) {
 		return
 	})
 
-	ApplyWallet = func(method WalletMethod) (address string, err error) { return "xxx", fmt.Errorf("error") }
+	AssignWallet = func(method WalletMethod) (address string, err error) { return "xxx", fmt.Errorf("error") }
 	_, err = LoadWalletByMethod(ctx, user.TID, WalletMethodTron)
 	if err == nil {
 		t.Error(err)
@@ -318,20 +334,25 @@ func TestLoadWallet(t *testing.T) {
 
 func TestTopup(t *testing.T) {
 	user := testAddUser("TestTopup")
-	ApplyWallet = func(method WalletMethod) (address string, err error) { return uuid.New(), nil }
+	AssignWallet = func(method WalletMethod) (address string, err error) { return uuid.New(), nil }
 	wallet, err := LoadWalletByMethod(ctx, user.TID, WalletMethodTron)
 	if err != nil || wallet.TID < 1 {
 		t.Error(err)
 		return
 	}
 	txid := uuid.New()
-	_, err = ReceiveTopup(ctx, wallet.Method, wallet.Address, txid, "TEST", decimal.NewFromFloat(100), xmap.M{})
+	_, _, err = ReceiveTopup(ctx, wallet.Method, wallet.Address, txid, "TEST", decimal.NewFromFloat(100), xmap.M{})
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	_, err = ReceiveTopup(ctx, wallet.Method, wallet.Address, txid, "TEST", decimal.NewFromFloat(100), xmap.M{})
+	_, _, err = ReceiveTopup(ctx, wallet.Method, wallet.Address, txid, "TEST", decimal.NewFromFloat(100), xmap.M{})
 	if err != nil {
+		t.Error(err)
+		return
+	}
+	_, skip, err := ReceiveTopup(ctx, wallet.Method, uuid.New(), txid, "TEST", decimal.NewFromFloat(100), xmap.M{})
+	if err != nil || !skip {
 		t.Error(err)
 		return
 	}
@@ -342,8 +363,8 @@ func TestTopup(t *testing.T) {
 	pgx.MockerClear()
 	txid = uuid.New()
 
-	pgx.MockerSetCall("Pool.Begin", 1, "Rows.Scan", 1, 2, 3).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
-		_, err = ReceiveTopup(ctx, wallet.Method, wallet.Address, txid, "TEST", decimal.NewFromFloat(100), xmap.M{})
+	pgx.MockerSetCall("Pool.Begin", 1, "Tx.Exec", 1, "Rows.Scan", 1, 2, 3, 4).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
+		_, _, err = ReceiveTopup(ctx, wallet.Method, wallet.Address, txid, "TEST", decimal.NewFromFloat(100), xmap.M{})
 		return
 	})
 }

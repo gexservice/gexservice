@@ -36,18 +36,20 @@ func Handle(pre string, mux *web.SessionMux) {
 func RequestSign(method gexdb.WalletMethod, key string) (timestamp int64, sign string) {
 	timestamp = xtime.Now()
 	body := NotifyBody{
-		Address:   MerchAddr[method],
-		Type:      MerchType[method],
 		Timestamp: timestamp,
 		Key:       key,
 	}
+	body.Merch.Address = MerchAddr[method]
+	body.Merch.Type = MerchType[method]
 	sign = body.CalcSign(AccessToken)
 	return
 }
 
 type NotifyBody struct {
-	Address   string `json:"address"`
-	Type      int    `json:"type"`
+	Merch struct {
+		Address string `json:"address"`
+		Type    int    `json:"type"`
+	} `json:"merch"`
 	Timestamp int64  `json:"timestamp"`
 	Key       string `json:"key"`
 	Sign      string `json:"sign"`
@@ -55,8 +57,8 @@ type NotifyBody struct {
 
 func (m *NotifyBody) CalcSign(token string) (sign string) {
 	args := url.Values{}
-	args.Set("merch_addr", m.Address)
-	args.Set("merch_type", fmt.Sprintf("%v", m.Type))
+	args.Set("merch_addr", m.Merch.Address)
+	args.Set("merch_type", fmt.Sprintf("%v", m.Merch.Type))
 	args.Set("timestamp", fmt.Sprintf("%d", m.Timestamp))
 	args.Set("key", m.Key)
 	signData := fmt.Sprintf("%v&access_token=%v", args.Encode(), token)

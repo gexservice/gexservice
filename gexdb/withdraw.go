@@ -134,12 +134,30 @@ func DoneWithdraw(ctx context.Context, orderID string, success bool, result xmap
 	if err != nil {
 		return
 	}
-	if withdraw.Status != WithdrawStatusConfirmed {
+	if withdraw.Status == WithdrawStatusDone {
+		if success {
+			return
+		}
+		err = fmt.Errorf("withdraw %v status is %v", orderID, withdraw.Status)
+		return
+	} else if withdraw.Status == WithdrawStatusCanceled {
+		if !success {
+			return
+		}
 		err = fmt.Errorf("withdraw %v status is %v", orderID, withdraw.Status)
 		return
 	}
 	for k, v := range result {
 		withdraw.Result[k] = v
+	}
+	if success {
+		withdraw.Status = WithdrawStatusDone
+	} else {
+		withdraw.Status = WithdrawStatusCanceled
+	}
+	err = withdraw.UpdateFilter(tx, ctx, "result,status")
+	if err != nil {
+		return
 	}
 	balance := &Balance{
 		UserID: withdraw.UserID,
@@ -155,15 +173,21 @@ func DoneWithdraw(ctx context.Context, orderID string, success bool, result xmap
 		return
 	}
 	if success {
-		withdraw.Status = WithdrawStatusDone
-	} else {
-		withdraw.Status = WithdrawStatusCanceled
+		_, err = AddBalanceRecordCall(tx, ctx, &BalanceRecord{
+			Creator:   withdraw.UserID,
+			BalanceID: balance.TID,
+			Type:      BalanceRecordTypeTopup,
+			Changed:   withdraw.Quantity,
+			Transaction: xsql.M{
+				"txid":     withdraw.OrderID,
+				"withdraw": withdraw.TID,
+			},
+		})
 	}
-	err = withdraw.UpdateFilter(tx, ctx, "result,status")
 	return
 }
 
-func ReceiveTopup(ctx context.Context, method WalletMethod, address string, txid, asset string, amount decimal.Decimal, result xmap.M) (withdraw *Withdraw, err error) {
+func ReceiveTopup(ctx context.Context, method WalletMethod, address string, txid, asset string, amount decimal.Decimal, result xmap.M) (topup *Withdraw, skip bool, err error) {
 	tx, err := Pool().Begin(ctx)
 	if err != nil {
 		return
@@ -177,17 +201,21 @@ func ReceiveTopup(ctx context.Context, method WalletMethod, address string, txid
 	}()
 	wallet, err := FindWalletWherefCall(tx, ctx, true, "method=$%v,address=$%v", method, address)
 	if err != nil {
+		if err == pgx.ErrNoRows {
+			skip = true
+			err = nil
+		}
 		return
 	}
 	orderID := fmt.Sprintf("topup_%v", txid)
-	withdraw, err = FindWithdrawByOrderIDCall(tx, ctx, orderID, false)
+	topup, err = FindWithdrawByOrderIDCall(tx, ctx, orderID, false)
 	if err != nil && err != pgx.ErrNoRows {
 		return
 	}
 	if err == nil { //received
 		return
 	}
-	withdraw = &Withdraw{
+	topup = &Withdraw{
 		OrderID:   orderID,
 		Type:      WithdrawTypeTopup,
 		UserID:    wallet.UserID,
@@ -198,20 +226,34 @@ func ReceiveTopup(ctx context.Context, method WalletMethod, address string, txid
 		Result:    xsql.M(result),
 		Status:    WithdrawStatusDone,
 	}
-	err = withdraw.Insert(tx, ctx)
+	err = topup.Insert(tx, ctx)
 	if err != nil {
 		return
 	}
 	balance := &Balance{
-		UserID: withdraw.UserID,
+		UserID: topup.UserID,
 		Area:   BalanceAreaSpot,
-		Asset:  withdraw.Asset,
-		Free:   withdraw.Quantity,
+		Asset:  topup.Asset,
+		Free:   topup.Quantity,
 	}
 	_, err = TouchBalanceCall(tx, ctx, balance.Area, []string{balance.Asset}, balance.UserID)
-	if err == nil {
-		err = IncreaseBalanceCall(tx, ctx, balance)
+	if err != nil {
+		return
 	}
+	err = IncreaseBalanceCall(tx, ctx, balance)
+	if err != nil {
+		return
+	}
+	_, err = AddBalanceRecordCall(tx, ctx, &BalanceRecord{
+		Creator:   topup.UserID,
+		BalanceID: balance.TID,
+		Type:      BalanceRecordTypeTopup,
+		Changed:   topup.Quantity,
+		Transaction: xsql.M{
+			"txid":  topup.OrderID,
+			"topup": topup.TID,
+		},
+	})
 	return
 }
 
