@@ -176,7 +176,7 @@ func DoneWithdraw(ctx context.Context, orderID string, success bool, result xmap
 		_, err = AddBalanceRecordCall(tx, ctx, &BalanceRecord{
 			Creator:   withdraw.UserID,
 			BalanceID: balance.TID,
-			Type:      BalanceRecordTypeTopup,
+			Type:      BalanceRecordTypeWithdraw,
 			Changed:   withdraw.Quantity,
 			Transaction: xsql.M{
 				"txid":     withdraw.OrderID,
