@@ -212,6 +212,7 @@ type UserRecordUnifySearcher struct {
 	} `json:"page" valid:"inline"`
 	Query struct {
 		Records []*UserRecord `json:"users"`
+		UserIDs []int64       `json:"user_ids" scan:"user_id"`
 		PrevIDs []int64       `json:"prev_ids" scan:"prev_id"`
 	} `json:"query" filter:"^password,external#all"`
 	Count struct {

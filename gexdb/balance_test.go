@@ -42,6 +42,20 @@ func TestBalance(t *testing.T) {
 		t.Error(err)
 		return
 	}
+	searcher := BalanceUnifySearcher{}
+	searcher.Where.Area = BalanceAreaAll
+	searcher.Where.Asset = []string{balance.Asset}
+	searcher.Where.Key = "Test"
+	err = searcher.Apply(ctx)
+	if err != nil || len(searcher.Query.Balances) < 1 || searcher.Count.Total < 1 {
+		t.Error(err)
+		return
+	}
+	areaBalances, _, err := ListAreaBalance(ctx, balance.UserID, BalanceAreaArray{BalanceAreaSpot}, asset, BalanceStatusAll)
+	if err != nil || len(areaBalances) != 1 {
+		t.Error(err)
+		return
+	}
 	if !IsErrBalanceNotEnought(IncreaseBalance(ctx,
 		&Balance{
 			UserID: user.TID,
@@ -102,6 +116,25 @@ func TestBalance(t *testing.T) {
 		t.Error(err)
 		return
 	}
+
+	balanceAll, err := CountAllBalance(ctx, asset)
+	if err != nil || len(balanceAll) < 1 {
+		t.Error(err)
+		return
+	}
+
+	balanceArea, err := CountAreaBalance(ctx, BalanceAreaSpot, time.Time{}, time.Now())
+	if err != nil || len(balanceArea) < 1 {
+		t.Error(err)
+		return
+	}
+
+	balanceUser, err := CountUserBalance(ctx, asset, user.TID)
+	if err != nil || len(balanceUser) < 1 {
+		t.Error(err)
+		return
+	}
+
 }
 
 func TestTransferChange(t *testing.T) {
@@ -215,6 +248,7 @@ func TestBalanceRecord(t *testing.T) {
 	searcher.Where.Asset = []string{balance.Asset}
 	searcher.Where.StartTime = xsql.Time(time.Now().Add(-time.Hour))
 	searcher.Where.EndTime = xsql.Time(time.Now())
+	searcher.Where.Key = "Test"
 	err = searcher.Apply(ctx)
 	if err != nil || len(searcher.Query.Records) < 1 || searcher.Count.Total < 1 {
 		fmt.Println("-->", searcher.Query.Records)

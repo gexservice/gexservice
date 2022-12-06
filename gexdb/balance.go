@@ -108,6 +108,16 @@ func ListUserBalance(ctx context.Context, userID int64, area BalanceArea, assets
 	return
 }
 
+func ListAreaBalance(ctx context.Context, userID int64, area BalanceAreaArray, asset string, status BalanceStatusArray) (balanceList []*Balance, balanceMap map[BalanceArea]*Balance, err error) {
+	err = ScanBalanceFilterWheref(
+		ctx, "#all",
+		"user_id=$%v,area=any($%v),asset=$%v,status=any($%v)",
+		[]interface{}{userID, area, asset, status},
+		"", &balanceList, &balanceMap, "area",
+	)
+	return
+}
+
 func TransferChange(ctx context.Context, creator, userID int64, from, to BalanceArea, asset string, value decimal.Decimal) (err error) {
 	tx, err := Pool().Begin(ctx)
 	if err != nil {
@@ -209,6 +219,47 @@ func ChangeBalanceCall(caller crud.Queryer, ctx context.Context, creator, userID
 	return
 }
 
+/**
+ * @apiDefine BalanceUnifySearcher
+ * @apiParam  {String} [area] the balance area filter, all type supported is <a href="#metadata-Balance">BalanceAreaAll</a>
+ * @apiParam  {Number} [asset] the balance asset filter, multi with comma
+ * @apiParam  {Number} [status] the balance status filter, multi with comma, all type supported is <a href="#metadata-Balance">BalanceStatusAll</a>
+ * @apiParam  {String} [key] the search key
+ * @apiParam  {Number} [skip] page skip
+ * @apiParam  {Number} [limit] page limit
+ */
+type BalanceUnifySearcher struct {
+	Model Balance `json:"model" from:"gex_balance b join gex_user u on b.user_id=u.tid"`
+	Where struct {
+		UserID int64              `json:"user_id" cmp:"b.user_id=$%v" valid:"user_id,o|i,r:0;"`
+		Area   BalanceAreaArray   `json:"area" cmp:"b.area=any($%v)" valid:"area,o|i,e:0;"`
+		Asset  []string           `json:"asset" cmp:"b.asset=any($%v)" valid:"asset,o|s,l:0;"`
+		Status BalanceStatusArray `json:"status" cmp:"b.status=any($%v)" valid:"status,o|i,e:;"`
+		Key    string             `json:"key" cmp:"(u.tid::text like $%v or u.name like $%v or u.phone like $%v or u.account like $%v)" valid:"key,o|s,l:0;"`
+	} `json:"where" join:"and" valid:"inline"`
+	Page struct {
+		Order string `json:"order" default:"order by b.update_time desc" valid:"order,o|s,l:0;"`
+		Skip  int    `json:"skip" valid:"skip,o|i,r:-1;"`
+		Limit int    `json:"limit" valid:"limit,o|i,r:0;"`
+	} `json:"page" valid:"inline"`
+	Query struct {
+		Balances []*Balance `json:"balances"`
+		UserIDs  []int64    `json:"user_ids" scan:"user_id"`
+	} `json:"query" filter:"b.#all"`
+	Count struct {
+		Total int64 `json:"total" scan:"tid"`
+	} `json:"count" filter:"b.count(tid)#all"`
+}
+
+func (b *BalanceUnifySearcher) Apply(ctx context.Context) (err error) {
+	b.Page.Order = ""
+	if len(b.Where.Key) > 0 {
+		b.Where.Key = "%" + b.Where.Key + "%"
+	}
+	err = crud.ApplyUnify(Pool(), ctx, b)
+	return
+}
+
 func AddBalanceRecordCall(caller crud.Queryer, ctx context.Context, records ...*BalanceRecord) (added int64, err error) {
 	if len(records) < 1 {
 		return
@@ -241,7 +292,7 @@ func AddBalanceRecordCall(caller crud.Queryer, ctx context.Context, records ...*
  * @apiParam  {Number} [limit] page limit
  */
 type BalanceRecordUnifySearcher struct {
-	Model BalanceRecordItem `json:"model" from:"gex_balance_record r join gex_balance b on b.tid=r.balance_id"`
+	Model BalanceRecordItem `json:"model" from:"gex_balance_record r join gex_balance b on b.tid=r.balance_id join gex_user u on b.user_id=u.tid"`
 	Where struct {
 		UserID    int64                  `json:"user_id" cmp:"b.user_id=$%v" valid:"user_id,o|i,r:0;"`
 		Area      BalanceArea            `json:"area" cmp:"b.area=$%v" valid:"area,o|i,e:0;"`
@@ -249,6 +300,7 @@ type BalanceRecordUnifySearcher struct {
 		Type      BalanceRecordTypeArray `json:"type" cmp:"r.type=any($%v)" valid:"type,o|i,e:;"`
 		StartTime xsql.Time              `json:"start_time" cmp:"r.update_time>=$%v" valid:"start_time,o|i,r:-1;"`
 		EndTime   xsql.Time              `json:"end_time" cmp:"r.update_time<$%v" valid:"end_time,o|i,r:-1;"`
+		Key       string                 `json:"key" cmp:"(u.tid::text like $%v or u.name like $%v or u.phone like $%v or u.account like $%v)" valid:"key,o|s,l:0;"`
 	} `json:"where" join:"and" valid:"inline"`
 	Page struct {
 		Order string `json:"order" default:"order by r.update_time desc" valid:"order,o|s,l:0;"`
@@ -257,14 +309,18 @@ type BalanceRecordUnifySearcher struct {
 	} `json:"page" valid:"inline"`
 	Query struct {
 		Records []*BalanceRecordItem `json:"records"`
-	} `json:"query" filter:"b.asset#all|r.type,target,changed,update_time#all"`
+		UserIDs []int64              `json:"user_id" scan:"user_id"`
+	} `json:"query" filter:"b.user_id,asset#all|r.type,target,changed,update_time#all"`
 	Count struct {
 		Total int64 `json:"total" scan:"tid"`
 	} `json:"count" filter:"r.count(tid)#all"`
 }
 
-func (o *BalanceRecordUnifySearcher) Apply(ctx context.Context) (err error) {
-	o.Page.Order = ""
-	err = crud.ApplyUnify(Pool(), ctx, o)
+func (b *BalanceRecordUnifySearcher) Apply(ctx context.Context) (err error) {
+	b.Page.Order = ""
+	if len(b.Where.Key) > 0 {
+		b.Where.Key = "%" + b.Where.Key + "%"
+	}
+	err = crud.ApplyUnify(Pool(), ctx, b)
 	return
 }

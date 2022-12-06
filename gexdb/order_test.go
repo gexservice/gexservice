@@ -17,6 +17,7 @@ func TestOrder(t *testing.T) {
 		Type:       OrderTypeTrade,
 		UserID:     user.TID,
 		Creator:    user.TID,
+		Area:       OrderAreaSpot,
 		Symbol:     "test",
 		OrderID:    NewOrderID(),
 		FeeBalance: "test",
@@ -40,7 +41,7 @@ func TestOrder(t *testing.T) {
 	}
 	searcher := &OrderUnifySearcher{}
 	searcher.Where.UserID = xsql.Int64Array{order.UserID}
-	searcher.Where.Area = "te"
+	searcher.Where.Area = OrderAreaAll
 	searcher.Where.Symbol = order.Symbol
 	searcher.Where.Key = order.OrderID
 	err = searcher.Apply(ctx)
@@ -60,6 +61,16 @@ func TestOrder(t *testing.T) {
 	}
 	orders, err := ListPendingOrder(ctx, order.UserID, "te", order.Symbol)
 	if err != nil || len(orders) > 0 {
+		t.Error(err)
+		return
+	}
+	feeAll, err := CountOrderFee(ctx, order.Area, time.Time{}, time.Now())
+	if err != nil || len(feeAll) < 1 {
+		t.Error(err)
+		return
+	}
+	volumeAll, err := CountOrderVolume(ctx, order.Area, time.Time{}, time.Now())
+	if err != nil || len(volumeAll) < 1 {
 		t.Error(err)
 		return
 	}

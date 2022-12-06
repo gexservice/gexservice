@@ -19,6 +19,7 @@ func TestHolding(t *testing.T) {
 	loadHolding, _ := ts.Should(t, "code", define.Success, "holding/lever", 5).GetMap("/usr/loadHolding?symbol=XX")
 	fmt.Printf("loadHolding--->%v\n", converter.JSON(loadHolding))
 	//
+	ts.Should(t, "code", define.ArgsInvalid).GetMap("/usr/listHolding?target_user_id=xx")
 	listHolding, _ := ts.Should(t, "code", define.Success, "balance/free", xmap.ShouldIsNoZero).GetMap("/usr/listHolding")
 	fmt.Printf("listHolding--->%v\n", converter.JSON(listHolding))
 	//change lever
@@ -28,6 +29,13 @@ func TestHolding(t *testing.T) {
 	//
 	ts.Should(t, "code", define.Success).GetMap("/pub/login?username=%v&password=%v", "abc3", "123")
 	ts.Should(t, "code", define.Success).GetMap("/usr/changeHoldingLever?symbol=%v&lever=1", "futures.YWEUSDT")
+	ts.Should(t, "code", define.ArgsInvalid).GetMap("/usr/searchHolding?status=xx")
+	searchHolding, _ := ts.Should(t, "code", define.Success).GetMap("/usr/searchHolding")
+	fmt.Printf("searchHolding--->%v\n", converter.JSON(searchHolding))
+	//
+	ts.Should(t, "code", define.Success).GetMap("/pub/login?username=%v&password=%v", "admin", "123")
+	ts.Should(t, "code", define.Success).GetMap("/usr/listHolding?target_user_id=%v", userabc0.TID)
+	//
 	//
 	//test error
 	pgx.MockerStart()
@@ -40,4 +48,5 @@ func TestHolding(t *testing.T) {
 	pgx.MockerSetCall("Rows.Scan", 1).Should(t, "code", define.ServerError).GetMap("/usr/loadHolding?symbol=XX")
 	pgx.MockerSetCall("Rows.Scan", 1, 2, "Pool.Exec", 1).Should(t, "code", define.ServerError).GetMap("/usr/listHolding")
 	pgx.MockerSetCall("Rows.Scan", 1).Should(t, "code", define.ServerError).GetMap("/usr/changeHoldingLever?symbol=%v&lever=1", "futures.YWEUSDT")
+	pgx.MockerSetCall("Pool.Query", 1, 2, 3).Should(t, "code", define.ServerError).GetMap("/usr/searchHolding")
 }

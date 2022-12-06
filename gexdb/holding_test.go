@@ -2,6 +2,7 @@ package gexdb
 
 import (
 	"testing"
+	"time"
 
 	"github.com/shopspring/decimal"
 )
@@ -39,6 +40,33 @@ func TestHolding(t *testing.T) {
 	}
 	holdings, symbols, err := ListUserHolding(ctx, user.TID, []string{symbol})
 	if err != nil || len(holdings) < 1 || len(symbols) < 1 {
+		t.Error(err)
+		return
+	}
+
+	searcher := HoldingUnifySearcher{}
+	searcher.Where.Symbol = []string{holding.Symbol}
+	searcher.Where.Key = "Test"
+	err = searcher.Apply(ctx)
+	if err != nil || len(searcher.Query.Holdings) < 1 || searcher.Count.Total < 1 {
+		t.Error(err)
+		return
+	}
+
+	holdingAll, symbolAll, err := ListHoldingByUser(ctx, []int64{user.TID}, []string{symbol})
+	if err != nil || len(holdingAll) < 1 || len(symbolAll) < 1 {
+		t.Error(err)
+		return
+	}
+
+	holdings, err = CountHolding(ctx, 1, time.Time{}, time.Now())
+	if err != nil || len(holdings) < 1 {
+		t.Error(err)
+		return
+	}
+
+	holdings, err = CountHolding(ctx, -1, time.Time{}, time.Now())
+	if err != nil || len(holdings) > 0 {
 		t.Error(err)
 		return
 	}

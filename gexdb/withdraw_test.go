@@ -126,6 +126,7 @@ func TestWithdraw(t *testing.T) {
 	searcher.Where.Type = WithdrawTypeArray{WithdrawTypeWithdraw}
 	searcher.Where.Asset = []string{asset}
 	searcher.Where.Status = WithdrawStatusAll
+	searcher.Where.Key = "Test"
 	err = searcher.Apply(ctx)
 	if err != nil || len(searcher.Query.Withdraws) < 1 {
 		t.Error(err)
@@ -134,6 +135,16 @@ func TestWithdraw(t *testing.T) {
 	withdraw = &Withdraw{
 		UserID:   user.TID,
 		Asset:    "x1",
+		Quantity: decimal.NewFromFloat(1),
+	}
+	err = CreateWithdraw(ctx, withdraw)
+	if err != nil || withdraw.Status != WithdrawStatusPending {
+		t.Error(err)
+		return
+	}
+	withdraw = &Withdraw{
+		UserID:   user.TID,
+		Asset:    asset,
 		Quantity: decimal.NewFromFloat(1),
 	}
 	err = CreateWithdraw(ctx, withdraw)

@@ -83,3 +83,10 @@ func (o *OnlineHander) List(userIDs ...int64) (infoes map[int64]*OnlineInfo) {
 	}
 	return
 }
+
+func (o *OnlineHander) Size() (size int) {
+	o.userLck.RLock()
+	defer o.userLck.RUnlock()
+	size = len(o.userAll)
+	return
+}

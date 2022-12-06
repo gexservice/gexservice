@@ -38,9 +38,11 @@ func Handle(pre string, mux *web.SessionMux) {
 	mux.HandleFunc("^"+pre+"/usr/logout(\\?.*)?$", LogoutH)
 	mux.HandleFunc("^"+pre+"/usr/userInfo(\\?.*)?$", UserInfoH)
 	mux.HandleFunc("^"+pre+"/usr/loadUser(\\?.*)?$", LoadUserH)
+	mux.HandleFunc("^"+pre+"/usr/addUser(\\?.*)?$", AddUserH)
 	mux.HandleFunc("^"+pre+"/usr/updateUser(\\?.*)?$", UpdateUserH)
 	mux.HandleFunc("^"+pre+"/usr/updateUserConfig(\\?.*)?$", UpdateUserConfigH)
 	mux.HandleFunc("^"+pre+"/usr/searchUser(\\?.*)?$", SearchUserH)
+	mux.HandleFunc("^"+pre+"/usr/listUserRecord(\\?.*)?$", ListUserRecordH)
 	// mux.HandleFunc("^"+pre+"/usr/searchMyUser(\\?.*)?$", SearchMyUserH)
 	// mux.HandleFunc("^"+pre+"/usr/updateMyUserRemakr(\\?.*)?$", UpdateMyUserRemarkH)
 	//balance
@@ -48,22 +50,24 @@ func Handle(pre string, mux *web.SessionMux) {
 	mux.HandleFunc("^"+pre+"/usr/loadBalanceOverview(\\?.*)?$", LoadBalanceOverviewH)
 	mux.HandleFunc("^"+pre+"/usr/listBalance(\\?.*)?$", ListBalanceH)
 	mux.HandleFunc("^"+pre+"/usr/transferBalance(\\?.*)?$", TransferBalanceH)
-	mux.HandleFunc("^"+pre+"/usr/listBalanceRecord(\\?.*)?$", ListBalanceRecordH)
+	mux.HandleFunc("^"+pre+"/usr/searchBalance(\\?.*)?$", SearchBalanceH)
+	mux.HandleFunc("^"+pre+"/usr/searchBalanceRecord(\\?.*)?$", SearchBalanceRecordH)
 	//withdraw
 	mux.HandleFunc("^"+pre+"/usr/createWithdraw(\\?.*)?$", CreateWithdrawH)
 	mux.HandleFunc("^"+pre+"/usr/cancelWithdraw(\\?.*)?$", CancelWithdrawH)
 	mux.HandleFunc("^"+pre+"/usr/confirmWithdraw(\\?.*)?$", ConfirmWithdrawH)
-	mux.HandleFunc("^"+pre+"/usr/listWithdraw(\\?.*)?$", ListWithdrawH)
+	mux.HandleFunc("^"+pre+"/usr/searchWithdraw(\\?.*)?$", SearchWithdrawH)
 	mux.HandleFunc("^"+pre+"/usr/createGoldbar(\\?.*)?$", CreateGoldbarH)
 	mux.HandleFunc("^"+pre+"/usr/cancelGoldbar(\\?.*)?$", CancelGoldbarH)
 	mux.HandleFunc("^"+pre+"/usr/confirmGoldbar(\\?.*)?$", ConfirmGoldbarH)
 	mux.HandleFunc("^"+pre+"/usr/doneGoldbar(\\?.*)?$", DoneGoldbarH)
-	mux.HandleFunc("^"+pre+"/usr/listGoldbar(\\?.*)?$", ListGoldbarH)
+	mux.HandleFunc("^"+pre+"/usr/searchGoldbar(\\?.*)?$", SearchGoldbarH)
 	mux.HandleFunc("^"+pre+"/usr/loadTopupAddress(\\?.*)?$", LoadTopupAddressH)
 	//holding
 	mux.HandleFunc("^"+pre+"/usr/listHolding(\\?.*)?$", ListHoldingH)
 	mux.HandleFunc("^"+pre+"/usr/loadHolding(\\?.*)?$", LoadHoldingH)
 	mux.HandleFunc("^"+pre+"/usr/changeHoldingLever(\\?.*)?$", ChangeHoldingLeverH)
+	mux.HandleFunc("^"+pre+"/usr/searchHolding(\\?.*)?$", SearchHoldingH)
 	//order
 	mux.HandleFunc("^"+pre+"/usr/placeOrder", PlaceOrderH)
 	mux.HandleFunc("^"+pre+"/usr/cancelOrder", CancelOrderH)
@@ -93,6 +97,9 @@ func Handle(pre string, mux *web.SessionMux) {
 	mux.HandleFunc("^"+pre+"/usr/addMessage(\\?.*)?$", AddMessageH)
 	mux.HandleFunc("^"+pre+"/usr/removeMessage(\\?.*)?$", RemoveMessageH)
 	mux.HandleFunc("^"+pre+"/usr/searchMessage(\\?.*)?$", SearchMessageH)
+	//count
+	mux.HandleFunc("^"+pre+"/usr/loadOverview(\\?.*)?$", LoadOverviewH)
+	mux.HandleFunc("^"+pre+"/usr/listBalanceCount(\\?.*)?$", ListBalanceCountH)
 	//sms
 	sms.Hand(pre, mux)
 	//email

@@ -137,11 +137,11 @@ func ConfirmWithdrawH(s *web.Session) web.Result {
 	})
 }
 
-//ListWithdrawH is http handler
+//SearchWithdrawH is http handler
 /**
  *
- * @api {GET} /usr/listWithdraw List Withdraw
- * @apiName ListWithdraw
+ * @api {GET} /usr/searchWithdraw Search Withdraw
+ * @apiName SearchWithdraw
  * @apiGroup Withdraw
  *
  *
@@ -171,7 +171,7 @@ func ConfirmWithdrawH(s *web.Session) web.Result {
  *     ]
  * }
  */
-func ListWithdrawH(s *web.Session) web.Result {
+func SearchWithdrawH(s *web.Session) web.Result {
 	searcher := &gexdb.WithdrawUnifySearcher{}
 	err := s.Valid(searcher, "#all")
 	if err != nil {
@@ -186,9 +186,18 @@ func ListWithdrawH(s *web.Session) web.Result {
 		xlog.Errorf("SearchOrderH searcher order fail with %v by %v", err, converter.JSON(searcher))
 		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
 	}
+	var users map[int64]*gexdb.User
+	if len(searcher.Query.UserIDs) > 0 {
+		_, users, err = gexdb.ListUserByID(s.R.Context(), searcher.Query.UserIDs...)
+		if err != nil {
+			xlog.Errorf("SearchWithdrawH list user fail with %v by %v", err, converter.JSON(searcher))
+			return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
+		}
+	}
 	return s.SendJSON(xmap.M{
 		"code":      define.Success,
 		"withdraws": searcher.Query.Withdraws,
+		"users":     users,
 		"total":     searcher.Count.Total,
 	})
 }
@@ -368,11 +377,11 @@ func DoneGoldbarH(s *web.Session) web.Result {
 	})
 }
 
-//ListGoldbarH is http handler
+//SearchGoldbarH is http handler
 /**
  *
- * @api {GET} /usr/listGoldbar List Goldbar
- * @apiName ListGoldbar
+ * @api {GET} /usr/searchGoldbar Search Goldbar
+ * @apiName SearchGoldbar
  * @apiGroup Withdraw
  *
  *
@@ -402,7 +411,7 @@ func DoneGoldbarH(s *web.Session) web.Result {
  *     ]
  * }
  */
-func ListGoldbarH(s *web.Session) web.Result {
+func SearchGoldbarH(s *web.Session) web.Result {
 	searcher := &gexdb.WithdrawUnifySearcher{}
 	err := s.Valid(searcher, "#all")
 	if err != nil {
@@ -418,9 +427,18 @@ func ListGoldbarH(s *web.Session) web.Result {
 		xlog.Errorf("SearchOrderH searcher order fail with %v by %v", err, converter.JSON(searcher))
 		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
 	}
+	var users map[int64]*gexdb.User
+	if len(searcher.Query.UserIDs) > 0 {
+		_, users, err = gexdb.ListUserByID(s.R.Context(), searcher.Query.UserIDs...)
+		if err != nil {
+			xlog.Errorf("SearchGoldbarH list user fail with %v by %v", err, converter.JSON(searcher))
+			return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
+		}
+	}
 	return s.SendJSON(xmap.M{
 		"code":     define.Success,
 		"goldbars": searcher.Query.Withdraws,
+		"users":    users,
 		"total":    searcher.Count.Total,
 	})
 }

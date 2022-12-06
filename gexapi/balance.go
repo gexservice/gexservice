@@ -222,11 +222,118 @@ func ChangeUserBalanceH(s *web.Session) web.Result {
 	})
 }
 
-//ListBalanceRecordH is http handler
+//SearchBalanceH is http handler
 /**
  *
- * @api {GET} /usr/listBalanceRecord List Balance Record
- * @apiName ListBalanceRecord
+ * @api {GET} /usr/searchBalance Search Balance
+ * @apiName SearchBalance
+ * @apiGroup Balance
+ *
+ *
+ * @apiUse BalanceUnifySearcher
+ *
+ * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>
+ * @apiSuccess (Success) {Object} unprofits the balance unprofit, mapping by user id, then mapping by symbol
+ * @apiSuccess (Success) {Decimal} unprofits.total the user total unprofit
+ * @apiSuccess (Balance) {Array} balances the balance records
+ * @apiUse BalanceObject
+ *
+ * @apiSuccessExample {type} Success-Response:
+ * {
+ *     "balances": [
+ *         {
+ *             "area": 200,
+ *             "asset": "USDT",
+ *             "create_time": 1670327710489,
+ *             "free": "905",
+ *             "locked": "45",
+ *             "margin": "0",
+ *             "status": 100,
+ *             "tid": 1021,
+ *             "update_time": 1670327710587,
+ *             "user_id": 100004
+ *         },
+ *         {
+ *             "area": 200,
+ *             "asset": "YWE",
+ *             "create_time": 1670327710489,
+ *             "free": "1000.499",
+ *             "locked": "0",
+ *             "margin": "0",
+ *             "status": 100,
+ *             "tid": 1020,
+ *             "update_time": 1670327710551,
+ *             "user_id": 100004
+ *         }
+ *     ],
+ *     "code": 0,
+ *     "total": 5,
+ *     "unprofits": {
+ *         "100004": {
+ *             "futures.YWEUSDT": "-5",
+ *             "total": "-5"
+ *         }
+ *     },
+ *     "users": {
+ *         "100004": {
+ *             "account": "abc2",
+ *             "create_time": 1670327710481,
+ *             "favorites": {},
+ *             "image": "abc2_image",
+ *             "name": "abc2_name",
+ *             "phone": "abc2_123",
+ *             "role": 100,
+ *             "status": 100,
+ *             "tid": 100004,
+ *             "type": 100,
+ *             "update_time": 1670327710481
+ *         }
+ *     }
+ * }
+ */
+func SearchBalanceH(s *web.Session) web.Result {
+	searcher := &gexdb.BalanceUnifySearcher{}
+	err := s.Valid(searcher, "#all")
+	if err != nil {
+		return util.ReturnCodeLocalErr(s, define.ArgsInvalid, "arg-err", err)
+	}
+	userID := s.Int64("user_id")
+	if !AdminAccess(s) {
+		searcher.Where.UserID = userID
+	}
+	err = searcher.Apply(s.R.Context())
+	if err != nil {
+		xlog.Errorf("SearchBalanceH search balance fail with %v by %v", err, converter.JSON(searcher))
+		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
+	}
+	var users map[int64]*gexdb.User
+	var unprofits map[int64]map[string]decimal.Decimal
+	if len(searcher.Query.UserIDs) > 0 {
+		unprofits, err = market.ListHoldingUnprofit(s.R.Context(), searcher.Query.UserIDs...)
+		if err != nil {
+			xlog.Errorf("SearchBalanceH list holding profits fail with %v by %v", err, converter.JSON(searcher))
+			return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
+		}
+		_, users, err = gexdb.ListUserByID(s.R.Context(), searcher.Query.UserIDs...)
+		if err != nil {
+			xlog.Errorf("SearchBalanceH list holding profits fail with %v by %v", err, converter.JSON(searcher))
+			return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
+		}
+	}
+	return s.SendJSON(xmap.M{
+		"code":      define.Success,
+		"balances":  searcher.Query.Balances,
+		"unprofits": unprofits,
+		"users":     users,
+		"total":     searcher.Count.Total,
+	})
+}
+
+//SearchBalanceRecordH is http handler
+/**
+ *
+ * @api {GET} /usr/searchBalanceRecord Search Balance Record
+ * @apiName SearchBalanceRecord
  * @apiGroup Balance
  *
  *
@@ -251,22 +358,33 @@ func ChangeUserBalanceH(s *web.Session) web.Result {
  *     "total": 1
  * }
  */
-func ListBalanceRecordH(s *web.Session) web.Result {
+func SearchBalanceRecordH(s *web.Session) web.Result {
 	searcher := &gexdb.BalanceRecordUnifySearcher{}
 	err := s.Valid(searcher, "#all")
 	if err != nil {
 		return util.ReturnCodeLocalErr(s, define.ArgsInvalid, "arg-err", err)
 	}
 	userID := s.Int64("user_id")
-	searcher.Where.UserID = userID
+	if !AdminAccess(s) {
+		searcher.Where.UserID = userID
+	}
 	err = searcher.Apply(s.R.Context())
 	if err != nil {
-		xlog.Errorf("SearchOrderH searcher order fail with %v by %v", err, converter.JSON(searcher))
+		xlog.Errorf("SearchBalanceRecordH list balance record fail with %v by %v", err, converter.JSON(searcher))
 		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
+	}
+	var users map[int64]*gexdb.User
+	if len(searcher.Query.UserIDs) > 0 {
+		_, users, err = gexdb.ListUserByID(s.R.Context(), searcher.Query.UserIDs...)
+		if err != nil {
+			xlog.Errorf("SearchBalanceRecordH list user fail with %v by %v", err, converter.JSON(searcher))
+			return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
+		}
 	}
 	return s.SendJSON(xmap.M{
 		"code":    define.Success,
 		"records": searcher.Query.Records,
+		"users":   users,
 		"total":   searcher.Count.Total,
 	})
 }

@@ -42,7 +42,7 @@
   * 标记价格显示，当`holdings.amout`为多仓（正数）时为`tickers[symbol].bid[0]`, 当`holdings.amout`为空仓（负数）时为`tickers[symbol].ask[0]`
   * 保证金率为持仓未实现盈亏除以总保证金加空闲保证金（已使用保证金+追加保证金+账号空闲余额），`unprofits[symbol]/(holding[symbol].margin_used+holdings[symbol].margin_added+balance.free)`，如果为正数显示绿色，负数显示红色
 * 更新杠杆使用<a href="#api-Balance-ChangeHoldingLever">更新仓位杠杆</a>, 注意检查返回`code=CodeBalanceNotEnought/CodeOrderPending`提示用户余额不足或有订单未成交
-* 列出钱包历史或资金历史使用<a href="#api-Balance-ListBalanceRecord">列出钱包记录</a>
+* 列出钱包历史或资金历史使用<a href="#api-Balance-SearchBalanceRecord">列出钱包记录</a>
 * 管理员修改钱包余额<a href="#api-Balance-ChangeUserBalance">修改钱包余额</a>
 * 划转钱包余额<a href="#api-Balance-TransferBalance">钱包划转</a>
 * 当用用户停在我的页面时，前端需要定时（5s)刷新我的钱包信息
@@ -87,10 +87,24 @@
 * 后台发布通知使用<a href="#api-Message-AddMessage">添加通知</a>
 
 ## 关于黄金提取
-* 提取申请：使用<a href="#api-Withdraw-CreateGoldbar">创建黄金订单接口</a>申请，获得提取码，申请后可以使用<a href="#api-Order-CancelGoldbar">取消黄金订单接口</a>取消
-* 列出申请：使用<a href="#api-Withdraw-ListGoldbar">列出黄金订单接口</a>
-* 提取管理：使用<a href="#api-Withdraw-ListGoldbar">列出订单接口</a>，状态为`OrderStatusPending`
+* 提取申请：使用<a href="#api-Withdraw-CreateGoldbar">创建黄金订单接口</a>申请，获得提取码，申请后可以使用<a href="#api-Withdraw-CancelGoldbar">取消黄金订单接口</a>取消
+* 列出申请：使用<a href="#api-Withdraw-SearchGoldbar">列出黄金订单接口</a>列出，使用<a href="#api-Withdraw-ConfirmGoldbar">审核黄金订单接口</a>审核，使用<a href="#api-Withdraw-DoneGoldbar">完成黄金订单接口</a>完成
+* 提取管理：使用<a href="#api-Withdraw-SearchGoldbar">列出订单接口</a>，状态为`OrderStatusPending`
 * 提取配置：使用<a href="#api-Conf-ConfGoldbar">黄金提取配置接口</a>
+* 更新配置调用<a href="#api-Sys-UpdateSysConfig">更新系统配置接口</a>更新配置
+
+## 关于充值提币
+* 提币申请：使用<a href="#api-Withdraw-CreateWithdraw">创建提币订单接口</a>申请，申请后可以使用<a href="#api-Withdraw-CancelWithdraw">取消提现订单接口</a>取消
+* 列出申请：使用<a href="#api-Withdraw-SearchWithdraw">列出提币充值订单接口</a>，使用<a href="#api-Withdraw-ConfirmWithdraw">审核黄金订单接口</a>审核
+* 提币管理：使用<a href="#api-Withdraw-SearchWithdraw">列出提币订单接口</a>，状态为`OrderStatusPending`
+* 自动审核配置：使用<a href="#api-Sys-LoadSysConfig">获取系统配置接口</a>列出自动审核配置，配置key为`ConfigWithdrawReview = "withdraw_review"`，调用<a href="#api-Sys-UpdateSysConfig">更新系统配置接口</a>更新配置，配置格式如下，以币种为key, *表示所有币中
+```
+{
+  "GCC":100,
+  "*":1,
+}
+```
+* 手动充值提币，使用<a href="#api-Balance-SearchBalanceRecord">列出钱包记录</a>， `type=BalanceRecordTypeChange`指定手动类型，手动修改钱包使用<a href="#api-Balance-ChangeUserBalance">修改钱包余额</a>
 
 ## 关于公告
 * <a href="#api-Announce">公告接口</a>
@@ -100,3 +114,28 @@
 ## 关于规则页
 * 后台系统配置里面配置规则html内容
 * 点击进入规则页后，使用<a href="#api-Conf-ConfRule">列出规则配置接口</a>加载规则说明
+
+## 关于后台统计
+* 首页使用<a href="#api-Count-LoadOverview">总览接口</a>
+
+## 关于后台用户管理
+* <a href="#api-User">用户接口</a>
+* <a href="#api-User-ListUserRecord">用户记录接口</a>
+* 用户统计使用<a href="#api-Count-LoadOverview">总览接口</a>中的`user`
+
+## 关于后台币币交易
+* 币币交易：使用<a href="#api-Order-SearchOrder">搜索订单接口</a>, `area=OrderAreaSpot`指定只列出现货订单
+* 交易统计使用<a href="#api-Count-LoadOverview">总览接口</a>中的`trade.spot`
+* 现货余额：使用<a href="#api-Balance-SearchBalance">搜索余额接口</a>, `area=BalanceAreaSpot`指定只列出现货余额
+
+## 关于后台合约交易
+* 使用<a href="#api-Order-SearchOrder">搜索订单接口</a>, `area=OrderAreaFutures`指定只列出合约订单
+* 持仓统计使用<a href="#api-Count-LoadOverview">总览接口</a>的`futures.buy/futures.sell`，buy为多仓，sell为空仓，平衡前端计算`buy.amount+sell.amount`
+* 交易统计使用<a href="#api-Count-LoadOverview">总览接口</a>中的`trade.futures`
+* 合约余额：使用<a href="#api-Balance-SearchBalance">搜索余额接口</a>, `area=BalanceAreaFutures`指定只列出合约余额
+* 持仓列表：使用<a href="#api-Balance-SearchHolding">搜索持仓接口</a>
+* 列出指定用户持仓：使用<a href="#api-Balance-ListHolding">列出持仓</a>, `target_user_id=指定用户`
+
+## 关于后台资金统计
+* 平台资产，使用<a href="#api-Count-ListBalanceCount">列出资产接口</a>
+* 用户资产，使用<a href="#api-Balance-SearchBalance">搜索余额接口</a>

@@ -323,7 +323,9 @@ func SearchOrderH(s *web.Session) web.Result {
 		return util.ReturnCodeLocalErr(s, define.ArgsInvalid, "arg-err", err)
 	}
 	userID := s.Int64("user_id")
-	searcher.Where.UserID = xsql.Int64Array{userID}
+	if !AdminAccess(s) {
+		searcher.Where.UserID = xsql.Int64Array{userID}
+	}
 	err = searcher.Apply(s.R.Context())
 	if err != nil {
 		xlog.Errorf("SearchOrderH searcher order fail with %v by %v", err, converter.JSON(searcher))

@@ -83,3 +83,15 @@ func CalcHoldingUnprofit(ctx context.Context, holdings ...*gexdb.Holding) (unpro
 	unprofits["total"] = totalUnprofit
 	return
 }
+
+func ListHoldingUnprofit(ctx context.Context, userIDs ...int64) (unprofits map[int64]map[string]decimal.Decimal, err error) {
+	holdingAll, _, err := gexdb.ListHoldingByUser(ctx, userIDs, nil)
+	if err != nil {
+		return
+	}
+	unprofits = map[int64]map[string]decimal.Decimal{}
+	for userID, holdings := range holdingAll {
+		unprofits[userID], _ = CalcHoldingUnprofit(ctx, holdings...)
+	}
+	return
+}

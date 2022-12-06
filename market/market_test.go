@@ -111,9 +111,11 @@ func testAddUser(prefix string) (user *gexdb.User) {
 }
 
 const (
-	spotBalanceBase   = "YWE"
-	spotBalanceQuote  = "USDT"
-	spotBalanceSymbol = "spot.YWEUSDT"
+	spotBalanceBase      = "YWE"
+	spotBalanceQuote     = "USDT"
+	spotBalanceSymbol    = "spot.YWEUSDT"
+	futuresBalanceQuote  = "USDT"
+	futuresBalanceSymbol = "futures.YWEUSDT"
 )
 
 var spotBalanceAll = []string{spotBalanceBase, spotBalanceQuote}
@@ -327,6 +329,65 @@ func TestShared(t *testing.T) {
 
 	matcher.ProcessCancel(ctx, userBase.TID, sellOpenOrder2.Symbol, sellOpenOrder2.OrderID)
 	matcher.ProcessCancel(ctx, userQuote.TID, buyOpenOrder2.Symbol, buyOpenOrder2.OrderID)
+}
+
+func TestListHoldingUnprofit(t *testing.T) {
+	clear()
+	pgx.MockerStart()
+	defer pgx.MockerStop()
+	area := gexdb.BalanceAreaFutures
+	userBuyer := testAddUser("TestListHoldingUnprofit-Buyer")
+	userSeller := testAddUser("TestListHoldingUnprofit-Seller ")
+	_, err := gexdb.TouchBalance(ctx, area, []string{futuresBalanceQuote}, userBuyer.TID, userSeller.TID)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	gexdb.IncreaseBalanceCall(gexdb.Pool(), ctx, &gexdb.Balance{
+		UserID: userBuyer.TID,
+		Area:   area,
+		Asset:  futuresBalanceQuote,
+		Free:   decimal.NewFromFloat(10000),
+		Status: gexdb.BalanceStatusNormal,
+	})
+	gexdb.IncreaseBalanceCall(gexdb.Pool(), ctx, &gexdb.Balance{
+		UserID: userSeller.TID,
+		Area:   area,
+		Asset:  futuresBalanceQuote,
+		Free:   decimal.NewFromFloat(10000),
+		Status: gexdb.BalanceStatusNormal,
+	})
+	Bootstrap()
+	//
+	sellOpenOrder, err := matcher.ProcessLimit(ctx, userSeller.TID, futuresBalanceSymbol, gexdb.OrderSideSell, decimal.NewFromFloat(0.5), decimal.NewFromFloat(100))
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	fmt.Printf("sell open order %v\n", sellOpenOrder.OrderID)
+	buyOpenOrder, err := matcher.ProcessMarket(ctx, userBuyer.TID, futuresBalanceSymbol, gexdb.OrderSideBuy, decimal.Zero, decimal.NewFromFloat(0.5))
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	fmt.Printf("buy open order %v\n", buyOpenOrder.OrderID)
+	//
+	unprofits, err := ListHoldingUnprofit(ctx, userBuyer.TID, userSeller.TID)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	fmt.Printf("unprofits-->%v\n", converter.JSON(unprofits))
+
+	//
+	//test error
+	pgx.MockerStart()
+	defer pgx.MockerStop()
+	pgx.MockerClear()
+	pgx.MockerSetCall("Pool.Query", 1).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
+		_, err = ListHoldingUnprofit(ctx, userBuyer.TID, userSeller.TID)
+		return
+	})
 }
 
 func TestMarketConn(t *testing.T) {

@@ -1,6 +1,7 @@
 package gexapi
 
 import (
+	"github.com/codingeasygo/util/converter"
 	"github.com/codingeasygo/util/xmap"
 	"github.com/codingeasygo/web"
 	"github.com/gexservice/gexservice/base/define"
@@ -21,6 +22,7 @@ import (
  *
  *
  * @apiParam  {String} [symbol] the symbol to list
+ * @apiParam  {Number} [target_user_id] the target user id to list holding
  * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>
  * @apiSuccess (Balance) {Object} balance the user balance info
  * @apiUse BalanceObject
@@ -84,11 +86,19 @@ import (
  */
 func ListHoldingH(s *web.Session) web.Result {
 	var symbolOnly []string
-	s.ValidFormat(`
+	var targetUserID int64
+	err := s.ValidFormat(`
 		symbol,o|s,l:0;
-	`, &symbolOnly)
+		target_user_id,o|i,r:0;
+	`, &symbolOnly, &targetUserID)
+	if err != nil {
+		return util.ReturnCodeLocalErr(s, define.ArgsInvalid, "arg-err", err)
+	}
 	userID := s.Value("user_id").(int64)
-	_, err := gexdb.TouchBalance(s.R.Context(), gexdb.BalanceAreaFutures, []string{matcher.Quote}, userID)
+	if targetUserID > 0 && AdminAccess(s) {
+		userID = targetUserID
+	}
+	_, err = gexdb.TouchBalance(s.R.Context(), gexdb.BalanceAreaFutures, []string{matcher.Quote}, userID)
 	if err != nil {
 		xlog.Errorf("ListHoldingH touch balance by %v,%v fail with %v", matcher.Quote, userID, err)
 		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
@@ -221,5 +231,96 @@ func ChangeHoldingLeverH(s *web.Session) web.Result {
 	}
 	return s.SendJSON(xmap.M{
 		"code": define.Success,
+	})
+}
+
+//SearchHoldingH is http handler
+/**
+ *
+ * @api {GET} /usr/searchHolding Search Holding
+ * @apiName SearchHolding
+ * @apiGroup Balance
+ *
+ *
+ * @apiUse HoldingUnifySearcher
+ *
+ * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>
+ * @apiSuccess (Success) {Object} unprofits the balance unprofit, mapping by user id, then mapping by symbol
+ * @apiSuccess (Holding) {Array} holdings the holding records
+ * @apiUse HoldingObject
+ *
+ * @apiSuccessExample {type} Success-Response:
+ * {
+ *     "code": 0,
+ *     "holdings": [
+ *         {
+ *             "amount": "0",
+ *             "blowup": "0",
+ *             "create_time": 1670327985918,
+ *             "lever": 1,
+ *             "margin_added": "0",
+ *             "margin_used": "0",
+ *             "open": "0",
+ *             "status": 100,
+ *             "symbol": "futures.YWEUSDT",
+ *             "tid": 1004,
+ *             "update_time": 1670327985918,
+ *             "user_id": 100005
+ *         }
+ *     ],
+ *     "total": 1,
+ *     "unprofits": {},
+ *     "users": {
+ *         "100005": {
+ *             "account": "abc3",
+ *             "create_time": 1670327985411,
+ *             "favorites": {},
+ *             "image": "abc3_image",
+ *             "name": "abc3_name",
+ *             "phone": "abc3_123",
+ *             "role": 100,
+ *             "status": 100,
+ *             "tid": 100005,
+ *             "type": 100,
+ *             "update_time": 1670327985411
+ *         }
+ *     }
+ * }
+ */
+func SearchHoldingH(s *web.Session) web.Result {
+	searcher := &gexdb.HoldingUnifySearcher{}
+	err := s.Valid(searcher, "#all")
+	if err != nil {
+		return util.ReturnCodeLocalErr(s, define.ArgsInvalid, "arg-err", err)
+	}
+	userID := s.Int64("user_id")
+	if !AdminAccess(s) {
+		searcher.Where.UserID = userID
+	}
+	err = searcher.Apply(s.R.Context())
+	if err != nil {
+		xlog.Errorf("SearchHoldingH search holding fail with %v by %v", err, converter.JSON(searcher))
+		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
+	}
+	var users map[int64]*gexdb.User
+	var unprofits map[int64]map[string]decimal.Decimal
+	if len(searcher.Query.UserIDs) > 0 {
+		unprofits, err = market.ListHoldingUnprofit(s.R.Context(), searcher.Query.UserIDs...)
+		if err != nil {
+			xlog.Errorf("SearchHoldingH list holding profits fail with %v by %v", err, converter.JSON(searcher))
+			return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
+		}
+		_, users, err = gexdb.ListUserByID(s.R.Context(), searcher.Query.UserIDs...)
+		if err != nil {
+			xlog.Errorf("SearchHoldingH list holding user fail with %v by %v", err, converter.JSON(searcher))
+			return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
+		}
+	}
+	return s.SendJSON(xmap.M{
+		"code":      define.Success,
+		"holdings":  searcher.Query.Holdings,
+		"unprofits": unprofits,
+		"users":     users,
+		"total":     searcher.Count.Total,
 	})
 }

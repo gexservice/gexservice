@@ -22,9 +22,9 @@ func TestWithdraw(t *testing.T) {
 	createWithdraw, _ := ts.Should(t, "code", define.Success).GetMap("/usr/createWithdraw?method=tron&asset=%v&quantity=%v&receiver=test", spotBalanceQuote, "1")
 	fmt.Printf("createWithdraw--->%v\n", converter.JSON(createWithdraw))
 	//
-	ts.Should(t, "code", define.ArgsInvalid).GetMap("/usr/listWithdraw?asset=%v&type=xx", spotBalanceQuote)
-	listWithdraw, _ := ts.Should(t, "code", define.Success).GetMap("/usr/listWithdraw?asset=%v", spotBalanceQuote)
-	fmt.Printf("listWithdraw--->%v\n", converter.JSON(listWithdraw))
+	ts.Should(t, "code", define.ArgsInvalid).GetMap("/usr/searchWithdraw?asset=%v&type=xx", spotBalanceQuote)
+	searchWithdraw, _ := ts.Should(t, "code", define.Success).GetMap("/usr/searchWithdraw?asset=%v", spotBalanceQuote)
+	fmt.Printf("searchWithdraw--->%v\n", converter.JSON(searchWithdraw))
 	//
 	ts.Should(t, "code", define.ArgsInvalid).GetMap("/usr/cancelWithdraw?order_id=%v", "")
 	cancelWithdraw, _ := ts.Should(t, "code", define.Success).GetMap("/usr/cancelWithdraw?order_id=%v", createWithdraw.StrDef("", "/withdraw/order_id"))
@@ -40,7 +40,7 @@ func TestWithdraw(t *testing.T) {
 	pgx.MockerStart()
 	defer pgx.MockerStop()
 	pgx.MockerClear()
-	pgx.MockerSetCall("Rows.Scan", 2).Should(t, "code", define.ServerError).GetMap("/usr/listWithdraw?asset=%v", spotBalanceQuote)
+	pgx.MockerSetCall("Pool.Query", 1, 2).Should(t, "code", define.ServerError).GetMap("/usr/searchWithdraw?asset=%v", spotBalanceQuote)
 	pgx.MockerSetCall("Rows.Scan", 1).Should(t, "code", define.ServerError).GetMap("/usr/createWithdraw?method=tron&asset=%v&quantity=%v&receiver=test", spotBalanceQuote, "1")
 	pgx.MockerSetCall("Rows.Scan", 1).Should(t, "code", define.ServerError).GetMap("/usr/cancelWithdraw?order_id=%v", createWithdraw.StrDef("", "/withdraw/order_id"))
 	pgx.MockerSetCall("Pool.Exec", 1).Should(t, "code", define.ServerError).GetMap("/usr/confirmWithdraw?order_id=%v", createWithdraw.StrDef("", "/withdraw/order_id"))
@@ -56,9 +56,9 @@ func TestGoldbar(t *testing.T) {
 	createGoldbar, _ := ts.Should(t, "code", define.Success).GetMap("/usr/createGoldbar?pickup_amount=%v&pickup_time=%v&pickup_address=addr", "1", xtime.Now())
 	fmt.Printf("createGoldbar--->%v\n", converter.JSON(createGoldbar))
 	//
-	ts.Should(t, "code", define.ArgsInvalid).GetMap("/usr/listGoldbar?status=%v", "xx")
-	listGoldbar, _ := ts.Should(t, "code", define.Success).GetMap("/usr/listGoldbar")
-	fmt.Printf("listGoldbar--->%v\n", converter.JSON(listGoldbar))
+	ts.Should(t, "code", define.ArgsInvalid).GetMap("/usr/searchGoldbar?status=%v", "xx")
+	searchGoldbar, _ := ts.Should(t, "code", define.Success).GetMap("/usr/searchGoldbar")
+	fmt.Printf("searchGoldbar--->%v\n", converter.JSON(searchGoldbar))
 	//
 	ts.Should(t, "code", define.ArgsInvalid).GetMap("/usr/cancelGoldbar?order_id=%v", "")
 	cancelGoldbar, _ := ts.Should(t, "code", define.Success).GetMap("/usr/cancelGoldbar?order_id=%v", createGoldbar.StrDef("", "/goldbar/order_id"))
@@ -83,7 +83,7 @@ func TestGoldbar(t *testing.T) {
 	pgx.MockerStart()
 	defer pgx.MockerStop()
 	pgx.MockerClear()
-	pgx.MockerSetCall("Rows.Scan", 2).Should(t, "code", define.ServerError).GetMap("/usr/listGoldbar")
+	pgx.MockerSetCall("Pool.Query", 1, 2).Should(t, "code", define.ServerError).GetMap("/usr/searchGoldbar")
 	pgx.MockerSetCall("Rows.Scan", 1).Should(t, "code", define.ServerError).GetMap("/usr/createGoldbar?pickup_amount=%v&pickup_time=%v&pickup_address=addr", "1", xtime.Now())
 	pgx.MockerSetCall("Rows.Scan", 1).Should(t, "code", define.ServerError).GetMap("/usr/cancelGoldbar?order_id=%v", createGoldbar.StrDef("", "/goldbar/order_id"))
 	pgx.MockerSetCall("Pool.Exec", 1).Should(t, "code", define.ServerError).GetMap("/usr/confirmGoldbar?order_id=%v", createGoldbar.StrDef("", "/goldbar/order_id"))

@@ -29,6 +29,7 @@ const (
 	// BalanceAssetYWE = "YWE"
 	// BalanceAssetMMK = "MMK"
 	BalanceAssetGoldbar = "YWE"
+	BalanceAssetUSDT    = "USDT"
 )
 
 // var (
@@ -45,19 +46,6 @@ func (b BalanceArea) Prefix() string {
 		return "funds."
 	default:
 		return fmt.Sprintf("%v.", int(b))
-	}
-}
-
-func (b BalanceArea) String() string {
-	switch b {
-	case BalanceAreaSpot:
-		return "Spot"
-	case BalanceAreaFutures:
-		return "Futures"
-	case BalanceAreaFunds:
-		return "Funds"
-	default:
-		return fmt.Sprintf("%v", int(b))
 	}
 }
 
@@ -227,6 +215,7 @@ type Ticker struct {
 
 type BalanceRecordItem struct {
 	TID        int64             `json:"tid"`
+	UserID     int64             `json:"user_id"`
 	Asset      string            `json:"asset"`
 	Type       BalanceRecordType `json:"type,omitempty"`
 	Target     int               `json:"target,omitempty"`

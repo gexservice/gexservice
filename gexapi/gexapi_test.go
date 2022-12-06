@@ -166,11 +166,19 @@ func initdata() {
 	userabc3 = testAddUser(gexdb.UserRoleNormal, "abc3")
 	gexdb.TouchBalance(ctx, gexdb.BalanceAreaFunds, spotBalanceAll, userx0.TID, userx1.TID, userabc0.TID, userabc1.TID, userabc2.TID, userabc3.TID)
 	gexdb.TouchBalance(ctx, gexdb.BalanceAreaSpot, spotBalanceAll, userx0.TID, userx1.TID, userabc0.TID, userabc1.TID, userabc2.TID, userabc3.TID)
+	gexdb.TouchBalance(ctx, gexdb.BalanceAreaSpot, []string{gexdb.BalanceAssetUSDT}, userabc0.TID)
 	gexdb.TouchBalance(ctx, gexdb.BalanceAreaFutures, []string{futuresBalanceQuote}, userx0.TID, userx1.TID, userabc0.TID, userabc1.TID, userabc2.TID, userabc3.TID)
 	gexdb.IncreaseBalanceCall(gexdb.Pool(), ctx, &gexdb.Balance{
 		UserID: userabc0.TID,
 		Area:   gexdb.BalanceAreaSpot,
 		Asset:  spotBalanceBase,
+		Free:   decimal.NewFromFloat(1000),
+		Status: gexdb.BalanceStatusNormal,
+	})
+	gexdb.IncreaseBalanceCall(gexdb.Pool(), ctx, &gexdb.Balance{
+		UserID: userabc0.TID,
+		Area:   gexdb.BalanceAreaSpot,
+		Asset:  gexdb.BalanceAssetUSDT,
 		Free:   decimal.NewFromFloat(1000),
 		Status: gexdb.BalanceStatusNormal,
 	})

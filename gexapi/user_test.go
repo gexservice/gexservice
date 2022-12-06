@@ -179,12 +179,18 @@ func TestManageUser(t *testing.T) {
 	//not access
 	clearCookie()
 	ts.Should(t, "code", define.Success).GetMap("/pub/login?username=%v&password=%v", "abc0", "123")
+	ts.Should(t, "code", define.Success).GetMap("/pub/login?username=%v&password=%v", "abc0", "123")
 	ts.Should(t, "code", define.NotAccess).GetMap("/usr/searchUser")
 	ts.Should(t, "code", define.NotAccess).GetMap("/usr/loadUser?user_id=%v", userabc0.TID)
+	ts.Should(t, "code", define.NotAccess).GetMap("/usr/listUserRecord")
+	ts.Should(t, "code", define.NotAccess).PostJSONMap(&gexdb.User{}, "/usr/addUser")
 
 	//admin access
 	clearCookie()
 	ts.Should(t, "code", define.Success).GetMap("/pub/login?username=%v&password=%v", "admin", "123")
+	//add user
+	ts.Should(t, "code", define.ArgsInvalid).PostJSONMap("xxxx", "/usr/addUser")
+	ts.Should(t, "code", define.Success).PostJSONMap(&gexdb.User{Account: converter.StringPtr("test00"), Password: converter.StringPtr("123")}, "/usr/addUser")
 	//searcher user
 	ts.Should(t, "code", define.ArgsInvalid).GetMap("/usr/searchUser?limit=xx")
 	searchUser, _ := ts.Should(t, "code", define.Success, "users", xmap.ShouldIsNoEmpty).GetMap("/usr/searchUser?key=abc0&ret_balance=1")
@@ -204,13 +210,21 @@ func TestManageUser(t *testing.T) {
 		Password:  converter.StringPtr("123"),
 		TradePass: converter.StringPtr("123"),
 	}, "/usr/updateUser")
+	//
+	//user record
+	ts.Should(t, "code", define.ArgsInvalid).GetMap("/usr/listUserRecord?type=xx")
+	listUserRecord, _ := ts.Should(t, "code", define.Success).GetMap("/usr/listUserRecord")
+	fmt.Printf("listUserRecord-->%v\n", converter.JSON(listUserRecord))
 
 	pgx.MockerStart()
 	defer pgx.MockerStop()
+	pgx.MockerClear()
 	//
+	pgx.MockerSetCall("Rows.Scan", 2).Should(t, "code", define.ServerError).PostJSONMap(&gexdb.User{}, "/usr/addUser")
 	pgx.MockerSetCall("Rows.Scan", 2).Should(t, "code", define.ServerError).GetMap("/usr/searchUser?key=abc0")
-	pgx.MockerSetRangeCall("Pool.Query", 1, 2).Should(t, "code", define.ServerError).GetMap("/usr/searchUser?key=abc0&ret_balance=1")
+	pgx.MockerSetRangeCall("Pool.Query", 1, 3).Should(t, "code", define.ServerError).GetMap("/usr/searchUser?key=abc0&ret_balance=1")
 	pgx.MockerSetCall("Rows.Scan", 2).Should(t, "code", define.ServerError).GetMap("/usr/loadUser?user_id=%v", userID)
+	pgx.MockerSetCall("Pool.Query", 1, 2, 3).Should(t, "code", define.ServerError).GetMap("/usr/listUserRecord")
 }
 
 func TestAdminAccess(t *testing.T) {

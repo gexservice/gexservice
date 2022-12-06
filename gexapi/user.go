@@ -149,7 +149,7 @@ func LoginH(s *web.Session) web.Result {
 		xlog.Warnf("LoginH user login to sytem from %v fail with user:%v status is %v", s.R.RemoteAddr, user.TID, user.Status)
 		return util.ReturnCodeLocalErr(s, define.UserInvalid, "usr-err", fmt.Errorf("user status is %v", user.Status))
 	}
-	remoteAddr := s.R.RemoteAddr
+	remoteAddr := strings.SplitN(s.R.RemoteAddr, ":", 2)[0]
 	realIP := s.R.Header.Get("X-Real-IP")
 	if len(realIP) > 0 {
 		remoteAddr = realIP
@@ -579,6 +579,55 @@ func UpdateUserConfigH(s *web.Session) web.Result {
 	})
 }
 
+//AddUserH is http handler to add user
+/**
+ *
+ * @api {POST} /usr/addUser Add User
+ * @apiName AddUser
+ * @apiGroup User
+ *
+ * @apiParam  {String} [name] will update user name
+ * @apiParam  {String} [account] will update user account
+ * @apiParam  {String} [phone] will update user phone
+ * @apiParam  {String} [password] will update user password
+ * @apiParam  {String} [image] will update user image
+ * @apiParam  {Object} [external] will update user external
+ *
+ *
+ * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>, 9000 is old password is not correct
+ *
+ * @apiSuccessExample {JSON} Success-Response:
+ * {
+ *     "code": 0,
+ * }
+ *
+ */
+func AddUserH(s *web.Session) web.Result {
+	user := &gexdb.User{}
+	err := RecvValidJSON(s, user)
+	if err != nil {
+		return util.ReturnCodeLocalErr(s, define.ArgsInvalid, "arg-err", err)
+	}
+	if !AdminAccess(s) {
+		return util.ReturnCodeLocalErr(s, define.NotAccess, "srv-err", define.ErrNotAccess)
+	}
+	user.Type = gexdb.UserTypeNormal
+	user.Status = gexdb.UserStatusNormal
+	if user.Password != nil && len(*user.Password) > 0 {
+		user.Password = converter.StringPtr(xhash.SHA1([]byte(*user.Password)))
+	}
+	err = gexdb.AddUser(s.R.Context(), user)
+	if err != nil {
+		xlog.Errorf("AddUserH add user by %v fail with %v", converter.JSON(user), err)
+		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
+	}
+	xlog.Debugf("AddUserH add user to system from %v success with user:%+v", s.R.RemoteAddr, converter.JSON(user))
+	return s.SendJSON(xmap.M{
+		"code": 0,
+		"user": user,
+	})
+}
+
 //SearchUserH is http handler to search user base info
 /**
  *
@@ -604,46 +653,34 @@ func UpdateUserConfigH(s *web.Session) web.Result {
  * {
  *     "balances": {
  *         "100002": {
- *             "MMK": {
- *                 "asset": "MMK",
- *                 "create_time": 1632386799137,
- *                 "free": "100",
- *                 "locked": "0",
- *                 "status": 100,
- *                 "tid": 1001,
- *                 "update_time": 1632386799137,
- *                 "user_id": 100002
- *             },
- *             "YWE": {
- *                 "asset": "YWE",
- *                 "create_time": 1632386799136,
- *                 "free": "100",
- *                 "locked": "0",
- *                 "status": 100,
- *                 "tid": 1000,
- *                 "update_time": 1632386799136,
- *                 "user_id": 100002
- *             }
+ *             "asset": "USDT",
+ *             "create_time": 0,
+ *             "free": "1979.8",
+ *             "locked": "20.1",
+ *             "margin": "0",
+ *             "update_time": 0,
+ *             "user_id": 100002
  *         }
  *     },
  *     "code": 0,
  *     "limit": 0,
+ *     "online": {},
  *     "skip": 0,
  *     "total": 1,
  *     "users": [
  *         {
  *             "account": "abc0",
- *             "broker_id": 0,
- *             "create_time": 1632386799135,
- *             "external": {},
+ *             "create_time": 1670317943195,
+ *             "favorites": {},
  *             "image": "abc0_image",
  *             "name": "abc0_name",
  *             "phone": "abc0_123",
  *             "role": 100,
  *             "status": 100,
  *             "tid": 100002,
+ *             "trade_pass": "40bd001563085fc35165329ea1ff5c5ecbdbbeef",
  *             "type": 100,
- *             "update_time": 1632386799135
+ *             "update_time": 1670317943195
  *         }
  *     ]
  * }
@@ -660,15 +697,27 @@ func SearchUserH(s *web.Session) web.Result {
 	}
 	err = searcher.Apply(s.R.Context())
 	if err != nil {
-		xlog.Warnf("SearchUserH search user by key:%v fail with %v", converter.JSON(searcher), err)
+		xlog.Warnf("SearchUserH search user by %v fail with %v", converter.JSON(searcher), err)
 		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
 	}
+	var online map[int64]*OnlineInfo
+	var balances map[int64]*gexdb.Balance
+	if len(searcher.Query.UserIDs) > 0 {
+		online = MarketOnline.List(searcher.Query.UserIDs...)
+		balances, err = gexdb.CountUserBalance(s.R.Context(), gexdb.BalanceAssetUSDT, searcher.Query.UserIDs...)
+		if err != nil {
+			xlog.Warnf("SearchUserH count user balance by key:%v fail with %v", gexdb.BalanceAssetUSDT, err)
+			return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
+		}
+	}
 	return s.SendJSON(xmap.M{
-		"code":  0,
-		"users": searcher.Query.Users,
-		"total": searcher.Count.Total,
-		"skip":  searcher.Page.Skip,
-		"limit": searcher.Page.Limit,
+		"code":     0,
+		"users":    searcher.Query.Users,
+		"online":   online,
+		"balances": balances,
+		"total":    searcher.Count.Total,
+		"skip":     searcher.Page.Skip,
+		"limit":    searcher.Page.Limit,
 	})
 }
 
@@ -689,37 +738,54 @@ func SearchUserH(s *web.Session) web.Result {
  * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>
  * @apiSuccess (User) {Object} user the user info
  * @apiUse UserObject
+ * @apiSuccess (Balance) {Object} balances the balances info, mapping by area as key, all suported is <a href="#metadata-Balance">BalanceAreaAll</a>
+ * @apiUse BalanceObject
  *
  * @apiSuccessExample {type} Success-Response:
  * {
  *     "balances": {
- *         "MMK": {
- *             "asset": "MMK",
- *             "create_time": 1632387865995,
- *             "free": "100",
+ *         "100": {
+ *             "area": 100,
+ *             "asset": "USDT",
+ *             "create_time": 1670320129750,
+ *             "free": "0",
  *             "locked": "0",
+ *             "margin": "0",
  *             "status": 100,
- *             "tid": 1001,
- *             "update_time": 1632387865995,
+ *             "tid": 1005,
+ *             "update_time": 1670320129750,
  *             "user_id": 100002
  *         },
- *         "YWE": {
- *             "asset": "YWE",
- *             "create_time": 1632387865994,
- *             "free": "100",
+ *         "200": {
+ *             "area": 200,
+ *             "asset": "USDT",
+ *             "create_time": 1670320129756,
+ *             "free": "2000",
  *             "locked": "0",
+ *             "margin": "0",
  *             "status": 100,
- *             "tid": 1000,
- *             "update_time": 1632387865994,
+ *             "tid": 1017,
+ *             "update_time": 1670320129767,
+ *             "user_id": 100002
+ *         },
+ *         "300": {
+ *             "area": 300,
+ *             "asset": "USDT",
+ *             "create_time": 1670320129758,
+ *             "free": "979.8",
+ *             "locked": "20.1",
+ *             "margin": "10",
+ *             "status": 100,
+ *             "tid": 1027,
+ *             "update_time": 1670320129888,
  *             "user_id": 100002
  *         }
  *     },
  *     "code": 0,
  *     "user": {
  *         "account": "abc0",
- *         "broker_id": 0,
- *         "create_time": 1632387865993,
- *         "external": {},
+ *         "create_time": 1670320129740,
+ *         "favorites": {},
  *         "image": "abc0_image",
  *         "name": "abc0_name",
  *         "phone": "abc0_123",
@@ -727,7 +793,7 @@ func SearchUserH(s *web.Session) web.Result {
  *         "status": 100,
  *         "tid": 100002,
  *         "type": 100,
- *         "update_time": 1632387865993
+ *         "update_time": 1670320129740
  *     }
  * }
  *
@@ -748,8 +814,136 @@ func LoadUserH(s *web.Session) web.Result {
 		xlog.Errorf("LoadUserH find target user(%v) err: %v", userID, err)
 		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
 	}
+	_, balances, err := gexdb.ListAreaBalance(s.R.Context(), user.TID, nil, gexdb.BalanceAssetUSDT, nil)
+	if err != nil {
+		xlog.Errorf("LoadUserH list area balance user(%v) err: %v", userID, err)
+		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
+	}
 	return s.SendJSON(xmap.M{
-		"code": 0,
-		"user": user,
+		"code":     0,
+		"user":     user,
+		"balances": balances,
+	})
+}
+
+//ListUserRecordH is http handler to list user record info
+/**
+ *
+ * @api {GET} /usr/listUserRecord List User Record
+ * @apiName ListUserRecord
+ * @apiGroup User
+ *
+ * @apiUse UserRecordUnifySearcher
+ *
+ * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>
+ * @apiSuccess (UserRecord) {Array} records the user array
+ * @apiUse UserRecordObject
+ *
+ *
+ * @apiSuccessExample {JSON} Success-Response:
+ * {
+ *     "code": 0,
+ *     "limit": 0,
+ *     "prevs": {
+ *         "1000": {
+ *             "create_time": 1670317943648,
+ *             "from_addr": "127.0.0.1",
+ *             "status": 100,
+ *             "tid": 1000,
+ *             "type": 100,
+ *             "update_time": 1670317943648,
+ *             "user_id": 100002
+ *         }
+ *     },
+ *     "records": [
+ *         {
+ *             "create_time": 1670317943663,
+ *             "from_addr": "127.0.0.1",
+ *             "prev_id": 1000,
+ *             "status": 100,
+ *             "tid": 1001,
+ *             "type": 100,
+ *             "update_time": 1670317943663,
+ *             "user_id": 100002
+ *         },
+ *         {
+ *             "create_time": 1670317943648,
+ *             "from_addr": "127.0.0.1",
+ *             "status": 100,
+ *             "tid": 1000,
+ *             "type": 100,
+ *             "update_time": 1670317943648,
+ *             "user_id": 100002
+ *         }
+ *     ],
+ *     "skip": 0,
+ *     "total": 3,
+ *     "users": {
+ *         "1000": {
+ *             "account": "admin",
+ *             "create_time": 1623749677664,
+ *             "favorites": {},
+ *             "name": "admin",
+ *             "role": 100,
+ *             "status": 100,
+ *             "tid": 1000,
+ *             "type": 10,
+ *             "update_time": 1623749677664
+ *         },
+ *         "100002": {
+ *             "account": "abc0",
+ *             "create_time": 1670317943195,
+ *             "favorites": {},
+ *             "image": "abc0_image",
+ *             "name": "abc0_name",
+ *             "phone": "abc0_123",
+ *             "role": 100,
+ *             "status": 100,
+ *             "tid": 100002,
+ *             "type": 100,
+ *             "update_time": 1670317943195
+ *         }
+ *     }
+ * }
+ *
+ */
+func ListUserRecordH(s *web.Session) web.Result {
+	var searcher = &gexdb.UserRecordUnifySearcher{}
+	err := s.Valid(searcher, "#all")
+	if err != nil {
+		return util.ReturnCodeLocalErr(s, define.ArgsInvalid, "arg-err", err)
+	}
+	if !AdminAccess(s) {
+		return util.ReturnCodeLocalErr(s, define.NotAccess, "srv-err", define.ErrNotAccess)
+	}
+	err = searcher.Apply(s.R.Context())
+	if err != nil {
+		xlog.Warnf("ListUserRecordH list user record by %v fail with %v", converter.JSON(searcher), err)
+		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
+	}
+	var users map[int64]*gexdb.User
+	if len(searcher.Query.UserIDs) > 0 {
+		_, users, err = gexdb.ListUserByID(s.R.Context(), searcher.Query.UserIDs...)
+		if err != nil {
+			xlog.Warnf("ListUserRecordH list prev user record fail with %v", err)
+			return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
+		}
+	}
+	var prevs map[int64]*gexdb.UserRecord
+	if len(searcher.Query.PrevIDs) > 0 {
+		_, prevs, err = gexdb.ListUserRecordByID(s.R.Context(), searcher.Query.PrevIDs...)
+		if err != nil {
+			xlog.Warnf("ListUserRecordH list prev user record fail with %v", err)
+			return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
+		}
+	}
+	return s.SendJSON(xmap.M{
+		"code":    0,
+		"records": searcher.Query.Records,
+		"users":   users,
+		"prevs":   prevs,
+		"total":   searcher.Count.Total,
+		"skip":    searcher.Page.Skip,
+		"limit":   searcher.Page.Limit,
 	})
 }

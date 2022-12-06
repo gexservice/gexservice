@@ -3,6 +3,7 @@ package gexapi
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/codingeasygo/crud/pgx"
 	"github.com/codingeasygo/util/converter"
@@ -83,6 +84,17 @@ func TestOrder(t *testing.T) {
 		queryOrder, _ := ts.Should(t, "code", define.Success, "/order/status", gexdb.OrderStatusDone).GetMap("/usr/queryOrder?order_id=%v", sellOrder.StrDef("", "/order/order_id"))
 		fmt.Printf("queryOrder--->%v\n", converter.JSON(queryOrder))
 	}
+	{ //overview
+		clearCookie()
+		ts.Should(t, "code", define.Success).GetMap("/pub/login?username=%v&password=%v", "admin", "123")
+
+		loadOverview, _ := ts.Should(t, "code", define.Success).GetMap("/usr/loadOverview")
+		fmt.Printf("loadOverview--->%v\n", converter.JSON(loadOverview))
+		ts.Should(t, "code", define.Success).GetMap("/usr/loadOverview")
+
+		listBalanceCount, _ := ts.Should(t, "code", define.Success).GetMap("/usr/listBalanceCount")
+		fmt.Printf("listBalanceCount--->%v\n", converter.JSON(listBalanceCount))
+	}
 	//search
 	clearCookie()
 	ts.Should(t, "code", define.Success).GetMap("/pub/login?username=%v&password=%v", *userabc0.Account, "123")
@@ -90,7 +102,7 @@ func TestOrder(t *testing.T) {
 	searchOrder, _ := ts.Should(t, "code", define.Success, "/orders", xmap.ShouldIsNoEmpty).GetMap("/usr/searchOrder")
 	fmt.Printf("searchOrder--->%v\n", converter.JSON(searchOrder))
 	ts.Should(t, "code", define.Success, "/orders", xmap.ShouldIsNoEmpty).GetMap("/usr/searchOrder?side=%v", gexdb.OrderSideBuy)
-	ts.Should(t, "code", define.Success, "/orders", xmap.ShouldIsNoEmpty).GetMap("/usr/searchOrder?area=%v", "spot")
+	ts.Should(t, "code", define.Success, "/orders", xmap.ShouldIsNoEmpty).GetMap("/usr/searchOrder?area=%v", gexdb.OrderAreaSpot)
 	//
 	//test error
 	pgx.MockerStart()
@@ -110,11 +122,20 @@ func TestOrder(t *testing.T) {
 	pgx.MockerSetCall("Pool.Exec", 1).Should(t, "code", define.ServerError).GetMap("/usr/cancelOrder?order_id=%v", triggerOrderID)
 	pgx.MockerSetCall("Rows.Scan", 1, 2).Should(t, "code", define.ServerError).GetMap("/usr/cancelAllOrder?symbol=%v", symbol)
 	pgx.MockerSetCall("Pool.Exec", 1).Should(t, "code", define.ServerError).GetMap("/usr/cancelAllOrder?symbol=%v", symbol)
-	pgx.MockerSetCall("Rows.Scan", 1).Should(t, "code", define.ServerError).GetMap("/usr/searchOrder")
+	pgx.MockerSetCall("Rows.Scan", 2).Should(t, "code", define.ServerError).GetMap("/usr/searchOrder")
 	pgx.MockerSetCall("Rows.Scan", 1).Should(t, "code", define.ServerError).GetMap("/usr/queryOrder?order_id=%v", orderID)
 
 	clearCookie()
 	ts.Should(t, "code", define.Success).GetMap("/pub/login?username=%v&password=%v", *userabc2.Account, "123")
 	pgx.MockerClear()
 	pgx.MockerSetCall("Rows.Scan", 2).Should(t, "code", define.ServerError).GetMap("/usr/queryOrder?order_id=%v", orderID)
+
+	clearCookie()
+	ts.Should(t, "code", define.Success).GetMap("/pub/login?username=%v&password=%v", "admin", "123")
+	pgx.MockerClear()
+	overviewLast = time.Time{}
+	pgx.MockerSetCall("Rows.Scan", 1).Should(t, "code", define.NotAccess).GetMap("/usr/loadOverview")
+	pgx.MockerSetRangeCall("Rows.Scan", 2, 14).Should(t, "code", define.ServerError).GetMap("/usr/loadOverview")
+	pgx.MockerSetCall("Rows.Scan", 1).Should(t, "code", define.NotAccess).GetMap("/usr/listBalanceCount")
+	pgx.MockerSetCall("Rows.Scan", 2).Should(t, "code", define.ServerError).GetMap("/usr/listBalanceCount")
 }

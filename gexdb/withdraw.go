@@ -66,7 +66,7 @@ func CreateWithdraw(ctx context.Context, withdraw *Withdraw) (err error) {
 	if reviewMin < 0 {
 		reviewMin = review.Float64Def(-1, "*")
 	}
-	if reviewMin < 0 || withdraw.Quantity.LessThan(decimal.NewFromFloat(reviewMin)) {
+	if reviewMin >= 0 && withdraw.Quantity.LessThan(decimal.NewFromFloat(reviewMin)) {
 		withdraw.Status = WithdrawStatusConfirmed
 	} else {
 		withdraw.Status = WithdrawStatusPending
@@ -464,30 +464,35 @@ func DoneGoldbar(ctx context.Context, orderID, code string, result xmap.M) (gold
  * @apiParam  {Number} [limit] page limit
  */
 type WithdrawUnifySearcher struct {
-	Model Withdraw `json:"model"`
+	Model Withdraw `json:"model" from:"gex_withdraw w join gex_user u on w.user_id=u.tid"`
 	Where struct {
-		UserID    int64               `json:"user_id" cmp:"user_id=$%v" valid:"user_id,o|i,r:0;"`
-		Type      WithdrawTypeArray   `json:"type" cmp:"type=any($%v)" valid:"type,o|i,e:;"`
-		Asset     []string            `json:"asset" cmp:"asset=any($%v)" valid:"asset,o|s,l:0;"`
-		StartTime xsql.Time           `json:"start_time" cmp:"update_time>=$%v" valid:"start_time,o|i,r:-1;"`
-		EndTime   xsql.Time           `json:"end_time" cmp:"update_time<$%v" valid:"end_time,o|i,r:-1;"`
-		Status    WithdrawStatusArray `json:"status" cmp:"status=any($%v)" valid:"status,o|i,e:;"`
+		UserID    int64               `json:"user_id" cmp:"w.user_id=$%v" valid:"user_id,o|i,r:0;"`
+		Type      WithdrawTypeArray   `json:"type" cmp:"w.type=any($%v)" valid:"type,o|i,e:;"`
+		Asset     []string            `json:"asset" cmp:"w.asset=any($%v)" valid:"asset,o|s,l:0;"`
+		StartTime xsql.Time           `json:"start_time" cmp:"w.update_time>=$%v" valid:"start_time,o|i,r:-1;"`
+		EndTime   xsql.Time           `json:"end_time" cmp:"w.update_time<$%v" valid:"end_time,o|i,r:-1;"`
+		Status    WithdrawStatusArray `json:"status" cmp:"w.status=any($%v)" valid:"status,o|i,e:;"`
+		Key       string              `json:"key" cmp:"(u.tid::text like $%v or u.name like $%v or u.phone like $%v or u.account like $%v)" valid:"key,o|s,l:0;"`
 	} `json:"where" join:"and" valid:"inline"`
 	Page struct {
-		Order string `json:"order" default:"order by update_time desc" valid:"order,o|s,l:0;"`
+		Order string `json:"order" default:"order by w.update_time desc" valid:"order,o|s,l:0;"`
 		Skip  int    `json:"skip" valid:"skip,o|i,r:-1;"`
 		Limit int    `json:"limit" valid:"limit,o|i,r:0;"`
 	} `json:"page" valid:"inline"`
 	Query struct {
 		Withdraws []*Withdraw `json:"withdraws"`
-	} `json:"query" filter:"#all"`
+		UserIDs   []int64     `json:"user_ids" scan:"user_id"`
+	} `json:"query" filter:"w.#all"`
 	Count struct {
 		Total int64 `json:"total" scan:"tid"`
-	} `json:"count" filter:"r.count(tid)#all"`
+	} `json:"count" filter:"w.count(tid)#all"`
 }
 
 func (w *WithdrawUnifySearcher) Apply(ctx context.Context) (err error) {
 	w.Page.Order = ""
+	if len(w.Where.Key) > 0 {
+		w.Where.Key = "%" + w.Where.Key + "%"
+	}
 	err = crud.ApplyUnify(Pool(), ctx, w)
 	return
 }
