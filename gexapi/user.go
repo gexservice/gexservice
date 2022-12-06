@@ -149,6 +149,21 @@ func LoginH(s *web.Session) web.Result {
 		xlog.Warnf("LoginH user login to sytem from %v fail with user:%v status is %v", s.R.RemoteAddr, user.TID, user.Status)
 		return util.ReturnCodeLocalErr(s, define.UserInvalid, "usr-err", fmt.Errorf("user status is %v", user.Status))
 	}
+	remoteAddr := s.R.RemoteAddr
+	realIP := s.R.Header.Get("X-Real-IP")
+	if len(realIP) > 0 {
+		remoteAddr = realIP
+	}
+	err = gexdb.AddUserRecord(s.R.Context(), &gexdb.UserRecord{
+		UserID:   user.TID,
+		Type:     gexdb.UserRecordTypeLogin,
+		FromAddr: remoteAddr,
+		Status:   gexdb.UserRecordStatusNormal,
+	})
+	if err != nil {
+		xlog.Errorf("LoginH add user record to sytem from %v fail with %v", s.R.RemoteAddr, err)
+		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
+	}
 	s.Clear()
 	s.SetValue("user_id", user.TID)
 	s.Flush()

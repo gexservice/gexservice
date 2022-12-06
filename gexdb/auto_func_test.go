@@ -1955,6 +1955,222 @@ func TestAutoUser(t *testing.T) {
 	}
 }
 
+func TestAutoUserRecord(t *testing.T) {
+	var err error
+	for _, value := range UserRecordTypeAll {
+		if value.EnumValid(int(value)) != nil {
+			t.Error("not enum valid")
+			return
+		}
+		if value.EnumValid(int(-321654)) == nil {
+			t.Error("not enum valid")
+			return
+		}
+		if UserRecordTypeAll.EnumValid(int(value)) != nil {
+			t.Error("not enum valid")
+			return
+		}
+		if UserRecordTypeAll.EnumValid(int(-321654)) == nil {
+			t.Error("not enum valid")
+			return
+		}
+	}
+	if len(UserRecordTypeAll.DbArray()) < 1 {
+		t.Error("not array")
+		return
+	}
+	if len(UserRecordTypeAll.InArray()) < 1 {
+		t.Error("not array")
+		return
+	}
+	for _, value := range UserRecordStatusAll {
+		if value.EnumValid(int(value)) != nil {
+			t.Error("not enum valid")
+			return
+		}
+		if value.EnumValid(int(-321654)) == nil {
+			t.Error("not enum valid")
+			return
+		}
+		if UserRecordStatusAll.EnumValid(int(value)) != nil {
+			t.Error("not enum valid")
+			return
+		}
+		if UserRecordStatusAll.EnumValid(int(-321654)) == nil {
+			t.Error("not enum valid")
+			return
+		}
+	}
+	if len(UserRecordStatusAll.DbArray()) < 1 {
+		t.Error("not array")
+		return
+	}
+	if len(UserRecordStatusAll.InArray()) < 1 {
+		t.Error("not array")
+		return
+	}
+	metav := MetaWithUserRecord()
+	if len(metav) < 1 {
+		t.Error("not meta")
+		return
+	}
+	userRecord := &UserRecord{}
+	userRecord.Valid()
+
+	table, fields := userRecord.Meta()
+	if len(table) < 1 || len(fields) < 1 {
+		t.Error("not meta")
+		return
+	}
+	fmt.Println(table, "---->", strings.Join(fields, ","))
+	if table := crud.Table(userRecord.MetaWith(int64(0))); len(table) < 1 {
+		t.Error("not table")
+		return
+	}
+	err = userRecord.Insert(GetQueryer, context.Background())
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if reflect.ValueOf(userRecord.TID).IsZero() {
+		t.Error("not id")
+		return
+	}
+	userRecord.Valid()
+	err = UpdateUserRecordFilter(context.Background(), userRecord, "")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	err = UpdateUserRecordWheref(context.Background(), userRecord, "")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	err = UpdateUserRecordFilterWheref(context.Background(), userRecord, UserRecordFilterUpdate, "tid=$%v", userRecord.TID)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	findUserRecord, err := FindUserRecord(context.Background(), userRecord.TID)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if userRecord.TID != findUserRecord.TID {
+		t.Error("find id error")
+		return
+	}
+	findUserRecord, err = FindUserRecordWheref(context.Background(), "tid=$%v", userRecord.TID)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if userRecord.TID != findUserRecord.TID {
+		t.Error("find id error")
+		return
+	}
+	findUserRecord, err = FindUserRecordFilterWheref(context.Background(), "#all", "tid=$%v", userRecord.TID)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if userRecord.TID != findUserRecord.TID {
+		t.Error("find id error")
+		return
+	}
+	findUserRecord, err = FindUserRecordWhereCall(GetQueryer, context.Background(), true, "and", []string{"tid=$1"}, []interface{}{userRecord.TID})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if userRecord.TID != findUserRecord.TID {
+		t.Error("find id error")
+		return
+	}
+	findUserRecord, err = FindUserRecordWherefCall(GetQueryer, context.Background(), true, "tid=$%v", userRecord.TID)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if userRecord.TID != findUserRecord.TID {
+		t.Error("find id error")
+		return
+	}
+	userRecordList, userRecordMap, err := ListUserRecordByID(context.Background())
+	if err != nil || len(userRecordList) > 0 || userRecordMap == nil || len(userRecordMap) > 0 {
+		t.Error(err)
+		return
+	}
+	userRecordList, userRecordMap, err = ListUserRecordByID(context.Background(), userRecord.TID)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if len(userRecordList) != 1 || userRecordList[0].TID != userRecord.TID || len(userRecordMap) != 1 || userRecordMap[userRecord.TID] == nil || userRecordMap[userRecord.TID].TID != userRecord.TID {
+		t.Error("list id error")
+		return
+	}
+	userRecordList, userRecordMap, err = ListUserRecordFilterByID(context.Background(), "#all")
+	if err != nil || len(userRecordList) > 0 || userRecordMap == nil || len(userRecordMap) > 0 {
+		t.Error(err)
+		return
+	}
+	userRecordList, userRecordMap, err = ListUserRecordFilterByID(context.Background(), "#all", userRecord.TID)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if len(userRecordList) != 1 || userRecordList[0].TID != userRecord.TID || len(userRecordMap) != 1 || userRecordMap[userRecord.TID] == nil || userRecordMap[userRecord.TID].TID != userRecord.TID {
+		t.Error("list id error")
+		return
+	}
+	userRecordList = nil
+	userRecordMap = nil
+	err = ScanUserRecordByID(context.Background(), []int64{userRecord.TID}, &userRecordList, &userRecordMap, "tid")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if len(userRecordList) != 1 || userRecordList[0].TID != userRecord.TID || len(userRecordMap) != 1 || userRecordMap[userRecord.TID] == nil || userRecordMap[userRecord.TID].TID != userRecord.TID {
+		t.Error("list id error")
+		return
+	}
+	userRecordList = nil
+	userRecordMap = nil
+	err = ScanUserRecordFilterByID(context.Background(), "#all", []int64{userRecord.TID}, &userRecordList, &userRecordMap, "tid")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if len(userRecordList) != 1 || userRecordList[0].TID != userRecord.TID || len(userRecordMap) != 1 || userRecordMap[userRecord.TID] == nil || userRecordMap[userRecord.TID].TID != userRecord.TID {
+		t.Error("list id error")
+		return
+	}
+	userRecordList = nil
+	userRecordMap = nil
+	err = ScanUserRecordWheref(context.Background(), "tid=$%v", []interface{}{userRecord.TID}, "", &userRecordList, &userRecordMap, "tid")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if len(userRecordList) != 1 || userRecordList[0].TID != userRecord.TID || len(userRecordMap) != 1 || userRecordMap[userRecord.TID] == nil || userRecordMap[userRecord.TID].TID != userRecord.TID {
+		t.Error("list id error")
+		return
+	}
+	userRecordList = nil
+	userRecordMap = nil
+	err = ScanUserRecordFilterWheref(context.Background(), "#all", "tid=$%v", []interface{}{userRecord.TID}, "", &userRecordList, &userRecordMap, "tid")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if len(userRecordList) != 1 || userRecordList[0].TID != userRecord.TID || len(userRecordMap) != 1 || userRecordMap[userRecord.TID] == nil || userRecordMap[userRecord.TID].TID != userRecord.TID {
+		t.Error("list id error")
+		return
+	}
+}
+
 func TestAutoWallet(t *testing.T) {
 	var err error
 	for _, value := range WalletMethodAll {

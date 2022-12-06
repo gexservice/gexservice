@@ -3291,6 +3291,362 @@ func ScanUserFilterWherefCall(caller interface{}, ctx context.Context, filter st
 	return
 }
 
+//UserRecordFilterOptional is crud filter
+const UserRecordFilterOptional = ""
+
+//UserRecordFilterRequired is crud filter
+const UserRecordFilterRequired = ""
+
+//UserRecordFilterInsert is crud filter
+const UserRecordFilterInsert = ""
+
+//UserRecordFilterUpdate is crud filter
+const UserRecordFilterUpdate = "update_time"
+
+//UserRecordFilterFind is crud filter
+const UserRecordFilterFind = "#all"
+
+//UserRecordFilterScan is crud filter
+const UserRecordFilterScan = "#all"
+
+//EnumValid will valid value by UserRecordType
+func (o *UserRecordType) EnumValid(v interface{}) (err error) {
+	var target UserRecordType
+	targetType := reflect.TypeOf(UserRecordType(0))
+	targetValue := reflect.ValueOf(v)
+	if targetValue.CanConvert(targetType) {
+		target = targetValue.Convert(targetType).Interface().(UserRecordType)
+	}
+	for _, value := range UserRecordTypeAll {
+		if target == value {
+			return nil
+		}
+	}
+	return fmt.Errorf("must be in %v", UserRecordTypeAll)
+}
+
+//EnumValid will valid value by UserRecordTypeArray
+func (o *UserRecordTypeArray) EnumValid(v interface{}) (err error) {
+	var target UserRecordType
+	targetType := reflect.TypeOf(UserRecordType(0))
+	targetValue := reflect.ValueOf(v)
+	if targetValue.CanConvert(targetType) {
+		target = targetValue.Convert(targetType).Interface().(UserRecordType)
+	}
+	for _, value := range UserRecordTypeAll {
+		if target == value {
+			return nil
+		}
+	}
+	return fmt.Errorf("must be in %v", UserRecordTypeAll)
+}
+
+//DbArray will join value to database array
+func (o UserRecordTypeArray) DbArray() (res string) {
+	res = "{" + converter.JoinSafe(o, ",", converter.JoinPolicyDefault) + "}"
+	return
+}
+
+//InArray will join value to database array
+func (o UserRecordTypeArray) InArray() (res string) {
+	res = "" + converter.JoinSafe(o, ",", converter.JoinPolicyDefault) + ""
+	return
+}
+
+//EnumValid will valid value by UserRecordStatus
+func (o *UserRecordStatus) EnumValid(v interface{}) (err error) {
+	var target UserRecordStatus
+	targetType := reflect.TypeOf(UserRecordStatus(0))
+	targetValue := reflect.ValueOf(v)
+	if targetValue.CanConvert(targetType) {
+		target = targetValue.Convert(targetType).Interface().(UserRecordStatus)
+	}
+	for _, value := range UserRecordStatusAll {
+		if target == value {
+			return nil
+		}
+	}
+	return fmt.Errorf("must be in %v", UserRecordStatusAll)
+}
+
+//EnumValid will valid value by UserRecordStatusArray
+func (o *UserRecordStatusArray) EnumValid(v interface{}) (err error) {
+	var target UserRecordStatus
+	targetType := reflect.TypeOf(UserRecordStatus(0))
+	targetValue := reflect.ValueOf(v)
+	if targetValue.CanConvert(targetType) {
+		target = targetValue.Convert(targetType).Interface().(UserRecordStatus)
+	}
+	for _, value := range UserRecordStatusAll {
+		if target == value {
+			return nil
+		}
+	}
+	return fmt.Errorf("must be in %v", UserRecordStatusAll)
+}
+
+//DbArray will join value to database array
+func (o UserRecordStatusArray) DbArray() (res string) {
+	res = "{" + converter.JoinSafe(o, ",", converter.JoinPolicyDefault) + "}"
+	return
+}
+
+//InArray will join value to database array
+func (o UserRecordStatusArray) InArray() (res string) {
+	res = "" + converter.JoinSafe(o, ",", converter.JoinPolicyDefault) + ""
+	return
+}
+
+//MetaWithUserRecord will return gex_user_record meta data
+func MetaWithUserRecord(fields ...interface{}) (v []interface{}) {
+	v = crud.MetaWith(string("gex_user_record"), fields...)
+	return
+}
+
+//MetaWith will return gex_user_record meta data
+func (userRecord *UserRecord) MetaWith(fields ...interface{}) (v []interface{}) {
+	v = crud.MetaWith(string("gex_user_record"), fields...)
+	return
+}
+
+//Meta will return gex_user_record meta data
+func (userRecord *UserRecord) Meta() (table string, fileds []string) {
+	table, fileds = crud.QueryField(userRecord, "#all")
+	return
+}
+
+//Valid will valid by filter
+func (userRecord *UserRecord) Valid() (err error) {
+	if reflect.ValueOf(userRecord.TID).IsZero() {
+		err = attrvalid.Valid(userRecord, UserRecordFilterInsert+"#all", UserRecordFilterOptional)
+	} else {
+		err = attrvalid.Valid(userRecord, UserRecordFilterUpdate, "")
+	}
+	return
+}
+
+//Insert will add gex_user_record to database
+func (userRecord *UserRecord) Insert(caller interface{}, ctx context.Context) (err error) {
+
+	if len(userRecord.External) < 1 {
+		userRecord.External = xsql.M{}
+	}
+
+	if userRecord.UpdateTime.Timestamp() < 1 {
+		userRecord.UpdateTime = xsql.TimeNow()
+	}
+
+	if userRecord.CreateTime.Timestamp() < 1 {
+		userRecord.CreateTime = xsql.TimeNow()
+	}
+
+	_, err = crud.InsertFilter(caller, ctx, userRecord, "^tid#all", "returning", "tid#all")
+	return
+}
+
+//UpdateFilter will update gex_user_record to database
+func (userRecord *UserRecord) UpdateFilter(caller interface{}, ctx context.Context, filter string) (err error) {
+	err = userRecord.UpdateFilterWheref(caller, ctx, filter, "")
+	return
+}
+
+//UpdateWheref will update gex_user_record to database
+func (userRecord *UserRecord) UpdateWheref(caller interface{}, ctx context.Context, formats string, formatArgs ...interface{}) (err error) {
+	err = userRecord.UpdateFilterWheref(caller, ctx, UserRecordFilterUpdate, formats, formatArgs...)
+	return
+}
+
+//UpdateFilterWheref will update gex_user_record to database
+func (userRecord *UserRecord) UpdateFilterWheref(caller interface{}, ctx context.Context, filter string, formats string, formatArgs ...interface{}) (err error) {
+	userRecord.UpdateTime = xsql.TimeNow()
+	sql, args := crud.UpdateSQL(userRecord, filter, nil)
+	where, args := crud.AppendWheref(nil, args, "tid=$%v", userRecord.TID)
+	if len(formats) > 0 {
+		where, args = crud.AppendWheref(where, args, formats, formatArgs...)
+	}
+	err = crud.UpdateRow(caller, ctx, userRecord, sql, where, "and", args)
+	return
+}
+
+//UpdateUserRecordFilter will update gex_user_record to database
+func UpdateUserRecordFilter(ctx context.Context, userRecord *UserRecord, filter string) (err error) {
+	err = UpdateUserRecordFilterCall(GetQueryer, ctx, userRecord, filter)
+	return
+}
+
+//UpdateUserRecordFilterCall will update gex_user_record to database
+func UpdateUserRecordFilterCall(caller interface{}, ctx context.Context, userRecord *UserRecord, filter string) (err error) {
+	err = userRecord.UpdateFilter(caller, ctx, filter)
+	return
+}
+
+//UpdateUserRecordWheref will update gex_user_record to database
+func UpdateUserRecordWheref(ctx context.Context, userRecord *UserRecord, formats string, formatArgs ...interface{}) (err error) {
+	err = UpdateUserRecordWherefCall(GetQueryer, ctx, userRecord, formats, formatArgs...)
+	return
+}
+
+//UpdateUserRecordWherefCall will update gex_user_record to database
+func UpdateUserRecordWherefCall(caller interface{}, ctx context.Context, userRecord *UserRecord, formats string, formatArgs ...interface{}) (err error) {
+	err = userRecord.UpdateWheref(caller, ctx, formats, formatArgs...)
+	return
+}
+
+//UpdateUserRecordFilterWheref will update gex_user_record to database
+func UpdateUserRecordFilterWheref(ctx context.Context, userRecord *UserRecord, filter string, formats string, formatArgs ...interface{}) (err error) {
+	err = UpdateUserRecordFilterWherefCall(GetQueryer, ctx, userRecord, filter, formats, formatArgs...)
+	return
+}
+
+//UpdateUserRecordFilterWherefCall will update gex_user_record to database
+func UpdateUserRecordFilterWherefCall(caller interface{}, ctx context.Context, userRecord *UserRecord, filter string, formats string, formatArgs ...interface{}) (err error) {
+	err = userRecord.UpdateFilterWheref(caller, ctx, filter, formats, formatArgs...)
+	return
+}
+
+//FindUserRecordCall will find gex_user_record by id from database
+func FindUserRecord(ctx context.Context, userRecordID int64) (userRecord *UserRecord, err error) {
+	userRecord, err = FindUserRecordCall(GetQueryer, ctx, userRecordID, false)
+	return
+}
+
+//FindUserRecordCall will find gex_user_record by id from database
+func FindUserRecordCall(caller interface{}, ctx context.Context, userRecordID int64, lock bool) (userRecord *UserRecord, err error) {
+	where, args := crud.AppendWhere(nil, nil, true, "tid=$%v", userRecordID)
+	userRecord, err = FindUserRecordWhereCall(caller, ctx, lock, "and", where, args)
+	return
+}
+
+//FindUserRecordWhereCall will find gex_user_record by where from database
+func FindUserRecordWhereCall(caller interface{}, ctx context.Context, lock bool, join string, where []string, args []interface{}) (userRecord *UserRecord, err error) {
+	querySQL := crud.QuerySQL(&UserRecord{}, "#all")
+	querySQL = crud.JoinWhere(querySQL, where, join)
+	if lock {
+		querySQL += " for update "
+	}
+	err = crud.QueryRow(caller, ctx, &UserRecord{}, "#all", querySQL, args, &userRecord)
+	return
+}
+
+//FindUserRecordWheref will find gex_user_record by where from database
+func FindUserRecordWheref(ctx context.Context, format string, args ...interface{}) (userRecord *UserRecord, err error) {
+	userRecord, err = FindUserRecordWherefCall(GetQueryer, ctx, false, format, args...)
+	return
+}
+
+//FindUserRecordWherefCall will find gex_user_record by where from database
+func FindUserRecordWherefCall(caller interface{}, ctx context.Context, lock bool, format string, args ...interface{}) (userRecord *UserRecord, err error) {
+	userRecord, err = FindUserRecordFilterWherefCall(GetQueryer, ctx, lock, "#all", format, args...)
+	return
+}
+
+//FindUserRecordFilterWheref will find gex_user_record by where from database
+func FindUserRecordFilterWheref(ctx context.Context, filter string, format string, args ...interface{}) (userRecord *UserRecord, err error) {
+	userRecord, err = FindUserRecordFilterWherefCall(GetQueryer, ctx, false, filter, format, args...)
+	return
+}
+
+//FindUserRecordFilterWherefCall will find gex_user_record by where from database
+func FindUserRecordFilterWherefCall(caller interface{}, ctx context.Context, lock bool, filter string, format string, args ...interface{}) (userRecord *UserRecord, err error) {
+	querySQL := crud.QuerySQL(&UserRecord{}, filter)
+	where, queryArgs := crud.AppendWheref(nil, nil, format, args...)
+	querySQL = crud.JoinWhere(querySQL, where, "and")
+	if lock {
+		querySQL += " for update "
+	}
+	err = crud.QueryRow(caller, ctx, &UserRecord{}, filter, querySQL, queryArgs, &userRecord)
+	return
+}
+
+//ListUserRecordByID will list gex_user_record by id from database
+func ListUserRecordByID(ctx context.Context, userRecordIDs ...int64) (userRecordList []*UserRecord, userRecordMap map[int64]*UserRecord, err error) {
+	userRecordList, userRecordMap, err = ListUserRecordByIDCall(GetQueryer, ctx, userRecordIDs...)
+	return
+}
+
+//ListUserRecordByIDCall will list gex_user_record by id from database
+func ListUserRecordByIDCall(caller interface{}, ctx context.Context, userRecordIDs ...int64) (userRecordList []*UserRecord, userRecordMap map[int64]*UserRecord, err error) {
+	if len(userRecordIDs) < 1 {
+		userRecordMap = map[int64]*UserRecord{}
+		return
+	}
+	err = ScanUserRecordByIDCall(caller, ctx, userRecordIDs, &userRecordList, &userRecordMap, "tid")
+	return
+}
+
+//ListUserRecordFilterByID will list gex_user_record by id from database
+func ListUserRecordFilterByID(ctx context.Context, filter string, userRecordIDs ...int64) (userRecordList []*UserRecord, userRecordMap map[int64]*UserRecord, err error) {
+	userRecordList, userRecordMap, err = ListUserRecordFilterByIDCall(GetQueryer, ctx, filter, userRecordIDs...)
+	return
+}
+
+//ListUserRecordFilterByIDCall will list gex_user_record by id from database
+func ListUserRecordFilterByIDCall(caller interface{}, ctx context.Context, filter string, userRecordIDs ...int64) (userRecordList []*UserRecord, userRecordMap map[int64]*UserRecord, err error) {
+	if len(userRecordIDs) < 1 {
+		userRecordMap = map[int64]*UserRecord{}
+		return
+	}
+	err = ScanUserRecordFilterByIDCall(caller, ctx, filter, userRecordIDs, &userRecordList, &userRecordMap, "tid")
+	return
+}
+
+//ScanUserRecordByID will list gex_user_record by id from database
+func ScanUserRecordByID(ctx context.Context, userRecordIDs []int64, dest ...interface{}) (err error) {
+	err = ScanUserRecordByIDCall(GetQueryer, ctx, userRecordIDs, dest...)
+	return
+}
+
+//ScanUserRecordByIDCall will list gex_user_record by id from database
+func ScanUserRecordByIDCall(caller interface{}, ctx context.Context, userRecordIDs []int64, dest ...interface{}) (err error) {
+	err = ScanUserRecordFilterByIDCall(caller, ctx, "#all", userRecordIDs, dest...)
+	return
+}
+
+//ScanUserRecordFilterByID will list gex_user_record by id from database
+func ScanUserRecordFilterByID(ctx context.Context, filter string, userRecordIDs []int64, dest ...interface{}) (err error) {
+	err = ScanUserRecordFilterByIDCall(GetQueryer, ctx, filter, userRecordIDs, dest...)
+	return
+}
+
+//ScanUserRecordFilterByIDCall will list gex_user_record by id from database
+func ScanUserRecordFilterByIDCall(caller interface{}, ctx context.Context, filter string, userRecordIDs []int64, dest ...interface{}) (err error) {
+	querySQL := crud.QuerySQL(&UserRecord{}, filter)
+	where := append([]string{}, fmt.Sprintf("tid in (%v)", xsql.Int64Array(userRecordIDs).InArray()))
+	querySQL = crud.JoinWhere(querySQL, where, " and ")
+	err = crud.Query(caller, ctx, &UserRecord{}, filter, querySQL, nil, dest...)
+	return
+}
+
+//ScanUserRecordWherefCall will list gex_user_record by format from database
+func ScanUserRecordWheref(ctx context.Context, format string, args []interface{}, suffix string, dest ...interface{}) (err error) {
+	err = ScanUserRecordWherefCall(GetQueryer, ctx, format, args, suffix, dest...)
+	return
+}
+
+//ScanUserRecordWherefCall will list gex_user_record by format from database
+func ScanUserRecordWherefCall(caller interface{}, ctx context.Context, format string, args []interface{}, suffix string, dest ...interface{}) (err error) {
+	err = ScanUserRecordFilterWherefCall(caller, ctx, "#all", format, args, suffix, dest...)
+	return
+}
+
+//ScanUserRecordFilterWheref will list gex_user_record by format from database
+func ScanUserRecordFilterWheref(ctx context.Context, filter string, format string, args []interface{}, suffix string, dest ...interface{}) (err error) {
+	err = ScanUserRecordFilterWherefCall(GetQueryer, ctx, filter, format, args, suffix, dest...)
+	return
+}
+
+//ScanUserRecordFilterWherefCall will list gex_user_record by format from database
+func ScanUserRecordFilterWherefCall(caller interface{}, ctx context.Context, filter string, format string, args []interface{}, suffix string, dest ...interface{}) (err error) {
+	querySQL := crud.QuerySQL(&UserRecord{}, filter)
+	var where []string
+	if len(format) > 0 {
+		where, args = crud.AppendWheref(nil, nil, format, args...)
+	}
+	querySQL = crud.JoinWhere(querySQL, where, " and ", suffix)
+	err = crud.Query(caller, ctx, &UserRecord{}, filter, querySQL, args, dest...)
+	return
+}
+
 //WalletFilterOptional is crud filter
 const WalletFilterOptional = ""
 

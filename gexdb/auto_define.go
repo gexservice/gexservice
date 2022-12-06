@@ -203,6 +203,22 @@ package gexdb
  */
 
 /**
+ * @apiDefine UserRecordUpdate
+ */
+/**
+ * @apiDefine UserRecordObject
+ * @apiSuccess (UserRecord) {Int64} UserRecord.tid the primary key
+ * @apiSuccess (UserRecord) {Int64} UserRecord.user_id the user record user id
+ * @apiSuccess (UserRecord) {UserRecordType} UserRecord.type the user recrod type, all suported is <a href="#metadata-UserRecord">UserRecordTypeAll</a>
+ * @apiSuccess (UserRecord) {String} UserRecord.from_addr the user record from addr
+ * @apiSuccess (UserRecord) {Object} UserRecord.external the user record external info
+ * @apiSuccess (UserRecord) {Int64} UserRecord.prev_id the user record prev id
+ * @apiSuccess (UserRecord) {Time} UserRecord.update_time the user recrod update time
+ * @apiSuccess (UserRecord) {Time} UserRecord.create_time the user record create time
+ * @apiSuccess (UserRecord) {UserRecordStatus} UserRecord.status the user record status, all suported is <a href="#metadata-UserRecord">UserRecordStatusAll</a>
+ */
+
+/**
  * @apiDefine WalletUpdate
  */
 /**

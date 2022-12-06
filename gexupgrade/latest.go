@@ -1158,6 +1158,105 @@ COMMENT ON COLUMN gex_user.status IS 'the user status, Normal=100:is normal, Loc
 
 
 --
+-- Name: gex_user_record; Type: TABLE; Schema: public;
+--
+
+CREATE TABLE gex_user_record (
+    tid bigint NOT NULL,
+    user_id bigint NOT NULL,
+    type integer NOT NULL,
+    from_addr character varying(255) NOT NULL,
+    external jsonb DEFAULT '{}'::jsonb NOT NULL,
+    prev_id bigint DEFAULT 0 NOT NULL,
+    update_time timestamp with time zone NOT NULL,
+    create_time timestamp with time zone NOT NULL,
+    status integer NOT NULL
+);
+
+
+--
+-- Name: COLUMN gex_user_record.tid; Type: COMMENT; Schema: public;
+--
+
+COMMENT ON COLUMN gex_user_record.tid IS 'the primary key';
+
+
+--
+-- Name: COLUMN gex_user_record.user_id; Type: COMMENT; Schema: public;
+--
+
+COMMENT ON COLUMN gex_user_record.user_id IS 'the user record user id';
+
+
+--
+-- Name: COLUMN gex_user_record.type; Type: COMMENT; Schema: public;
+--
+
+COMMENT ON COLUMN gex_user_record.type IS 'the user recrod type, Login=100:is login record type';
+
+
+--
+-- Name: COLUMN gex_user_record.from_addr; Type: COMMENT; Schema: public;
+--
+
+COMMENT ON COLUMN gex_user_record.from_addr IS 'the user record from addr';
+
+
+--
+-- Name: COLUMN gex_user_record.external; Type: COMMENT; Schema: public;
+--
+
+COMMENT ON COLUMN gex_user_record.external IS 'the user record external info';
+
+
+--
+-- Name: COLUMN gex_user_record.prev_id; Type: COMMENT; Schema: public;
+--
+
+COMMENT ON COLUMN gex_user_record.prev_id IS 'the user record prev id';
+
+
+--
+-- Name: COLUMN gex_user_record.update_time; Type: COMMENT; Schema: public;
+--
+
+COMMENT ON COLUMN gex_user_record.update_time IS 'the user recrod update time';
+
+
+--
+-- Name: COLUMN gex_user_record.create_time; Type: COMMENT; Schema: public;
+--
+
+COMMENT ON COLUMN gex_user_record.create_time IS 'the user record create time';
+
+
+--
+-- Name: COLUMN gex_user_record.status; Type: COMMENT; Schema: public;
+--
+
+COMMENT ON COLUMN gex_user_record.status IS 'the user record status, Normal=100:is normal status';
+
+
+--
+-- Name: gex_user_record_tid_seq; Type: SEQUENCE; Schema: public;
+--
+
+CREATE SEQUENCE gex_user_record_tid_seq
+    START WITH 1000
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: gex_user_record_tid_seq; Type: SEQUENCE OWNED BY; Schema: public;
+--
+
+ALTER SEQUENCE gex_user_record_tid_seq OWNED BY gex_user_record.tid;
+
+
+--
 -- Name: gex_user_tid_seq; Type: SEQUENCE; Schema: public;
 --
 
@@ -1444,6 +1543,13 @@ ALTER TABLE IF EXISTS ONLY gex_user ALTER COLUMN tid SET DEFAULT nextval('gex_us
 
 
 --
+-- Name: gex_user_record tid; Type: DEFAULT; Schema: public;
+--
+
+ALTER TABLE IF EXISTS ONLY gex_user_record ALTER COLUMN tid SET DEFAULT nextval('gex_user_record_tid_seq'::regclass);
+
+
+--
 -- Name: gex_wallet tid; Type: DEFAULT; Schema: public;
 --
 
@@ -1528,6 +1634,14 @@ ALTER TABLE IF EXISTS ONLY gex_order
 
 ALTER TABLE IF EXISTS ONLY gex_user
     ADD CONSTRAINT gex_user_pkey PRIMARY KEY (tid);
+
+
+--
+-- Name: gex_user_record gex_user_record_pkey; Type: CONSTRAINT; Schema: public;
+--
+
+ALTER TABLE IF EXISTS ONLY gex_user_record
+    ADD CONSTRAINT gex_user_record_pkey PRIMARY KEY (tid);
 
 
 --
@@ -1770,6 +1884,34 @@ CREATE UNIQUE INDEX gex_user_phone_idx ON gex_user USING btree (phone);
 
 
 --
+-- Name: gex_user_record_type_idx; Type: INDEX; Schema: public;
+--
+
+CREATE INDEX gex_user_record_type_idx ON gex_user_record USING btree (type);
+
+
+--
+-- Name: gex_user_record_update_time_idx; Type: INDEX; Schema: public;
+--
+
+CREATE INDEX gex_user_record_update_time_idx ON gex_user_record USING btree (update_time);
+
+
+--
+-- Name: gex_user_record_user_id_idx; Type: INDEX; Schema: public;
+--
+
+CREATE INDEX gex_user_record_user_id_idx ON gex_user_record USING btree (user_id);
+
+
+--
+-- Name: gex_user_recrod_status_idx; Type: INDEX; Schema: public;
+--
+
+CREATE INDEX gex_user_recrod_status_idx ON gex_user_record USING btree (status);
+
+
+--
 -- Name: gex_user_role_idx; Type: INDEX; Schema: public;
 --
 
@@ -1888,6 +2030,10 @@ DROP INDEX IF EXISTS gex_user_update_time_idx;
 DROP INDEX IF EXISTS gex_user_type_idx;
 DROP INDEX IF EXISTS gex_user_status_idx;
 DROP INDEX IF EXISTS gex_user_role_idx;
+DROP INDEX IF EXISTS gex_user_recrod_status_idx;
+DROP INDEX IF EXISTS gex_user_record_user_id_idx;
+DROP INDEX IF EXISTS gex_user_record_update_time_idx;
+DROP INDEX IF EXISTS gex_user_record_type_idx;
 DROP INDEX IF EXISTS gex_user_phone_idx;
 DROP INDEX IF EXISTS gex_user_password_idx;
 DROP INDEX IF EXISTS gex_user_email_idx;
@@ -1922,6 +2068,7 @@ DROP INDEX IF EXISTS gex_balance_record_balance_id_idx;
 DROP INDEX IF EXISTS gex_balance_history_user_asset_idx;
 DROP INDEX IF EXISTS gex_balance_history_status_idx;
 ALTER TABLE IF EXISTS gex_wallet ALTER COLUMN tid DROP DEFAULT;
+ALTER TABLE IF EXISTS gex_user_record ALTER COLUMN tid DROP DEFAULT;
 ALTER TABLE IF EXISTS gex_user ALTER COLUMN tid DROP DEFAULT;
 ALTER TABLE IF EXISTS gex_order_comm ALTER COLUMN tid DROP DEFAULT;
 ALTER TABLE IF EXISTS gex_order ALTER COLUMN tid DROP DEFAULT;
@@ -1935,6 +2082,8 @@ DROP TABLE IF EXISTS gex_withdraw;
 DROP SEQUENCE IF EXISTS gex_wallet_tid_seq;
 DROP TABLE IF EXISTS gex_wallet;
 DROP SEQUENCE IF EXISTS gex_user_tid_seq;
+DROP SEQUENCE IF EXISTS gex_user_record_tid_seq;
+DROP TABLE IF EXISTS gex_user_record;
 DROP TABLE IF EXISTS gex_user;
 DROP SEQUENCE IF EXISTS gex_order_tid_seq;
 DROP SEQUENCE IF EXISTS gex_order_comm_tid_seq;
@@ -1957,6 +2106,7 @@ DROP TABLE IF EXISTS gex_balance;
 const CLEAR = `
 DELETE FROM gex_withdraw;
 DELETE FROM gex_wallet;
+DELETE FROM gex_user_record;
 DELETE FROM gex_user;
 DELETE FROM gex_order_comm;
 DELETE FROM gex_order;

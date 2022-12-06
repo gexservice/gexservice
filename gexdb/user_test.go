@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/codingeasygo/crud/pgx"
 	"github.com/codingeasygo/util/converter"
@@ -107,6 +108,62 @@ func TestUser(t *testing.T) {
 		t.Error(err)
 		return
 	}
+
+	total, err := CountUser(ctx, time.Time{}, time.Now())
+	if err != nil || total < 1 {
+		t.Error(err)
+		return
+	}
+}
+
+func TestUserRecord(t *testing.T) {
+	clear()
+	user := testAddUser("TestUserRecord")
+	err := AddUserRecord(ctx, &UserRecord{
+		UserID:   user.TID,
+		Type:     UserRecordTypeLogin,
+		FromAddr: "xxx",
+		Status:   UserRecordStatusNormal,
+	})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	err = AddUserRecord(ctx, &UserRecord{
+		UserID:   user.TID,
+		Type:     UserRecordTypeLogin,
+		FromAddr: "xxx",
+		Status:   UserRecordStatusNormal,
+	})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	record, err := FindUserRecordByLastCall(Pool(), ctx, user.TID, UserRecordTypeLogin)
+	if err != nil || record.PrevID < 1 {
+		t.Error(err)
+		return
+	}
+	searcher := &UserRecordUnifySearcher{}
+	searcher.Where.Type = UserRecordTypeAll
+	err = searcher.Apply(context.Background())
+	if err != nil || len(searcher.Query.Records) < 1 || searcher.Count.Total < 1 {
+		t.Error(err)
+		return
+	}
+	//
+	//test error
+	pgx.MockerStart()
+	defer pgx.MockerStop()
+	pgx.MockerSetCall("Rows.Scan", 1).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
+		err = AddUserRecord(ctx, &UserRecord{
+			UserID:   user.TID,
+			Type:     UserRecordTypeLogin,
+			FromAddr: "xxx",
+			Status:   UserRecordStatusNormal,
+		})
+		return
+	})
 }
 
 func TestUserFavorites(t *testing.T) {

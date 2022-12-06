@@ -477,6 +477,50 @@ type User struct {
 	Status     UserStatus    `json:"status,omitempty" valid:"status,o|i,e:0;"`           /* the user status, Normal=100:is normal, Locked=200:is locked, Removed=-1:is deleted */
 }
 
+/***** metadata:UserRecord *****/
+type UserRecordType int
+type UserRecordTypeArray []UserRecordType
+
+const (
+	UserRecordTypeLogin UserRecordType = 100 //is login record type
+)
+
+//UserRecordTypeAll is the user recrod type
+var UserRecordTypeAll = UserRecordTypeArray{UserRecordTypeLogin}
+
+//UserRecordTypeShow is the user recrod type
+var UserRecordTypeShow = UserRecordTypeArray{UserRecordTypeLogin}
+
+type UserRecordStatus int
+type UserRecordStatusArray []UserRecordStatus
+
+const (
+	UserRecordStatusNormal UserRecordStatus = 100 //is normal status
+)
+
+//UserRecordStatusAll is the user record status
+var UserRecordStatusAll = UserRecordStatusArray{UserRecordStatusNormal}
+
+//UserRecordStatusShow is the user record status
+var UserRecordStatusShow = UserRecordStatusArray{UserRecordStatusNormal}
+
+/*
+ * UserRecord  represents gex_user_record
+ * UserRecord Fields:tid,user_id,type,from_addr,external,prev_id,update_time,create_time,status,
+ */
+type UserRecord struct {
+	T          string           `json:"-" table:"gex_user_record"`                          /* the table name tag */
+	TID        int64            `json:"tid,omitempty" valid:"tid,r|i,r:0;"`                 /* the primary key */
+	UserID     int64            `json:"user_id,omitempty" valid:"user_id,r|i,r:0;"`         /* the user record user id */
+	Type       UserRecordType   `json:"type,omitempty" valid:"type,r|i,e:0;"`               /* the user recrod type, Login=100:is login record type */
+	FromAddr   string           `json:"from_addr,omitempty" valid:"from_addr,r|s,l:0;"`     /* the user record from addr */
+	External   xsql.M           `json:"external,omitempty" valid:"external,r|s,l:0;"`       /* the user record external info */
+	PrevID     int64            `json:"prev_id,omitempty" valid:"prev_id,r|i,r:0;"`         /* the user record prev id */
+	UpdateTime xsql.Time        `json:"update_time,omitempty" valid:"update_time,r|i,r:1;"` /* the user recrod update time */
+	CreateTime xsql.Time        `json:"create_time,omitempty" valid:"create_time,r|i,r:1;"` /* the user record create time */
+	Status     UserRecordStatus `json:"status,omitempty" valid:"status,r|i,e:0;"`           /* the user record status, Normal=100:is normal status */
+}
+
 /***** metadata:Wallet *****/
 type WalletMethod string
 type WalletMethodArray []WalletMethod

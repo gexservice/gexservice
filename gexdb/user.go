@@ -7,6 +7,7 @@ import (
 	"github.com/codingeasygo/util/converter"
 	"github.com/codingeasygo/util/xmap"
 	"github.com/codingeasygo/util/xsql"
+	"github.com/jackc/pgx/v4"
 )
 
 //FindUserByUsrPwd will return user by match account/email/phone=username and passowrd=matched
@@ -162,6 +163,64 @@ func (t *UserUnifySearcher) Apply(ctx context.Context) (err error) {
 		t.Where.Key = "%" + t.Where.Key + "%"
 	}
 	t.Page.Order = crud.BuildOrderby(UserOrderbyAll, t.Page.Order)
+	err = crud.ApplyUnify(Pool(), ctx, t)
+	return
+}
+
+func FindUserRecordByLastCall(caller crud.Queryer, ctx context.Context, userID int64, recordType UserRecordType) (record *UserRecord, err error) {
+	sql := crud.QuerySQL(&UserRecord{}, "#all")
+	sql, args := crud.JoinWheref(sql, nil, "user_id=$%v,type=$%v", userID, recordType)
+	sql = crud.JoinPage(sql, "order by update_time desc", 0, 1)
+	err = crud.QueryRow(caller, ctx, &UserRecord{}, "#all", sql, args, &record)
+	return
+}
+
+func AddUserRecord(ctx context.Context, record *UserRecord) (err error) {
+	err = AddUserRecordCall(Pool(), ctx, record)
+	return
+}
+
+func AddUserRecordCall(caller crud.Queryer, ctx context.Context, record *UserRecord) (err error) {
+	last, err := FindUserRecordByLastCall(caller, ctx, record.UserID, record.Type)
+	if err != nil && err != pgx.ErrNoRows {
+		return
+	}
+	if last != nil {
+		record.PrevID = last.TID
+	}
+	err = record.Insert(caller, ctx)
+	return
+}
+
+/**
+ * @apiDefine UserRecordUnifySearcher
+ * @apiParam  {Number} [type] the type filter, multi with comma, all type supported is <a href="#metadata-UserRecord">UserRecordTypeAll</a>
+ * @apiParam  {Number} [status] the status filter, multi with comma, all status supported is <a href="#metadata-UserRecord">UserRecordStatusAll</a>
+ * @apiParam  {Number} [offset] page offset
+ * @apiParam  {Number} [limit] page limit
+ */
+type UserRecordUnifySearcher struct {
+	Model UserRecord `json:"model"`
+	Where struct {
+		Type   UserRecordTypeArray   `json:"type" cmp:"type=any($%v)" valid:"type,o|i,e:;"`
+		Status UserRecordStatusArray `json:"status" cmp:"status=any($%v)" valid:"status,o|i,e:;"`
+	} `json:"where" join:"and" valid:"inline"`
+	Page struct {
+		Order string `json:"order" default:"order by update_time desc" valid:"order,o|s,l:0;"`
+		Skip  int    `json:"skip" valid:"skip,o|i,r:-1;"`
+		Limit int    `json:"limit" valid:"limit,o|i,r:0;"`
+	} `json:"page" valid:"inline"`
+	Query struct {
+		Records []*UserRecord `json:"users"`
+		PrevIDs []int64       `json:"prev_ids" scan:"prev_id"`
+	} `json:"query" filter:"^password,external#all"`
+	Count struct {
+		Total int64 `json:"total" scan:"tid"`
+	} `json:"count" filter:"count(tid)#all"`
+}
+
+func (t *UserRecordUnifySearcher) Apply(ctx context.Context) (err error) {
+	t.Page.Order = ""
 	err = crud.ApplyUnify(Pool(), ctx, t)
 	return
 }
