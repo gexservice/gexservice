@@ -123,6 +123,7 @@ package gexdb
  * @apiSuccess (Order) {OrderType} Order.type the order type, all suported is <a href="#metadata-Order">OrderTypeAll</a>
  * @apiSuccess (Order) {Int64} Order.user_id the order user id
  * @apiSuccess (Order) {Int64} Order.creator the order creator user id
+ * @apiSuccess (Order) {OrderArea} Order.area the order area, all suported is <a href="#metadata-Order">OrderAreaAll</a>
  * @apiSuccess (Order) {String} Order.symbol the order symbol
  * @apiSuccess (Order) {OrderSide} Order.side the order side, all suported is <a href="#metadata-Order">OrderSideAll</a>
  * @apiSuccess (Order) {Decimal} Order.quantity the order expected quantity

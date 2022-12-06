@@ -29,6 +29,7 @@ DROP INDEX IF EXISTS gex_order_fee_settled_idx;
 DROP INDEX IF EXISTS gex_order_comm_user_type_idx;
 DROP INDEX IF EXISTS gex_order_comm_status_idx;
 DROP INDEX IF EXISTS gex_order_comm_create_time_idx;
+DROP INDEX IF EXISTS gex_order_area_idx;
 DROP INDEX IF EXISTS gex_kline_symbol_idx;
 DROP INDEX IF EXISTS gex_kline_start_time_idx;
 DROP INDEX IF EXISTS gex_kline_interval_idx;

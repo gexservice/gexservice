@@ -108,26 +108,6 @@ func ListUserBalance(ctx context.Context, userID int64, area BalanceArea, assets
 	return
 }
 
-func CountBalance(ctx context.Context, area BalanceArea, start, end time.Time) (balances map[string]decimal.Decimal, err error) {
-	//not using sql sum for percision loss
-	balances = map[string]decimal.Decimal{}
-	err = crud.QueryWheref(
-		Pool, ctx, &Balance{}, "asset,free,locked#all",
-		"area=$%v,update_time>=$%v,update_time<$%v",
-		[]interface{}{area, start, end},
-		"", 0, 0,
-		func(balance *Balance) {
-			having, ok := balances[balance.Asset]
-			if !ok {
-				having = decimal.Zero
-				balances[balance.Asset] = having
-			}
-			balances[balance.Asset] = having.Add(balance.Free).Add(balance.Locked)
-		},
-	)
-	return
-}
-
 func TransferChange(ctx context.Context, creator, userID int64, from, to BalanceArea, asset string, value decimal.Decimal) (err error) {
 	tx, err := Pool().Begin(ctx)
 	if err != nil {

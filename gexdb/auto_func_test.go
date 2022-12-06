@@ -1231,6 +1231,32 @@ func TestAutoOrder(t *testing.T) {
 		t.Error("not array")
 		return
 	}
+	for _, value := range OrderAreaAll {
+		if value.EnumValid(int(value)) != nil {
+			t.Error("not enum valid")
+			return
+		}
+		if value.EnumValid(int(-321654)) == nil {
+			t.Error("not enum valid")
+			return
+		}
+		if OrderAreaAll.EnumValid(int(value)) != nil {
+			t.Error("not enum valid")
+			return
+		}
+		if OrderAreaAll.EnumValid(int(-321654)) == nil {
+			t.Error("not enum valid")
+			return
+		}
+	}
+	if len(OrderAreaAll.DbArray()) < 1 {
+		t.Error("not array")
+		return
+	}
+	if len(OrderAreaAll.InArray()) < 1 {
+		t.Error("not array")
+		return
+	}
 	for _, value := range OrderSideAll {
 		if value.EnumValid(string(value)) != nil {
 			t.Error("not enum valid")

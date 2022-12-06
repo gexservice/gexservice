@@ -136,6 +136,8 @@ func (f *FuturesMatcher) ProcessCancel(ctx context.Context, userID int64, orderI
 		OrderID: orderID,
 		UserID:  userID,
 		Creator: userID,
+		Area:    gexdb.OrderArea(f.Area),
+		Symbol:  f.Symbol,
 		Status:  gexdb.OrderStatusCanceled,
 	}
 	order, err = f.ProcessOrder(ctx, args)
@@ -148,6 +150,7 @@ func (f *FuturesMatcher) ProcessMarket(ctx context.Context, userID int64, side g
 		Type:       gexdb.OrderTypeTrade,
 		UserID:     userID,
 		Creator:    userID,
+		Area:       gexdb.OrderArea(f.Area),
 		Symbol:     f.Symbol,
 		Side:       side,
 		Quantity:   quantity,
@@ -168,6 +171,7 @@ func (f *FuturesMatcher) ProcessLimit(ctx context.Context, userID int64, side ge
 		Type:     gexdb.OrderTypeTrade,
 		UserID:   userID,
 		Creator:  userID,
+		Area:     gexdb.OrderArea(f.Area),
 		Symbol:   f.Symbol,
 		Side:     side,
 		Quantity: quantity,
@@ -420,6 +424,7 @@ func (f *FuturesMatcher) processMarketOrder(ctx context.Context, args *gexdb.Ord
 			Type:    gexdb.OrderTypeTrade,
 			UserID:  args.UserID,
 			Creator: args.UserID,
+			Area:    gexdb.OrderArea(f.Area),
 			Symbol:  f.Symbol,
 			Side:    args.Side,
 			FeeRate: args.FeeRate,
@@ -602,6 +607,7 @@ func (f *FuturesMatcher) processLimitOrder(ctx context.Context, args *gexdb.Orde
 			Type:     gexdb.OrderTypeTrade,
 			UserID:   args.UserID,
 			Creator:  args.UserID,
+			Area:     gexdb.OrderArea(f.Area),
 			Symbol:   f.Symbol,
 			Side:     args.Side,
 			Quantity: args.Quantity,
@@ -873,6 +879,7 @@ func (f *FuturesMatcher) blowupHolding(tx *pgx.Tx, ctx context.Context, changed 
 		Type:     gexdb.OrderTypeBlowup,
 		UserID:   holding.UserID,
 		Creator:  0,
+		Area:     gexdb.OrderArea(f.Area),
 		Symbol:   f.Symbol,
 		Quantity: holding.Amount.Abs(),
 	}

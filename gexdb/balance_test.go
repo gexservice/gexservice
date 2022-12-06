@@ -79,12 +79,6 @@ func TestBalance(t *testing.T) {
 	// 	return
 	// }
 
-	balanceAll, err := CountBalance(ctx, BalanceAreaSpot, time.Now().Add(-time.Hour), time.Now())
-	if err != nil || len(balanceAll) < 1 {
-		t.Error(err)
-		return
-	}
-
 	err = IncreaseBalance(ctx, &Balance{UserID: 10})
 	if !IsErrBalanceNotFound(err) {
 		t.Error(err)

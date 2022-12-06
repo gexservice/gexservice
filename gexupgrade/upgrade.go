@@ -17,4 +17,6 @@ ALTER TABLE gex_user ADD COLUMN IF NOT EXISTS config jsonb DEFAULT '{}'::jsonb N
 ALTER TABLE gex_user ADD COLUMN IF NOT EXISTS email character varying(255);
 CREATE UNIQUE INDEX IF NOT EXISTS gex_user_email_idx ON gex_user USING btree (email);
 ALTER TABLE gex_balance_record ADD COLUMN IF NOT EXISTS transaction jsonb DEFAULT '{}'::jsonb NOT NULL;
+ALTER TABLE gex_order ADD COLUMN IF NOT EXISTS area integer DEFAULT 0 NOT NULL;
+CREATE INDEX IF NOT EXISTS gex_order_area_idx ON gex_order USING btree (area);
 `

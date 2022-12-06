@@ -648,6 +648,7 @@ CREATE TABLE gex_order (
     type integer NOT NULL,
     user_id bigint NOT NULL,
     creator bigint NOT NULL,
+    area integer DEFAULT 0 NOT NULL,
     symbol character varying(16) NOT NULL,
     side character varying(8) NOT NULL,
     quantity double precision DEFAULT 0 NOT NULL,
@@ -710,6 +711,13 @@ COMMENT ON COLUMN gex_order.user_id IS 'the order user id';
 --
 
 COMMENT ON COLUMN gex_order.creator IS 'the order creator user id';
+
+
+--
+-- Name: COLUMN gex_order.area; Type: COMMENT; Schema: public;
+--
+
+COMMENT ON COLUMN gex_order.area IS 'the order area, None=0, Spot=OrderArea(BalanceAreaSpot):is spot area, Futures=OrderArea(BalanceAreaFutures):is futures area';
 
 
 --
@@ -1636,6 +1644,13 @@ CREATE INDEX gex_kline_symbol_idx ON gex_kline USING btree (symbol);
 
 
 --
+-- Name: gex_order_area_idx; Type: INDEX; Schema: public;
+--
+
+CREATE INDEX gex_order_area_idx ON gex_order USING btree (area);
+
+
+--
 -- Name: gex_order_comm_create_time_idx; Type: INDEX; Schema: public;
 --
 
@@ -1890,6 +1905,7 @@ DROP INDEX IF EXISTS gex_order_fee_settled_idx;
 DROP INDEX IF EXISTS gex_order_comm_user_type_idx;
 DROP INDEX IF EXISTS gex_order_comm_status_idx;
 DROP INDEX IF EXISTS gex_order_comm_create_time_idx;
+DROP INDEX IF EXISTS gex_order_area_idx;
 DROP INDEX IF EXISTS gex_kline_symbol_idx;
 DROP INDEX IF EXISTS gex_kline_start_time_idx;
 DROP INDEX IF EXISTS gex_kline_interval_idx;

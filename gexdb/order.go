@@ -51,27 +51,6 @@ func ClearCanceledOrder(ctx context.Context, userID int64, symbol string, before
 	return
 }
 
-func CountOrderFee(ctx context.Context, start, end time.Time) (fee map[string]decimal.Decimal, err error) {
-	//not using sql sum for percision loss
-	fee = map[string]decimal.Decimal{}
-	err = crud.QueryWheref(
-		Pool, ctx, MetaWithOrder(string(""), decimal.Zero), "fee_balance,fee_filled#all",
-		"update_time>=$%v,update_time<$%v,status=any($%v)", []interface{}{start, end, OrderStatusArray{OrderStatusPartCanceled, OrderStatusDone}},
-		"", 0, 0,
-		func(v []interface{}) {
-			balance := *(v[0].(*string))
-			filled := *(v[1].(*decimal.Decimal))
-			having, ok := fee[balance]
-			if !ok {
-				having = decimal.Zero
-				fee[balance] = having
-			}
-			fee[balance] = having.Add(filled)
-		},
-	)
-	return
-}
-
 func CancelTriggerOrder(ctx context.Context, userID int64, symbol string, orderID int64) (updated int64, err error) {
 	updated, err = crud.UpdateWheref(Pool, ctx, &Order{Status: OrderStatusCanceled}, "status", "user_id=$%v,symbol=$%v,tid=$%v,status=$%v", userID, symbol, orderID, OrderStatusWaiting)
 	return

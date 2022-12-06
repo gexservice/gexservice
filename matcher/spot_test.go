@@ -44,7 +44,7 @@ func TestSpotMatcherBootstrap(t *testing.T) {
 		Free:   decimal.NewFromFloat(1000),
 		Status: gexdb.BalanceStatusNormal,
 	})
-	startBalances, err := gexdb.CountBalance(ctx, area, time.Time{}, time.Now())
+	startBalances, err := CountBalance(ctx, area, time.Time{}, time.Now())
 	if err != nil || !startBalances[spotBalanceBase].Equal(decimal.NewFromFloat(1000)) || !startBalances[spotBalanceQuote].Equal(decimal.NewFromFloat(1000)) {
 		t.Error(err)
 		return
@@ -134,7 +134,7 @@ func TestSpotMatcherMarket(t *testing.T) {
 		Free:   decimal.NewFromFloat(10000),
 		Status: gexdb.BalanceStatusNormal,
 	})
-	startBalances, err := gexdb.CountBalance(ctx, area, time.Time{}, time.Now())
+	startBalances, err := CountBalance(ctx, area, time.Time{}, time.Now())
 	if err != nil || !startBalances[spotBalanceBase].Equal(decimal.NewFromFloat(10000)) || !startBalances[spotBalanceQuote].Equal(decimal.NewFromFloat(10000)) {
 		t.Error(err)
 		return
@@ -603,7 +603,7 @@ func TestSpotMatcherLimit(t *testing.T) {
 		Free:   decimal.NewFromFloat(1000),
 		Status: gexdb.BalanceStatusNormal,
 	})
-	startBalances, err := gexdb.CountBalance(ctx, area, time.Time{}, time.Now())
+	startBalances, err := CountBalance(ctx, area, time.Time{}, time.Now())
 	if err != nil || !startBalances[spotBalanceBase].Equal(decimal.NewFromFloat(1000)) || !startBalances[spotBalanceQuote].Equal(decimal.NewFromFloat(1000)) {
 		t.Error(err)
 		return
@@ -844,12 +844,12 @@ func TestSpotMatcherLimit(t *testing.T) {
 		assetBalanceLocked(userBase.TID, area, spotBalanceBase, decimal.NewFromFloat(0))
 		assetDepthEmpty(matcher.Depth(0))
 	}
-	doneBalances, err := gexdb.CountBalance(ctx, gexdb.BalanceAreaSpot, time.Time{}, time.Now())
+	doneBalances, err := CountBalance(ctx, gexdb.BalanceAreaSpot, time.Time{}, time.Now())
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	doneFee, err := gexdb.CountOrderFee(ctx, time.Time{}, time.Now())
+	doneFee, err := CountOrderFee(ctx, time.Time{}, time.Now())
 	if err != nil {
 		t.Error(err)
 		return
@@ -948,7 +948,7 @@ func TestSpotMatcherCancel(t *testing.T) {
 		Free:   decimal.NewFromFloat(10000),
 		Status: gexdb.BalanceStatusNormal,
 	})
-	startBalances, err := gexdb.CountBalance(ctx, area, time.Time{}, time.Now())
+	startBalances, err := CountBalance(ctx, area, time.Time{}, time.Now())
 	if err != nil || !startBalances[spotBalanceBase].Equal(decimal.NewFromFloat(10000)) || !startBalances[spotBalanceQuote].Equal(decimal.NewFromFloat(10000)) {
 		t.Error(err)
 		return
@@ -1235,12 +1235,12 @@ func TestSpotMatcherCancel(t *testing.T) {
 			return
 		}
 	}
-	doneBalances, err := gexdb.CountBalance(ctx, gexdb.BalanceAreaSpot, time.Time{}, time.Now())
+	doneBalances, err := CountBalance(ctx, gexdb.BalanceAreaSpot, time.Time{}, time.Now())
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	doneFee, err := gexdb.CountOrderFee(ctx, time.Time{}, time.Now())
+	doneFee, err := CountOrderFee(ctx, time.Time{}, time.Now())
 	if err != nil {
 		t.Error(err)
 		return

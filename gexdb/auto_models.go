@@ -255,6 +255,21 @@ var OrderTypeAll = OrderTypeArray{OrderTypeTrade, OrderTypeTrigger, OrderTypeBlo
 //OrderTypeShow is the order type
 var OrderTypeShow = OrderTypeArray{OrderTypeTrade, OrderTypeTrigger, OrderTypeBlowup}
 
+type OrderArea int
+type OrderAreaArray []OrderArea
+
+const (
+	OrderAreaNone    OrderArea = 0                             //
+	OrderAreaSpot    OrderArea = OrderArea(BalanceAreaSpot)    //is spot area
+	OrderAreaFutures OrderArea = OrderArea(BalanceAreaFutures) //is futures area
+)
+
+//OrderAreaAll is the order area
+var OrderAreaAll = OrderAreaArray{OrderAreaNone, OrderAreaSpot, OrderAreaFutures}
+
+//OrderAreaShow is the order area
+var OrderAreaShow = OrderAreaArray{OrderAreaNone, OrderAreaSpot, OrderAreaFutures}
+
 type OrderSide string
 type OrderSideArray []OrderSide
 
@@ -307,7 +322,7 @@ const OrderOrderbyAll = "update_time,create_time"
 
 /*
  * Order  represents gex_order
- * Order Fields:tid,order_id,type,user_id,creator,symbol,side,quantity,filled,price,trigger_type,trigger_price,avg_price,total_price,holding,profit,owned,unhedged,in_balance,in_filled,out_balance,out_filled,fee_balance,fee_filled,fee_rate,transaction,fee_settled_status,fee_settled_next,update_time,create_time,status,
+ * Order Fields:tid,order_id,type,user_id,creator,area,symbol,side,quantity,filled,price,trigger_type,trigger_price,avg_price,total_price,holding,profit,owned,unhedged,in_balance,in_filled,out_balance,out_filled,fee_balance,fee_filled,fee_rate,transaction,fee_settled_status,fee_settled_next,update_time,create_time,status,
  */
 type Order struct {
 	T                string           `json:"-" table:"gex_order"`                                              /* the table name tag */
@@ -316,6 +331,7 @@ type Order struct {
 	Type             OrderType        `json:"type,omitempty" valid:"type,r|i,e:0;"`                             /* the order type, Trade=100: is trade type, Trigger=200: is trigger trade order, Blowup=300: is blow up type */
 	UserID           int64            `json:"user_id,omitempty" valid:"user_id,r|i,r:0;"`                       /* the order user id */
 	Creator          int64            `json:"creator,omitempty" valid:"creator,r|i,r:0;"`                       /* the order creator user id */
+	Area             OrderArea        `json:"area,omitempty" valid:"area,r|i,e:0;"`                             /* the order area, None=0, Spot=OrderArea(BalanceAreaSpot):is spot area, Futures=OrderArea(BalanceAreaFutures):is futures area */
 	Symbol           string           `json:"symbol,omitempty" valid:"symbol,r|s,l:0;"`                         /* the order symbol */
 	Side             OrderSide        `json:"side,omitempty" valid:"side,r|s,e:0;"`                             /* the order side, Buy=buy: is buy side, Sell=sell: is sell side */
 	Quantity         decimal.Decimal  `json:"quantity,omitempty" valid:"quantity,o|f,r:0;"`                     /* the order expected quantity */

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/centny/orderbook"
+	"github.com/codingeasygo/crud"
 	"github.com/codingeasygo/crud/pgx"
 	"github.com/codingeasygo/util/xprop"
 	"github.com/codingeasygo/util/xsql"
@@ -142,6 +143,47 @@ func assetDepthEmpty(depth *orderbook.Depth) {
 	if len(depth.Asks) > 0 || len(depth.Bids) > 0 {
 		panic("not empty")
 	}
+}
+
+func CountBalance(ctx context.Context, area gexdb.BalanceArea, start, end time.Time) (balances map[string]decimal.Decimal, err error) {
+	//not using sql sum for percision loss
+	balances = map[string]decimal.Decimal{}
+	err = crud.QueryWheref(
+		gexdb.Pool, ctx, &gexdb.Balance{}, "asset,free,locked#all",
+		"area=$%v,update_time>=$%v,update_time<$%v",
+		[]interface{}{area, start, end},
+		"", 0, 0,
+		func(balance *gexdb.Balance) {
+			having, ok := balances[balance.Asset]
+			if !ok {
+				having = decimal.Zero
+				balances[balance.Asset] = having
+			}
+			balances[balance.Asset] = having.Add(balance.Free).Add(balance.Locked)
+		},
+	)
+	return
+}
+
+func CountOrderFee(ctx context.Context, start, end time.Time) (fee map[string]decimal.Decimal, err error) {
+	//not using sql sum for percision loss
+	fee = map[string]decimal.Decimal{}
+	err = crud.QueryWheref(
+		gexdb.Pool, ctx, gexdb.MetaWithOrder(string(""), decimal.Zero), "fee_balance,fee_filled#all",
+		"update_time>=$%v,update_time<$%v,status=any($%v)", []interface{}{start, end, gexdb.OrderStatusArray{gexdb.OrderStatusPartCanceled, gexdb.OrderStatusDone}},
+		"", 0, 0,
+		func(v []interface{}) {
+			balance := *(v[0].(*string))
+			filled := *(v[1].(*decimal.Decimal))
+			having, ok := fee[balance]
+			if !ok {
+				having = decimal.Zero
+				fee[balance] = having
+			}
+			fee[balance] = having.Add(filled)
+		},
+	)
+	return
 }
 
 func TestErrMatcher(t *testing.T) {

@@ -2073,6 +2073,50 @@ func (o OrderTypeArray) InArray() (res string) {
 	return
 }
 
+//EnumValid will valid value by OrderArea
+func (o *OrderArea) EnumValid(v interface{}) (err error) {
+	var target OrderArea
+	targetType := reflect.TypeOf(OrderArea(0))
+	targetValue := reflect.ValueOf(v)
+	if targetValue.CanConvert(targetType) {
+		target = targetValue.Convert(targetType).Interface().(OrderArea)
+	}
+	for _, value := range OrderAreaAll {
+		if target == value {
+			return nil
+		}
+	}
+	return fmt.Errorf("must be in %v", OrderAreaAll)
+}
+
+//EnumValid will valid value by OrderAreaArray
+func (o *OrderAreaArray) EnumValid(v interface{}) (err error) {
+	var target OrderArea
+	targetType := reflect.TypeOf(OrderArea(0))
+	targetValue := reflect.ValueOf(v)
+	if targetValue.CanConvert(targetType) {
+		target = targetValue.Convert(targetType).Interface().(OrderArea)
+	}
+	for _, value := range OrderAreaAll {
+		if target == value {
+			return nil
+		}
+	}
+	return fmt.Errorf("must be in %v", OrderAreaAll)
+}
+
+//DbArray will join value to database array
+func (o OrderAreaArray) DbArray() (res string) {
+	res = "{" + converter.JoinSafe(o, ",", converter.JoinPolicyDefault) + "}"
+	return
+}
+
+//InArray will join value to database array
+func (o OrderAreaArray) InArray() (res string) {
+	res = "" + converter.JoinSafe(o, ",", converter.JoinPolicyDefault) + ""
+	return
+}
+
 //EnumValid will valid value by OrderSide
 func (o *OrderSide) EnumValid(v interface{}) (err error) {
 	var target OrderSide

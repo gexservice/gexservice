@@ -48,15 +48,6 @@ func TestOrder(t *testing.T) {
 		t.Errorf("%v,%v", err, searcher.Count.Total)
 		return
 	}
-	balances, err := CountOrderFee(ctx, time.Now().Add(-time.Hour), time.Now())
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	if len(balances) != 1 {
-		t.Error("error")
-		return
-	}
 	_, err = ClearCanceledOrder(ctx, order.UserID, order.Symbol, time.Now())
 	if err != nil {
 		t.Error(err)
