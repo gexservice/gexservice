@@ -131,6 +131,7 @@ package gexdb
  * @apiSuccess (Order) {Decimal} Order.price the order expected price
  * @apiSuccess (Order) {OrderTriggerType} Order.trigger_type the order trigger type, all suported is <a href="#metadata-Order">OrderTriggerTypeAll</a>
  * @apiSuccess (Order) {Decimal} Order.trigger_price the order trigger price
+ * @apiSuccess (Order) {Time} Order.trigger_time the order trigger time
  * @apiSuccess (Order) {Decimal} Order.avg_price the order filled avg price
  * @apiSuccess (Order) {Decimal} Order.total_price the order filled total price
  * @apiSuccess (Order) {Decimal} Order.holding the order holding

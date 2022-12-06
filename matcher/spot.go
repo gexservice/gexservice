@@ -181,7 +181,7 @@ func (s *SpotMatcher) ProcessOrder(ctx context.Context, args *gexdb.Order) (orde
 		return
 	}
 	if args.Price.IsPositive() {
-		args.Quantity = args.Quantity.Round(s.PrecisionQuantity)
+		args.Quantity = args.Quantity.RoundFloor(s.PrecisionQuantity)
 		args.Price = args.Price.Round(s.PrecisionPrice)
 		if args.Side != gexdb.OrderSideBuy && args.Side != gexdb.OrderSideSell {
 			err = fmt.Errorf("process limit side only supporte buy/sell")
@@ -198,7 +198,7 @@ func (s *SpotMatcher) ProcessOrder(ctx context.Context, args *gexdb.Order) (orde
 			order, err = s.processLimitOrder(ctx, args)
 		}
 	} else {
-		args.Quantity = args.Quantity.Round(s.PrecisionQuantity)
+		args.Quantity = args.Quantity.RoundFloor(s.PrecisionQuantity)
 		args.TotalPrice = args.TotalPrice.Round(s.PrecisionPrice)
 		if args.Side != gexdb.OrderSideBuy && args.Side != gexdb.OrderSideSell {
 			err = fmt.Errorf("process market side only supporte buy/sell")
@@ -330,6 +330,23 @@ func (s *SpotMatcher) processMarketOrder(ctx context.Context, args *gexdb.Order)
 			xlog.Errorf("SpotMatcher process market by %v,%v,%v,%v is panic with %v,\n%v", args.UserID, args.Side, args.TotalPrice, args.Quantity, rerr, debug.CallStatck())
 			err = fmt.Errorf("%v", rerr)
 		}
+		if err == nil && order.Filled.IsPositive() && order.TriggerType == gexdb.OrderTriggerTypeAfterOpen && order.TriggerPrice.IntPart() > 0 {
+			closeOrder := &gexdb.Order{
+				UserID:       order.UserID,
+				Creator:      order.Creator,
+				Area:         gexdb.OrderArea(s.Area),
+				Type:         gexdb.OrderTypeTrigger,
+				OrderID:      gexdb.NewOrderID(),
+				Symbol:       order.Symbol,
+				Side:         ReverseSide(order.Side),
+				Quantity:     order.InFilled,
+				TriggerType:  gexdb.OrderTriggerTypeAfterClose,
+				TriggerPrice: order.TriggerPrice,
+				TriggerTime:  xsql.Time(time.Now().Add(time.Duration(args.TriggerPrice.IntPart()) * time.Millisecond)),
+				Status:       gexdb.OrderStatusWaiting,
+			}
+			err = gexdb.AddOrder(ctx, closeOrder)
+		}
 		if tx != nil {
 			if err == nil {
 				err = tx.Commit(ctx)
@@ -376,14 +393,17 @@ func (s *SpotMatcher) processMarketOrder(ctx context.Context, args *gexdb.Order)
 		order.FeeRate = args.FeeRate
 	} else {
 		order = &gexdb.Order{
-			OrderID: s.NewOrderID(),
-			Type:    gexdb.OrderTypeTrade,
-			UserID:  args.UserID,
-			Creator: args.UserID,
-			Area:    gexdb.OrderArea(s.Area),
-			Symbol:  s.Symbol,
-			Side:    args.Side,
-			FeeRate: args.FeeRate,
+			OrderID:      s.NewOrderID(),
+			Type:         args.Type,
+			UserID:       args.UserID,
+			Creator:      args.UserID,
+			Area:         gexdb.OrderArea(s.Area),
+			Symbol:       s.Symbol,
+			Side:         args.Side,
+			FeeRate:      args.FeeRate,
+			TriggerType:  args.TriggerType,
+			TriggerPrice: args.TriggerPrice,
+			TriggerTime:  args.TriggerTime,
 		}
 	}
 

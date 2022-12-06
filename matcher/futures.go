@@ -203,7 +203,7 @@ func (f *FuturesMatcher) ProcessOrder(ctx context.Context, args *gexdb.Order) (o
 	}
 	if args.Price.IsPositive() {
 		//check args
-		args.Quantity = args.Quantity.Round(f.PrecisionQuantity)
+		args.Quantity = args.Quantity.RoundFloor(f.PrecisionQuantity)
 		args.Price = args.Price.Round(f.PrecisionPrice)
 		if args.Side != gexdb.OrderSideBuy && args.Side != gexdb.OrderSideSell {
 			err = fmt.Errorf("process limit side only supporte buy/sell")
@@ -221,8 +221,8 @@ func (f *FuturesMatcher) ProcessOrder(ctx context.Context, args *gexdb.Order) (o
 		}
 	} else {
 		//check args
-		args.Quantity = args.Quantity.Round(f.PrecisionQuantity)
-		args.TotalPrice = args.TotalPrice.Round(f.PrecisionPrice)
+		args.Quantity = args.Quantity.RoundFloor(f.PrecisionQuantity)
+		args.TotalPrice = args.TotalPrice.RoundFloor(f.PrecisionPrice)
 		if args.Side != gexdb.OrderSideBuy && args.Side != gexdb.OrderSideSell {
 			err = fmt.Errorf("process market side only supporte buy/sell")
 			err = NewErrMatcher(err, "[ProcessOrder] args invalid")
@@ -370,6 +370,23 @@ func (f *FuturesMatcher) processMarketOrder(ctx context.Context, args *gexdb.Ord
 			xlog.Errorf("FuturesMatcher process market by %v,%v,%v,%v is panic with %v,\n%v", args.UserID, args.Side, args.TotalPrice, args.Quantity, rerr, debug.CallStatck())
 			err = fmt.Errorf("%v", rerr)
 		}
+		if err == nil && order.Filled.IsPositive() && order.TriggerType == gexdb.OrderTriggerTypeAfterOpen && order.TriggerPrice.IntPart() > 0 {
+			closeOrder := &gexdb.Order{
+				UserID:       order.UserID,
+				Creator:      order.Creator,
+				Area:         gexdb.OrderArea(f.Area),
+				Type:         gexdb.OrderTypeTrigger,
+				OrderID:      gexdb.NewOrderID(),
+				Symbol:       order.Symbol,
+				Side:         ReverseSide(order.Side),
+				Quantity:     order.Filled,
+				TriggerType:  gexdb.OrderTriggerTypeAfterClose,
+				TriggerPrice: order.TriggerPrice,
+				TriggerTime:  xsql.Time(time.Now().Add(time.Duration(args.TriggerPrice.IntPart()) * time.Millisecond)),
+				Status:       gexdb.OrderStatusWaiting,
+			}
+			err = gexdb.AddOrder(ctx, closeOrder)
+		}
 		if tx != nil {
 			if err == nil {
 				err = tx.Commit(ctx)
@@ -420,14 +437,17 @@ func (f *FuturesMatcher) processMarketOrder(ctx context.Context, args *gexdb.Ord
 		order.FeeRate = args.FeeRate
 	} else {
 		order = &gexdb.Order{
-			OrderID: f.NewOrderID(),
-			Type:    gexdb.OrderTypeTrade,
-			UserID:  args.UserID,
-			Creator: args.UserID,
-			Area:    gexdb.OrderArea(f.Area),
-			Symbol:  f.Symbol,
-			Side:    args.Side,
-			FeeRate: args.FeeRate,
+			OrderID:      f.NewOrderID(),
+			Type:         args.Type,
+			UserID:       args.UserID,
+			Creator:      args.UserID,
+			Area:         gexdb.OrderArea(f.Area),
+			Symbol:       f.Symbol,
+			Side:         args.Side,
+			FeeRate:      args.FeeRate,
+			TriggerType:  args.TriggerType,
+			TriggerPrice: args.TriggerPrice,
+			TriggerTime:  args.TriggerTime,
 		}
 	}
 

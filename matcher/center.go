@@ -650,7 +650,7 @@ func (m *MatcherCenter) ProcessOrder(ctx context.Context, args *gexdb.Order) (or
 		err = fmt.Errorf("symbol %v is not supported", args.Symbol)
 		return
 	}
-	if args.TID < 1 && args.Type == gexdb.OrderTypeTrigger {
+	if args.TID < 1 && args.Type == gexdb.OrderTypeTrigger && args.TriggerType != gexdb.OrderTriggerTypeAfterOpen {
 		if args.UserID <= 0 || args.Quantity.Sign() <= 0 || args.TriggerPrice.Sign() <= 0 {
 			err = fmt.Errorf("process trigger userID/quantity/trigger_price is required or too small")
 			err = NewErrMatcher(err, "[ProcessOrder] args invalid")

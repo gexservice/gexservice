@@ -291,13 +291,15 @@ const (
 	OrderTriggerTypeNone       OrderTriggerType = 0   //is none type
 	OrderTriggerTypeStopProfit OrderTriggerType = 100 //is stop profit type
 	OrderTriggerTypeStopLoss   OrderTriggerType = 200 //is stop loss
+	OrderTriggerTypeAfterOpen  OrderTriggerType = 300 //is after open
+	OrderTriggerTypeAfterClose OrderTriggerType = 310 //is after close
 )
 
 //OrderTriggerTypeAll is the order trigger type
-var OrderTriggerTypeAll = OrderTriggerTypeArray{OrderTriggerTypeNone, OrderTriggerTypeStopProfit, OrderTriggerTypeStopLoss}
+var OrderTriggerTypeAll = OrderTriggerTypeArray{OrderTriggerTypeNone, OrderTriggerTypeStopProfit, OrderTriggerTypeStopLoss, OrderTriggerTypeAfterOpen, OrderTriggerTypeAfterClose}
 
 //OrderTriggerTypeShow is the order trigger type
-var OrderTriggerTypeShow = OrderTriggerTypeArray{OrderTriggerTypeNone, OrderTriggerTypeStopProfit, OrderTriggerTypeStopLoss}
+var OrderTriggerTypeShow = OrderTriggerTypeArray{OrderTriggerTypeNone, OrderTriggerTypeStopProfit, OrderTriggerTypeStopLoss, OrderTriggerTypeAfterOpen, OrderTriggerTypeAfterClose}
 
 type OrderStatus int
 type OrderStatusArray []OrderStatus
@@ -322,7 +324,7 @@ const OrderOrderbyAll = "update_time,create_time"
 
 /*
  * Order  represents gex_order
- * Order Fields:tid,order_id,type,user_id,creator,area,symbol,side,quantity,filled,price,trigger_type,trigger_price,avg_price,total_price,holding,profit,owned,unhedged,in_balance,in_filled,out_balance,out_filled,fee_balance,fee_filled,fee_rate,transaction,fee_settled_status,fee_settled_next,update_time,create_time,status,
+ * Order Fields:tid,order_id,type,user_id,creator,area,symbol,side,quantity,filled,price,trigger_type,trigger_price,trigger_time,avg_price,total_price,holding,profit,owned,unhedged,in_balance,in_filled,out_balance,out_filled,fee_balance,fee_filled,fee_rate,transaction,fee_settled_status,fee_settled_next,update_time,create_time,status,
  */
 type Order struct {
 	T                string           `json:"-" table:"gex_order"`                                              /* the table name tag */
@@ -337,8 +339,9 @@ type Order struct {
 	Quantity         decimal.Decimal  `json:"quantity,omitempty" valid:"quantity,o|f,r:0;"`                     /* the order expected quantity */
 	Filled           decimal.Decimal  `json:"filled,omitempty" valid:"filled,r|f,r:0;"`                         /* the order filled quantity */
 	Price            decimal.Decimal  `json:"price,omitempty" valid:"price,o|f,r:0;"`                           /* the order expected price */
-	TriggerType      OrderTriggerType `json:"trigger_type,omitempty" valid:"trigger_type,o|i,e:0;"`             /* the order trigger type, None=0:is none type, StopProfit=100: is stop profit type, StopLoss=200: is stop loss */
+	TriggerType      OrderTriggerType `json:"trigger_type,omitempty" valid:"trigger_type,o|i,e:0;"`             /* the order trigger type, None=0:is none type, StopProfit=100: is stop profit type, StopLoss=200: is stop loss, AfterOpen=300: is after open, AfterClose=310: is after close */
 	TriggerPrice     decimal.Decimal  `json:"trigger_price,omitempty" valid:"trigger_price,o|f,r:0;"`           /* the order trigger price */
+	TriggerTime      xsql.Time        `json:"trigger_time,omitempty" valid:"trigger_time,r|i,r:1;"`             /* the order trigger time */
 	AvgPrice         decimal.Decimal  `json:"avg_price,omitempty" valid:"avg_price,r|f,r:0;"`                   /* the order filled avg price */
 	TotalPrice       decimal.Decimal  `json:"total_price,omitempty" valid:"total_price,o|f,r:0;"`               /* the order filled total price */
 	Holding          decimal.Decimal  `json:"holding,omitempty" valid:"holding,r|f,r:0;"`                       /* the order holding */

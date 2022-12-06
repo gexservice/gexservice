@@ -82,10 +82,8 @@ func ListOrderForTriggerCall(caller crud.Queryer, ctx context.Context, symbol st
 		args = append(args, OrderSideBuy, OrderTriggerTypeStopLoss, ask)
 		or = append(or, fmt.Sprintf("(side=$%v and trigger_type=$%v and trigger_price<=$%v)", len(args)-2, len(args)-1, len(args)))
 	}
-	if len(or) < 1 {
-		err = fmt.Errorf("ask/bid is zero")
-		return
-	}
+	args = append(args, OrderTriggerTypeAfterClose, time.Now())
+	or = append(or, fmt.Sprintf("(trigger_type=$%v and trigger_time<=$%v)", len(args)-1, len(args)))
 	and = append(and, "("+strings.Join(or, " or ")+")")
 	querySQL = crud.JoinWhere(querySQL, and, " and ", "order by update_time asc")
 	err = crud.Query(caller, ctx, &Order{}, "#all", querySQL, args, &orders)

@@ -213,11 +213,4 @@ func TestTriggerOrder(t *testing.T) {
 		t.Error(err)
 		return
 	}
-
-	//
-	_, err = ListOrderForTrigger(ctx, symbol, decimal.Zero, decimal.Zero)
-	if err == nil {
-		t.Error(err)
-		return
-	}
 }

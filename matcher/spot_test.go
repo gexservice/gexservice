@@ -579,6 +579,70 @@ func TestSpotMatcherMarket(t *testing.T) {
 	}
 }
 
+func TestSpotMatcherMarketAfter(t *testing.T) {
+	clear()
+	area := gexdb.BalanceAreaSpot
+	userBase := testAddUser("TestSpotMatcherMarketAfter-Base")
+	userQuote := testAddUser("TestSpotMatcherMarketAfter-Quote")
+	userTrigger := testAddUser("TestSpotMatcherMarket-Trigger ")
+	_, err := gexdb.TouchBalance(ctx, area, spotBalanceAll, userBase.TID, userQuote.TID, userTrigger.TID)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	gexdb.IncreaseBalanceCall(gexdb.Pool(), ctx, &gexdb.Balance{
+		UserID: userBase.TID,
+		Area:   area,
+		Asset:  spotBalanceBase,
+		Free:   decimal.NewFromFloat(10000),
+		Status: gexdb.BalanceStatusNormal,
+	})
+	gexdb.IncreaseBalanceCall(gexdb.Pool(), ctx, &gexdb.Balance{
+		UserID: userQuote.TID,
+		Area:   area,
+		Asset:  spotBalanceQuote,
+		Free:   decimal.NewFromFloat(10000),
+		Status: gexdb.BalanceStatusNormal,
+	})
+	gexdb.IncreaseBalanceCall(gexdb.Pool(), ctx, &gexdb.Balance{
+		UserID: userTrigger.TID,
+		Area:   area,
+		Asset:  spotBalanceQuote,
+		Free:   decimal.NewFromFloat(10000),
+		Status: gexdb.BalanceStatusNormal,
+	})
+	matcher := NewSpotMatcher(spotBalanceSymbol, spotBalanceBase, spotBalanceQuote, MatcherMonitorF(func(ctx context.Context, event *MatcherEvent) {
+	}))
+	{ //sell buy all, invest
+		sellOrder, err := matcher.ProcessLimit(ctx, userBase.TID, gexdb.OrderSideSell, decimal.NewFromFloat(0.5), decimal.NewFromFloat(100))
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		fmt.Printf("sell order %v\n", sellOrder.OrderID)
+		assetOrderStatus(sellOrder.OrderID, gexdb.OrderStatusPending)
+		assetBalanceLocked(userBase.TID, area, spotBalanceBase, decimal.NewFromFloat(0.5))
+
+		buyOrder, err := matcher.ProcessMarket(ctx, userQuote.TID, gexdb.OrderSideBuy, decimal.NewFromFloat(50), decimal.Zero)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		fmt.Printf("buy order %v\n", buyOrder.OrderID)
+		assetOrderStatus(buyOrder.OrderID, gexdb.OrderStatusDone)
+		assetOrderStatus(sellOrder.OrderID, gexdb.OrderStatusDone)
+
+		assetBalanceLocked(userQuote.TID, area, spotBalanceQuote, decimal.NewFromFloat(0))
+		assetBalanceLocked(userQuote.TID, area, spotBalanceBase, decimal.NewFromFloat(0))
+		assetBalanceLocked(userBase.TID, area, spotBalanceQuote, decimal.NewFromFloat(0))
+		assetBalanceLocked(userBase.TID, area, spotBalanceBase, decimal.NewFromFloat(0))
+		assetBalanceFree(userQuote.TID, area, spotBalanceQuote, decimal.NewFromFloat(9950))
+		assetBalanceFree(userQuote.TID, area, spotBalanceBase, decimal.NewFromFloat(0.5).Mul(decimal.NewFromFloat(1).Sub(spotFeeRate)))
+		assetBalanceFree(userBase.TID, area, spotBalanceQuote, decimal.NewFromFloat(50).Mul(decimal.NewFromFloat(1).Sub(spotFeeRate)))
+		assetBalanceFree(userBase.TID, area, spotBalanceBase, decimal.NewFromFloat(9999.5))
+	}
+}
+
 func TestSpotMatcherLimit(t *testing.T) {
 	clear()
 	area := gexdb.BalanceAreaSpot

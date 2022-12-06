@@ -12,6 +12,15 @@ import (
 
 var Quote string = "USDT"
 
+func ReverseSide(side gexdb.OrderSide) (newSide gexdb.OrderSide) {
+	if side == gexdb.OrderSideBuy {
+		newSide = gexdb.OrderSideSell
+	} else {
+		newSide = gexdb.OrderSideBuy
+	}
+	return
+}
+
 type FeeCache interface {
 	LoadFee(ctx context.Context, userID int64, symbol string) (fee decimal.Decimal, err error)
 }

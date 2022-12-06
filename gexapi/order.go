@@ -27,7 +27,7 @@ import (
  * @apiParam  {Number} [total_price] the total price to buy, only supported when side=OrderSideBuy and price=0
  * @apiParam  {Number} [quantity] the total quantity to trade, required when price>0
  * @apiParam  {Number} [trigger_type] the trigger type, required when type=OrderTypeTrigger, all type supported is <a href="#metadata-Order">OrderTriggerTypeAll</a>
- * @apiParam  {Number} [trigger_price] the trigger price, required when type=OrderTypeTrigger
+ * @apiParam  {Number} [trigger_price] the trigger price, required when type=OrderTypeTrigger, it is ms when trigger_type=OrderTriggerTypeAfterOpen
  *
  *
  * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a> or <a href="#metadata-ExReturnCode">ExReturnCode</a>
@@ -51,6 +51,9 @@ import (
  *
  * @apiParamExample  {Query} Trigger Limit Sell:
  * type=OrderTypeTrigger&symbol=YWKUSDT&side=OrderSideSell&quantity=1&price=100&trigger_type=OrderTriggerTypeStopProfit&trigger_price=100
+ *
+ * @apiParamExample  {Query} After Trigger:
+ * type=OrderTypeTrigger&symbol=YWKUSDT&side=OrderSideSell&quantity=1&trigger_type=OrderTriggerTypeAfterOpen&trigger_price=60000
  *
  * @apiSuccessExample {JSON} Success-Response:
  * {

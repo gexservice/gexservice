@@ -656,6 +656,7 @@ CREATE TABLE gex_order (
     price double precision DEFAULT 0 NOT NULL,
     trigger_type integer DEFAULT 0 NOT NULL,
     trigger_price double precision DEFAULT 0 NOT NULL,
+    trigger_time timestamp with time zone NOT NULL,
     avg_price double precision DEFAULT 0 NOT NULL,
     total_price double precision DEFAULT 0 NOT NULL,
     holding double precision DEFAULT 0 NOT NULL,
@@ -759,7 +760,7 @@ COMMENT ON COLUMN gex_order.price IS 'the order expected price';
 -- Name: COLUMN gex_order.trigger_type; Type: COMMENT; Schema: public;
 --
 
-COMMENT ON COLUMN gex_order.trigger_type IS 'the order trigger type, None=0:is none type, StopProfit=100: is stop profit type, StopLoss=200: is stop loss';
+COMMENT ON COLUMN gex_order.trigger_type IS 'the order trigger type, None=0:is none type, StopProfit=100: is stop profit type, StopLoss=200: is stop loss, AfterOpen=300: is after open, AfterClose=310: is after close';
 
 
 --
@@ -767,6 +768,13 @@ COMMENT ON COLUMN gex_order.trigger_type IS 'the order trigger type, None=0:is n
 --
 
 COMMENT ON COLUMN gex_order.trigger_price IS 'the order trigger price';
+
+
+--
+-- Name: COLUMN gex_order.trigger_time; Type: COMMENT; Schema: public;
+--
+
+COMMENT ON COLUMN gex_order.trigger_time IS 'the order trigger time';
 
 
 --
@@ -1821,10 +1829,17 @@ CREATE INDEX gex_order_symobl_idx ON gex_order USING btree (symbol);
 
 
 --
--- Name: gex_order_trigger_idx; Type: INDEX; Schema: public;
+-- Name: gex_order_trigger_price_idx; Type: INDEX; Schema: public;
 --
 
-CREATE INDEX gex_order_trigger_idx ON gex_order USING btree (trigger_type, trigger_price);
+CREATE INDEX gex_order_trigger_price_idx ON gex_order USING btree (trigger_type, trigger_price);
+
+
+--
+-- Name: gex_order_trigger_time_idx; Type: INDEX; Schema: public;
+--
+
+CREATE INDEX gex_order_trigger_time_idx ON gex_order USING btree (trigger_type, trigger_time);
 
 
 --
@@ -2042,7 +2057,8 @@ DROP INDEX IF EXISTS gex_order_user_id_idx;
 DROP INDEX IF EXISTS gex_order_update_time_idx;
 DROP INDEX IF EXISTS gex_order_unhedged_idx;
 DROP INDEX IF EXISTS gex_order_type_idx;
-DROP INDEX IF EXISTS gex_order_trigger_idx;
+DROP INDEX IF EXISTS gex_order_trigger_time_idx;
+DROP INDEX IF EXISTS gex_order_trigger_price_idx;
 DROP INDEX IF EXISTS gex_order_symobl_idx;
 DROP INDEX IF EXISTS gex_order_status_idx;
 DROP INDEX IF EXISTS gex_order_side_idx;

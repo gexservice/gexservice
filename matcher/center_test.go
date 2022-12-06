@@ -385,6 +385,119 @@ func TestMatcherCenter(t *testing.T) {
 		assetOrderStatus(sellOpenOrder2.OrderID, gexdb.OrderStatusDone)
 	}
 	if testCount++; enabled[0] || enabled[testCount] {
+		fmt.Printf("\n\n==>start case %v: trigger after spot\n", testCount)
+		//
+		area := gexdb.BalanceAreaSpot
+		symbol := "spot.YWEUSDT"
+		userBase := testAddUser("TestSpotMatcherMarketAfter-Base")
+		userQuote := testAddUser("TestSpotMatcherMarketAfter-Quote")
+		userTrigger := testAddUser("TestSpotMatcherMarket-Trigger ")
+		_, err := gexdb.TouchBalance(ctx, area, spotBalanceAll, userBase.TID, userQuote.TID, userTrigger.TID)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		gexdb.IncreaseBalanceCall(gexdb.Pool(), ctx, &gexdb.Balance{
+			UserID: userBase.TID,
+			Area:   area,
+			Asset:  spotBalanceBase,
+			Free:   decimal.NewFromFloat(10000),
+			Status: gexdb.BalanceStatusNormal,
+		})
+		gexdb.IncreaseBalanceCall(gexdb.Pool(), ctx, &gexdb.Balance{
+			UserID: userQuote.TID,
+			Area:   area,
+			Asset:  spotBalanceQuote,
+			Free:   decimal.NewFromFloat(10000),
+			Status: gexdb.BalanceStatusNormal,
+		})
+		gexdb.IncreaseBalanceCall(gexdb.Pool(), ctx, &gexdb.Balance{
+			UserID: userTrigger.TID,
+			Area:   area,
+			Asset:  spotBalanceQuote,
+			Free:   decimal.NewFromFloat(10000),
+			Status: gexdb.BalanceStatusNormal,
+		})
+
+		//holding
+		sellOpenOrder1, err := center.ProcessLimit(ctx, userBase.TID, symbol, gexdb.OrderSideSell, decimal.NewFromFloat(1), decimal.NewFromFloat(110))
+		if err != nil {
+			t.Error(ErrStack(err))
+			return
+		}
+		fmt.Printf("sell open order %v\n", sellOpenOrder1.OrderID)
+		assetOrderStatus(sellOpenOrder1.OrderID, gexdb.OrderStatusPending)
+		buyOpenOrder1, err := center.ProcessLimit(ctx, userQuote.TID, symbol, gexdb.OrderSideBuy, decimal.NewFromFloat(1), decimal.NewFromFloat(100))
+		if err != nil {
+			t.Error(ErrStack(err))
+			return
+		}
+		fmt.Printf("buy open order %v\n", buyOpenOrder1.OrderID)
+		assetOrderStatus(sellOpenOrder1.OrderID, gexdb.OrderStatusPending)
+		assetOrderStatus(buyOpenOrder1.OrderID, gexdb.OrderStatusPending)
+
+		afterOpenOrder, err := center.ProcessOrder(ctx, &gexdb.Order{
+			UserID:       userTrigger.TID,
+			Creator:      userTrigger.TID,
+			Type:         gexdb.OrderTypeTrigger,
+			Symbol:       symbol,
+			Side:         gexdb.OrderSideBuy,
+			Quantity:     decimal.NewFromFloat(1),
+			TriggerType:  gexdb.OrderTriggerTypeAfterOpen,
+			TriggerPrice: decimal.NewFromFloat(1),
+		})
+		if err != nil {
+			t.Error(ErrStack(err))
+			return
+		}
+		assetOrderStatus(afterOpenOrder.OrderID, gexdb.OrderStatusDone)
+		assetOrderStatus(sellOpenOrder1.OrderID, gexdb.OrderStatusDone)
+		center.procTriggerOrder()
+		assetOrderStatus(buyOpenOrder1.OrderID, gexdb.OrderStatusPartialled)
+	}
+	if testCount++; enabled[0] || enabled[testCount] {
+		fmt.Printf("\n\n==>start case %v: trigger after futures\n", testCount)
+		//
+		env := testFuturesInit(testCount)
+		symbol := "futures.YWEUSDT"
+
+		//holding
+		sellOpenOrder1, err := center.ProcessLimit(ctx, env.Seller.TID, symbol, gexdb.OrderSideSell, decimal.NewFromFloat(1), decimal.NewFromFloat(110))
+		if err != nil {
+			t.Error(ErrStack(err))
+			return
+		}
+		fmt.Printf("sell open order %v\n", sellOpenOrder1.OrderID)
+		assetOrderStatus(sellOpenOrder1.OrderID, gexdb.OrderStatusPending)
+		buyOpenOrder1, err := center.ProcessLimit(ctx, env.Buyer.TID, symbol, gexdb.OrderSideBuy, decimal.NewFromFloat(1), decimal.NewFromFloat(100))
+		if err != nil {
+			t.Error(ErrStack(err))
+			return
+		}
+		fmt.Printf("buy open order %v\n", buyOpenOrder1.OrderID)
+		assetOrderStatus(sellOpenOrder1.OrderID, gexdb.OrderStatusPending)
+		assetOrderStatus(buyOpenOrder1.OrderID, gexdb.OrderStatusPending)
+
+		afterOpenOrder, err := center.ProcessOrder(ctx, &gexdb.Order{
+			UserID:       env.Buyer2.TID,
+			Creator:      env.Buyer2.TID,
+			Type:         gexdb.OrderTypeTrigger,
+			Symbol:       symbol,
+			Side:         gexdb.OrderSideSell,
+			Quantity:     decimal.NewFromFloat(1),
+			TriggerType:  gexdb.OrderTriggerTypeAfterOpen,
+			TriggerPrice: decimal.NewFromFloat(1),
+		})
+		if err != nil {
+			t.Error(ErrStack(err))
+			return
+		}
+		assetOrderStatus(afterOpenOrder.OrderID, gexdb.OrderStatusDone)
+		assetOrderStatus(buyOpenOrder1.OrderID, gexdb.OrderStatusDone)
+		center.procTriggerOrder()
+		assetOrderStatus(sellOpenOrder1.OrderID, gexdb.OrderStatusDone)
+	}
+	if testCount++; enabled[0] || enabled[testCount] {
 		fmt.Printf("\n\n==>start case %v: trigger error\n", testCount)
 		//
 		env := testFuturesInit(testCount)
