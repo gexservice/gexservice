@@ -232,6 +232,7 @@ package gexdb
  * @apiSuccess (Withdraw) {WithdrawMethod} Withdraw.method the withdraw metod, all suported is <a href="#metadata-Withdraw">WithdrawMethodAll</a>
  * @apiSuccess (Withdraw) {String} Withdraw.asset the withdraw asset
  * @apiSuccess (Withdraw) {Decimal} Withdraw.quantity the withdraw order quantity
+ * @apiSuccess (Withdraw) {StringPtr} Withdraw.sender
  * @apiSuccess (Withdraw) {String} Withdraw.receiver the widhdraw receiver
  * @apiSuccess (Withdraw) {Int} Withdraw.processed the withdraw if processed
  * @apiSuccess (Withdraw) {Object} Withdraw.result the withdraw order transaction info

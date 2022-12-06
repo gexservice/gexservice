@@ -60,7 +60,6 @@ func init() {
 	if len(proxyServer) > 0 {
 		proxyAddr = proxyServer
 	}
-	basedb.StoreConf(ctx, ConfigBrokerCommRate, "0.8")
 	config := xprop.NewConfig()
 	config.LoadPropString(`
 [message.withdraw.done.title]

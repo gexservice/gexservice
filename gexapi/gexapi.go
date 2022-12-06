@@ -52,8 +52,13 @@ func Handle(pre string, mux *web.SessionMux) {
 	//withdraw
 	mux.HandleFunc("^"+pre+"/usr/createWithdraw(\\?.*)?$", CreateWithdrawH)
 	mux.HandleFunc("^"+pre+"/usr/cancelWithdraw(\\?.*)?$", CancelWithdrawH)
-	mux.HandleFunc("^"+pre+"/usr/listWithdraw(\\?.*)?$", ListWithdrawH)
 	mux.HandleFunc("^"+pre+"/usr/confirmWithdraw(\\?.*)?$", ConfirmWithdrawH)
+	mux.HandleFunc("^"+pre+"/usr/listWithdraw(\\?.*)?$", ListWithdrawH)
+	mux.HandleFunc("^"+pre+"/usr/createGoldbar(\\?.*)?$", CreateGoldbarH)
+	mux.HandleFunc("^"+pre+"/usr/cancelGoldbar(\\?.*)?$", CancelGoldbarH)
+	mux.HandleFunc("^"+pre+"/usr/confirmGoldbar(\\?.*)?$", ConfirmGoldbarH)
+	mux.HandleFunc("^"+pre+"/usr/doneGoldbar(\\?.*)?$", DoneGoldbarH)
+	mux.HandleFunc("^"+pre+"/usr/listGoldbar(\\?.*)?$", ListGoldbarH)
 	mux.HandleFunc("^"+pre+"/usr/loadTopupAddress(\\?.*)?$", LoadTopupAddressH)
 	//holding
 	mux.HandleFunc("^"+pre+"/usr/listHolding(\\?.*)?$", ListHoldingH)

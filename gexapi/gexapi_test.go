@@ -108,7 +108,6 @@ func init() {
 	if len(proxyServer) > 0 {
 		proxyAddr = proxyServer
 	}
-	basedb.StoreConf(ctx, gexdb.ConfigBrokerCommRate, "0.8")
 	basedb.StoreConf(ctx, gexdb.ConfigWithdrawReview, converter.JSON(xmap.M{"*": 0}))
 }
 

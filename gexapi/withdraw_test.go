@@ -8,6 +8,8 @@ import (
 	"github.com/codingeasygo/util/converter"
 	"github.com/codingeasygo/util/uuid"
 	"github.com/codingeasygo/util/xmap"
+	"github.com/codingeasygo/util/xtime"
+	"github.com/gexservice/gexservice/base/basedb"
 	"github.com/gexservice/gexservice/base/define"
 	"github.com/gexservice/gexservice/gexdb"
 )
@@ -42,6 +44,53 @@ func TestWithdraw(t *testing.T) {
 	pgx.MockerSetCall("Rows.Scan", 1).Should(t, "code", define.ServerError).GetMap("/usr/createWithdraw?method=tron&asset=%v&quantity=%v&receiver=test", spotBalanceQuote, "1")
 	pgx.MockerSetCall("Rows.Scan", 1).Should(t, "code", define.ServerError).GetMap("/usr/cancelWithdraw?order_id=%v", createWithdraw.StrDef("", "/withdraw/order_id"))
 	pgx.MockerSetCall("Pool.Exec", 1).Should(t, "code", define.ServerError).GetMap("/usr/confirmWithdraw?order_id=%v", createWithdraw.StrDef("", "/withdraw/order_id"))
+}
+
+func TestGoldbar(t *testing.T) {
+	basedb.StoreConf(ctx, gexdb.ConfigGoldbarFee, "0.001")
+	basedb.StoreConf(ctx, gexdb.ConfigGoldbarRate, "10")
+	clearCookie()
+	ts.Should(t, "code", define.Success).GetMap("/pub/login?username=%v&password=%v", "abc0", "123")
+	//
+	ts.Should(t, "code", define.ArgsInvalid).PostJSONMap(xmap.M{}, "/usr/createGoldbar")
+	createGoldbar, _ := ts.Should(t, "code", define.Success).GetMap("/usr/createGoldbar?pickup_amount=%v&pickup_time=%v&pickup_address=addr", "1", xtime.Now())
+	fmt.Printf("createGoldbar--->%v\n", converter.JSON(createGoldbar))
+	//
+	ts.Should(t, "code", define.ArgsInvalid).GetMap("/usr/listGoldbar?status=%v", "xx")
+	listGoldbar, _ := ts.Should(t, "code", define.Success).GetMap("/usr/listGoldbar")
+	fmt.Printf("listGoldbar--->%v\n", converter.JSON(listGoldbar))
+	//
+	ts.Should(t, "code", define.ArgsInvalid).GetMap("/usr/cancelGoldbar?order_id=%v", "")
+	cancelGoldbar, _ := ts.Should(t, "code", define.Success).GetMap("/usr/cancelGoldbar?order_id=%v", createGoldbar.StrDef("", "/goldbar/order_id"))
+	fmt.Printf("cancelGoldbar--->%v\n", converter.JSON(cancelGoldbar))
+	//
+	ts.Should(t, "code", define.ArgsInvalid).GetMap("/usr/confirmGoldbar?order_id=%v", "")
+	createGoldbar, _ = ts.Should(t, "code", define.Success).GetMap("/usr/createGoldbar?pickup_amount=%v&pickup_time=%v&pickup_address=addr", "1", xtime.Now())
+	ts.Should(t, "code", define.NotAccess).GetMap("/usr/confirmGoldbar?order_id=%v", createGoldbar.StrDef("", "/goldbar/order_id"))
+	ts.Should(t, "code", define.NotAccess).PostJSONMap(xmap.M{
+		"code":     createGoldbar.StrDef("", "/goldbar/receiver"),
+		"order_id": createGoldbar.StrDef("", "/goldbar/order_id"),
+	}, "/usr/doneGoldbar")
+	ts.Should(t, "code", define.Success).GetMap("/pub/login?username=%v&password=%v", "admin", "123")
+	ts.Should(t, "code", define.Success).GetMap("/usr/confirmGoldbar?order_id=%v", createGoldbar.StrDef("", "/goldbar/order_id"))
+	ts.Should(t, "code", define.ArgsInvalid).PostJSONMap("xx", "/usr/doneGoldbar")
+	ts.Should(t, "code", define.Success).PostJSONMap(xmap.M{
+		"code":     createGoldbar.StrDef("", "/goldbar/receiver"),
+		"order_id": createGoldbar.StrDef("", "/goldbar/order_id"),
+	}, "/usr/doneGoldbar")
+	//
+	//test error
+	pgx.MockerStart()
+	defer pgx.MockerStop()
+	pgx.MockerClear()
+	pgx.MockerSetCall("Rows.Scan", 2).Should(t, "code", define.ServerError).GetMap("/usr/listGoldbar")
+	pgx.MockerSetCall("Rows.Scan", 1).Should(t, "code", define.ServerError).GetMap("/usr/createGoldbar?pickup_amount=%v&pickup_time=%v&pickup_address=addr", "1", xtime.Now())
+	pgx.MockerSetCall("Rows.Scan", 1).Should(t, "code", define.ServerError).GetMap("/usr/cancelGoldbar?order_id=%v", createGoldbar.StrDef("", "/goldbar/order_id"))
+	pgx.MockerSetCall("Pool.Exec", 1).Should(t, "code", define.ServerError).GetMap("/usr/confirmGoldbar?order_id=%v", createGoldbar.StrDef("", "/goldbar/order_id"))
+	pgx.MockerSetCall("Pool.Begin", 1).Should(t, "code", define.ServerError).PostJSONMap(xmap.M{
+		"code":     createGoldbar.StrDef("", "/goldbar/receiver"),
+		"order_id": createGoldbar.StrDef("", "/goldbar/order_id"),
+	}, "/usr/doneGoldbar")
 }
 
 func TestLoadTopupAddress(t *testing.T) {

@@ -96,13 +96,14 @@ const (
 	BalanceRecordTypeChange   BalanceRecordType = 400 //is manual change type
 	BalanceRecordTypeTopup    BalanceRecordType = 500 //is topup
 	BalanceRecordTypeWithdraw BalanceRecordType = 600 //is withdraw
+	BalanceRecordTypeGoldbar  BalanceRecordType = 700 //is gold bar
 )
 
 //BalanceRecordTypeAll is the balance record type
-var BalanceRecordTypeAll = BalanceRecordTypeArray{BalanceRecordTypeTrade, BalanceRecordTypeTradeFee, BalanceRecordTypeProfit, BalanceRecordTypeBlowup, BalanceRecordTypeTransfer, BalanceRecordTypeChange, BalanceRecordTypeTopup, BalanceRecordTypeWithdraw}
+var BalanceRecordTypeAll = BalanceRecordTypeArray{BalanceRecordTypeTrade, BalanceRecordTypeTradeFee, BalanceRecordTypeProfit, BalanceRecordTypeBlowup, BalanceRecordTypeTransfer, BalanceRecordTypeChange, BalanceRecordTypeTopup, BalanceRecordTypeWithdraw, BalanceRecordTypeGoldbar}
 
 //BalanceRecordTypeShow is the balance record type
-var BalanceRecordTypeShow = BalanceRecordTypeArray{BalanceRecordTypeTrade, BalanceRecordTypeTradeFee, BalanceRecordTypeProfit, BalanceRecordTypeBlowup, BalanceRecordTypeTransfer, BalanceRecordTypeChange, BalanceRecordTypeTopup, BalanceRecordTypeWithdraw}
+var BalanceRecordTypeShow = BalanceRecordTypeArray{BalanceRecordTypeTrade, BalanceRecordTypeTradeFee, BalanceRecordTypeProfit, BalanceRecordTypeBlowup, BalanceRecordTypeTransfer, BalanceRecordTypeChange, BalanceRecordTypeTopup, BalanceRecordTypeWithdraw, BalanceRecordTypeGoldbar}
 
 type BalanceRecordStatus int
 type BalanceRecordStatusArray []BalanceRecordStatus
@@ -127,7 +128,7 @@ type BalanceRecord struct {
 	TID         int64               `json:"tid,omitempty" valid:"tid,r|i,r:0;"`                 /* the primary key */
 	Creator     int64               `json:"creator,omitempty" valid:"creator,r|i,r:0;"`         /* the balance creator */
 	BalanceID   int64               `json:"balance_id,omitempty" valid:"balance_id,r|i,r:0;"`   /* the balance id */
-	Type        BalanceRecordType   `json:"type,omitempty" valid:"type,r|i,e:0;"`               /* the balance record type, Trade=100: is trade type, TradeFee=110:is trade fee, Profit=200:is close profit, Blowup=210:is blowup, Transfer=300:is transfer, Change=400: is manual change type, Topup=500: is topup, Withdraw=600: is withdraw */
+	Type        BalanceRecordType   `json:"type,omitempty" valid:"type,r|i,e:0;"`               /* the balance record type, Trade=100: is trade type, TradeFee=110:is trade fee, Profit=200:is close profit, Blowup=210:is blowup, Transfer=300:is transfer, Change=400: is manual change type, Topup=500: is topup, Withdraw=600: is withdraw, Goldbar=700:is gold bar */
 	Target      int                 `json:"target,omitempty" valid:"target,r|i,r:0;"`           /* the balance target type */
 	Changed     decimal.Decimal     `json:"changed,omitempty" valid:"changed,r|f,r:0;"`         /* the balance change value */
 	Transaction xsql.M              `json:"transaction,omitempty" valid:"transaction,r|s,l:0;"` /* the balance record transaction info */
@@ -551,7 +552,7 @@ var WithdrawStatusShow = WithdrawStatusArray{WithdrawStatusPending, WithdrawStat
 
 /*
  * Withdraw  represents gex_withdraw
- * Withdraw Fields:tid,order_id,type,user_id,creator,method,asset,quantity,receiver,processed,result,update_time,create_time,status,
+ * Withdraw Fields:tid,order_id,type,user_id,creator,method,asset,quantity,sender,receiver,processed,result,update_time,create_time,status,
  */
 type Withdraw struct {
 	T          string          `json:"-" table:"gex_withdraw"`                             /* the table name tag */
@@ -563,6 +564,7 @@ type Withdraw struct {
 	Method     WithdrawMethod  `json:"method,omitempty" valid:"method,r|s,e:0;"`           /* the withdraw metod, Tron=tron: is tron method, Ethereum=ethereum: is ethereum method */
 	Asset      string          `json:"asset,omitempty" valid:"asset,r|s,l:0;"`             /* the withdraw asset */
 	Quantity   decimal.Decimal `json:"quantity,omitempty" valid:"quantity,r|f,r:0;"`       /* the withdraw order quantity */
+	Sender     *string         `json:"sender,omitempty" valid:"sender,r|s,l:0;"`           /*  */
 	Receiver   string          `json:"receiver,omitempty" valid:"receiver,r|s,l:0;"`       /* the widhdraw receiver */
 	Processed  int             `json:"processed,omitempty" valid:"processed,r|i,r:0;"`     /* the withdraw if processed */
 	Result     xsql.M          `json:"result,omitempty" valid:"result,r|s,l:0;"`           /* the withdraw order transaction info */

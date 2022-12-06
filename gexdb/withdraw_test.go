@@ -8,7 +8,9 @@ import (
 	"github.com/codingeasygo/util/converter"
 	"github.com/codingeasygo/util/uuid"
 	"github.com/codingeasygo/util/xmap"
+	"github.com/codingeasygo/util/xtime"
 	"github.com/gexservice/gexservice/base/basedb"
+	"github.com/gexservice/gexservice/base/define"
 	"github.com/shopspring/decimal"
 )
 
@@ -365,6 +367,120 @@ func TestTopup(t *testing.T) {
 
 	pgx.MockerSetCall("Pool.Begin", 1, "Tx.Exec", 1, 2, 3, "Rows.Scan", 1, 2, 3, 4).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
 		_, _, err = ReceiveTopup(ctx, wallet.Method, wallet.Address, txid, "TEST", decimal.NewFromFloat(100), xmap.M{})
+		return
+	})
+}
+
+func TestGoldbar(t *testing.T) {
+	clear()
+	basedb.StoreConf(ctx, ConfigGoldbarFee, "0.001")
+	basedb.StoreConf(ctx, ConfigGoldbarRate, "10")
+	user := testAddUser("TestGoldbar")
+	added, err := TouchBalance(ctx, BalanceAreaSpot, []string{BalanceAssetGoldbar}, user.TID)
+	if err != nil || added != 1 {
+		t.Error(err)
+		return
+	}
+	balance := &Balance{
+		UserID: user.TID,
+		Area:   BalanceAreaSpot,
+		Asset:  BalanceAssetGoldbar,
+		Free:   decimal.NewFromFloat(10000),
+	}
+	err = IncreaseBalance(ctx, balance)
+	if err != nil || !balance.Free.Equal(decimal.NewFromFloat(10000)) {
+		t.Error(err)
+		return
+	}
+	goldbar, err := CreateGoldbar(ctx, user.TID, 1, xtime.Now(), "address")
+	if err != nil || goldbar.Status != WithdrawStatusPending {
+		t.Error(err)
+		return
+	}
+	_, err = CancelGoldbar(ctx, 1, goldbar.OrderID)
+	if err != define.ErrNotAccess {
+		t.Error(err)
+		return
+	}
+	goldbar, err = CancelGoldbar(ctx, user.TID, goldbar.OrderID)
+	if err != nil || goldbar.Status != WithdrawStatusCanceled {
+		t.Error(err)
+		return
+	}
+	_, err = CancelGoldbar(ctx, user.TID, goldbar.OrderID)
+	if err == nil {
+		t.Error(err)
+		return
+	}
+	goldbar00, err := CreateGoldbar(ctx, user.TID, 1, xtime.Now(), "address")
+	if err != nil || goldbar00.Status != WithdrawStatusPending {
+		t.Error(err)
+		return
+	}
+	err = ConfirmGoldbar(ctx, goldbar00.OrderID)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	_, err = DoneGoldbar(ctx, goldbar00.OrderID, goldbar00.Receiver, xmap.M{"A": 123})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	_, err = DoneGoldbar(ctx, goldbar00.OrderID, goldbar00.Receiver, xmap.M{"A": 123})
+	if err == nil {
+		t.Error(err)
+		return
+	}
+	//
+	searcher := WithdrawUnifySearcher{}
+	searcher.Where.Type = WithdrawTypeArray{WithdrawTypeGoldbar}
+	searcher.Where.Asset = []string{BalanceAssetGoldbar}
+	searcher.Where.Status = WithdrawStatusAll
+	err = searcher.Apply(ctx)
+	if err != nil || len(searcher.Query.Withdraws) < 1 {
+		t.Error(err)
+		return
+	}
+	//cancel type is not correct
+	goldbar4 := &Withdraw{
+		OrderID:  NewOrderID(),
+		Type:     WithdrawTypeTopup,
+		UserID:   user.TID,
+		Asset:    BalanceAssetGoldbar,
+		Quantity: decimal.NewFromFloat(1),
+	}
+	err = AddWithdraw(ctx, goldbar4)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	_, err = CancelGoldbar(ctx, user.TID, goldbar4.OrderID)
+	if err == nil {
+		t.Error(err)
+		return
+	}
+
+	pgx.MockerStart()
+	defer pgx.MockerStop()
+	pgx.MockerClear()
+	goldbar, err = CreateGoldbar(ctx, user.TID, 1, xtime.Now(), "address")
+	if err != nil || goldbar00.Status != WithdrawStatusPending {
+		t.Error(err)
+		return
+	}
+	pgx.MockerClear()
+	//
+	pgx.MockerSetCall("Pool.Begin", 1, "Rows.Scan", 1, 2, 3).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
+		_, err = CreateGoldbar(ctx, user.TID, 1, xtime.Now(), "address")
+		return
+	})
+	pgx.MockerSetCall("Pool.Begin", 1, "Rows.Scan", 1, 2).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
+		_, err = CancelGoldbar(ctx, user.TID, goldbar.OrderID)
+		return
+	})
+	pgx.MockerSetCall("Pool.Begin", 1, "Rows.Scan", 1, 2, 3, "Tx.Exec", 1, 2, 3).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
+		_, err = DoneGoldbar(ctx, goldbar.OrderID, goldbar.Receiver, xmap.M{"A": 123})
 		return
 	})
 }

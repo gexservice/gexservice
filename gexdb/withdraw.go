@@ -2,14 +2,19 @@ package gexdb
 
 import (
 	"context"
+	"encoding/binary"
+	"encoding/hex"
 	"fmt"
+	"math/rand"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/codingeasygo/crud"
 	"github.com/codingeasygo/util/converter"
 	"github.com/codingeasygo/util/xmap"
 	"github.com/codingeasygo/util/xsql"
+	"github.com/gexservice/gexservice/base/basedb"
 	"github.com/gexservice/gexservice/base/define"
 	"github.com/jackc/pgx/v4"
 	"github.com/shopspring/decimal"
@@ -277,6 +282,174 @@ func ReceiveTopup(ctx context.Context, method WalletMethod, address string, txid
 		"_time":   time.Now().UTC().Format("2006-01-02 15:04:05(MST)"),
 	}
 	_, err = AddTemplateMessageCall(tx, ctx, MessageTypeUser, messageEnv, MessageKeyTopup, topup.UserID)
+	return
+}
+
+func RandGoldbarCode() (code string) {
+	v := rand.Int31()
+	data := make([]byte, 4)
+	binary.BigEndian.PutUint32(data, uint32(v))
+	code = strings.ToUpper(hex.EncodeToString(data))
+	code = code[0:6]
+	return
+}
+
+func CreateGoldbar(ctx context.Context, userID int64, pickupAmount int64, pickupTime int64, pickupAddress string) (goldbar *Withdraw, err error) {
+	goldbar = &Withdraw{}
+	goldbar.OrderID = fmt.Sprintf("goldbar_%v", NewOrderID())
+	goldbar.UserID = userID
+	goldbar.Creator = userID
+	goldbar.Asset = BalanceAssetGoldbar
+	goldbar.Type = WithdrawTypeGoldbar
+	goldbar.Status = WithdrawStatusPending
+	goldbar.Receiver = RandGoldbarCode()
+	goldbar.Result = xsql.M{
+		"pickup_code":    goldbar.Receiver,
+		"pickup_time":    pickupTime,
+		"pickup_address": pickupAddress,
+	}
+	tx, err := Pool().Begin(ctx)
+	if err != nil {
+		return
+	}
+	defer func() {
+		if err == nil {
+			err = tx.Commit(ctx)
+		} else {
+			tx.Rollback(ctx)
+		}
+	}()
+	var goldbarRate, goldbarFee float64
+	err = basedb.LoadConfCall(tx, ctx, ConfigGoldbarRate, &goldbarRate)
+	if err == nil {
+		err = basedb.LoadConfCall(tx, ctx, ConfigGoldbarFee, &goldbarFee)
+	}
+	if err != nil {
+		return
+	}
+	goldbar.Quantity = decimal.NewFromInt(pickupAmount).Mul(decimal.NewFromFloat(goldbarRate)).Mul(decimal.NewFromFloat(1 + goldbarFee))
+	balance := &Balance{
+		UserID: goldbar.UserID,
+		Area:   BalanceAreaSpot,
+		Asset:  goldbar.Asset,
+		Free:   decimal.Zero.Sub(goldbar.Quantity),
+		Locked: goldbar.Quantity,
+	}
+	err = IncreaseBalanceCall(tx, ctx, balance)
+	if err != nil {
+		return
+	}
+	err = AddWithdrawCall(tx, ctx, goldbar)
+	return
+}
+
+func CancelGoldbar(ctx context.Context, userID int64, orderID string) (goldbar *Withdraw, err error) {
+	tx, err := Pool().Begin(ctx)
+	if err != nil {
+		return
+	}
+	defer func() {
+		if err == nil {
+			err = tx.Commit(ctx)
+		} else {
+			tx.Rollback(ctx)
+		}
+	}()
+	goldbar, err = FindWithdrawByOrderIDCall(tx, ctx, orderID, true)
+	if err != nil {
+		return
+	}
+	if userID > 0 && goldbar.UserID != userID {
+		err = define.ErrNotAccess
+		return
+	}
+	if goldbar.Type != WithdrawTypeGoldbar {
+		err = fmt.Errorf("order is not goldbar")
+		return
+	}
+	if goldbar.Status != WithdrawStatusPending && goldbar.Status != WithdrawStatusConfirmed {
+		err = fmt.Errorf("goldbar is not pending or confirmed")
+		return
+	}
+	goldbar.Status = WithdrawStatusCanceled
+	free := goldbar.Quantity
+	balance := &Balance{
+		UserID: goldbar.UserID,
+		Area:   BalanceAreaSpot,
+		Asset:  goldbar.Asset,
+		Free:   free,
+		Locked: decimal.Zero.Sub(free),
+	}
+	err = IncreaseBalanceCall(tx, ctx, balance)
+	if err != nil {
+		return
+	}
+	err = goldbar.UpdateFilter(tx, ctx, "status")
+	return
+}
+
+func ConfirmGoldbar(ctx context.Context, orderID string) (err error) {
+	err = crud.UpdateRowWheref(Pool, ctx, &Withdraw{Status: WithdrawStatusConfirmed}, "status", "order_id=$%v,status=$%v", orderID, WithdrawStatusPending)
+	return
+}
+
+func DoneGoldbar(ctx context.Context, orderID, code string, result xmap.M) (goldbar *Withdraw, err error) {
+	tx, err := Pool().Begin(ctx)
+	if err != nil {
+		return
+	}
+	defer func() {
+		if err == nil {
+			err = tx.Commit(ctx)
+		} else {
+			tx.Rollback(ctx)
+		}
+	}()
+	goldbar, err = FindWithdrawByOrderIDCall(tx, ctx, orderID, true)
+	if err != nil {
+		return
+	}
+	if goldbar.Status != WithdrawStatusPending && goldbar.Status != WithdrawStatusConfirmed {
+		err = fmt.Errorf("goldbar is not pending or confirmed")
+		return
+	}
+	for k, v := range result {
+		goldbar.Result[k] = v
+	}
+	goldbar.Status = WithdrawStatusDone
+	err = goldbar.UpdateFilter(tx, ctx, "result,status")
+	if err != nil {
+		return
+	}
+	balance := &Balance{
+		UserID: goldbar.UserID,
+		Area:   BalanceAreaSpot,
+		Asset:  goldbar.Asset,
+		Locked: decimal.Zero.Sub(goldbar.Quantity),
+	}
+	err = IncreaseBalanceCall(tx, ctx, balance)
+	if err != nil {
+		return
+	}
+	messageEnv := xmap.M{
+		"_amount": goldbar.Quantity,
+		"_asset":  goldbar.Asset,
+		"_time":   time.Now().UTC().Format("2006-01-02 15:04:05(MST)"),
+	}
+	_, err = AddBalanceRecordCall(tx, ctx, &BalanceRecord{
+		Creator:   goldbar.UserID,
+		BalanceID: balance.TID,
+		Type:      BalanceRecordTypeGoldbar,
+		Changed:   goldbar.Quantity,
+		Transaction: xsql.M{
+			"txid":    goldbar.OrderID,
+			"goldbar": goldbar.TID,
+		},
+	})
+	if err != nil {
+		return
+	}
+	_, err = AddTemplateMessageCall(tx, ctx, MessageTypeUser, messageEnv, MessageKeyGoldbar, goldbar.UserID)
 	return
 }
 

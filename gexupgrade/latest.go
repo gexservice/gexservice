@@ -225,7 +225,7 @@ COMMENT ON COLUMN gex_balance_record.balance_id IS 'the balance id';
 -- Name: COLUMN gex_balance_record.type; Type: COMMENT; Schema: public;
 --
 
-COMMENT ON COLUMN gex_balance_record.type IS 'the balance record type, Trade=100: is trade type, TradeFee=110:is trade fee, Profit=200:is close profit, Blowup=210:is blowup, Transfer=300:is transfer, Change=400: is manual change type, Topup=500: is topup, Withdraw=600: is withdraw';
+COMMENT ON COLUMN gex_balance_record.type IS 'the balance record type, Trade=100: is trade type, TradeFee=110:is trade fee, Profit=200:is close profit, Blowup=210:is blowup, Transfer=300:is transfer, Change=400: is manual change type, Topup=500: is topup, Withdraw=600: is withdraw, Goldbar=700:is gold bar';
 
 
 --
@@ -1264,6 +1264,7 @@ CREATE TABLE gex_withdraw (
     method character varying(255) NOT NULL,
     asset character varying(16) NOT NULL,
     quantity double precision DEFAULT 0 NOT NULL,
+    sender character varying(255),
     receiver character varying(255) NOT NULL,
     processed integer DEFAULT 0 NOT NULL,
     result jsonb DEFAULT '{}'::jsonb NOT NULL,

@@ -394,7 +394,7 @@ func sendUserInfo(s *web.Session, user *gexdb.User) web.Result {
 		xlog.Warnf("UserInfoH check user having trade password with %v by uid:%v", err, user.TID)
 	}
 	//config
-	config, err := basedb.LoadConfigList(s.R.Context(), gexdb.ConfigWelcomeMessage, gexdb.ConfigWithdrawMax, gexdb.ConfigBrokerDesc)
+	config, err := basedb.LoadConfigList(s.R.Context(), gexdb.ConfigWelcomeMessage, gexdb.ConfigWithdrawMax)
 	if err != nil { //ignore error
 		xlog.Warnf("UserInfoH load config fail with %v by uid:%v", err, user.TID)
 	}

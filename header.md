@@ -87,10 +87,9 @@
 * 后台发布通知使用<a href="#api-Message-AddMessage">添加通知</a>
 
 ## 关于黄金提取
-* 提取申请：使用<a href="#api-Order-CreateGoldbarOrder">创建黄金订单接口</a>申请，获得提取码，申请后可以使用<a href="#api-Order-CancelGoldbarOrder">取消黄金订单接口</a>取消
-* 列出申请：使用<a href="#api-Order-SearchOrder">列出订单接口</a>，类型传入`OrderTypeGoldbar`列出黄金订单，
-* 提取管理：使用<a href="#api-Order-SearchOrder">列出订单接口</a>，类型传入`OrderTypeGoldbar`列出黄金订单，状态为`OrderStatusPending`
-* 黄金对账单：使用<a href="#api-Order-SearchOrder">列出订单接口</a>，类型传入`OrderTypeGoldbar`和`OrderTypeChangeYWE`列出黄金订单，状态为`OrderStatusDone`
+* 提取申请：使用<a href="#api-Withdraw-CreateGoldbar">创建黄金订单接口</a>申请，获得提取码，申请后可以使用<a href="#api-Order-CancelGoldbar">取消黄金订单接口</a>取消
+* 列出申请：使用<a href="#api-Withdraw-ListGoldbar">列出黄金订单接口</a>
+* 提取管理：使用<a href="#api-Withdraw-ListGoldbar">列出订单接口</a>，状态为`OrderStatusPending`
 * 提取配置：使用<a href="#api-Conf-ConfGoldbar">黄金提取配置接口</a>
 
 ## 关于公告

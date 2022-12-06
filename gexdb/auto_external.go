@@ -19,13 +19,11 @@ const (
 	ConfigGoldbarRate    = "goldbar_rate"
 	ConfigGoldbarFee     = "goldbar_fee"
 	ConfigGoldbarTips    = "goldbar_tips"
-	ConfigBrokerCommRate = "broker_comm_rate"
-	ConfigBrokerDesc     = "broker_desc"
 	ConfigTradeRule      = "trade_rule"
 	ConfigCoinRate       = "coin_rate"
 )
 
-var ConfigAll = []string{ConfigCoinRate, ConfigWelcomeMessage, ConfigWithdrawMax, ConfigGoldbarAddress, ConfigGoldbarExplain, ConfigGoldbarRate, ConfigGoldbarFee, ConfigGoldbarTips, ConfigBrokerCommRate, ConfigTradeRule}
+var ConfigAll = []string{ConfigWelcomeMessage, ConfigWithdrawMax, ConfigGoldbarAddress, ConfigGoldbarExplain, ConfigGoldbarRate, ConfigGoldbarFee, ConfigGoldbarTips, ConfigTradeRule, ConfigCoinRate}
 
 const (
 	// BalanceAssetYWE = "YWE"

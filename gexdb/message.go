@@ -16,6 +16,7 @@ const (
 	MessageKeyWithdrawFail = "withdraw.fail"
 	MessageKeyTopup        = "topup"
 	MessageKeyBlowup       = "blowup"
+	MessageKeyGoldbar      = "goldbar"
 )
 
 var MessageKeyAll = []string{MessageKeyWithdrawDone, MessageKeyWithdrawFail, MessageKeyTopup, MessageKeyBlowup}
