@@ -13,6 +13,8 @@ import (
 )
 
 func TestMarket(t *testing.T) {
+	clearCookie()
+	ts.Should(t, "code", define.Success).GetMap("/pub/login?username=%v&password=%v", "abc0", "123")
 	symbol := "spot.YWEUSDT"
 
 	//symbol
@@ -35,8 +37,9 @@ func TestMarket(t *testing.T) {
 	pgx.MockerStart()
 	defer pgx.MockerStop()
 	pgx.MockerClear()
-
-	pgx.MockerSetCall("Pool.Query", 1).Should(t, "code", define.ServerError).GetMap("/pub/listKLine?symbol=%v&interval=5min&start_time=100&end_time=%v", symbol, xsql.TimeNow().Timestamp())
+	pgx.MockerSetCall("Rows.Scan", 1).Should(t, "code", define.ServerError).GetMap("/pub/listSymbol")
+	pgx.MockerSetCall("Rows.Scan", 1).Should(t, "code", define.ServerError).GetMap("/pub/loadSymbol?symbol=%v", symbol)
+	pgx.MockerSetCall("Pool.Query", 1, "Rows.Scan", 1).Should(t, "code", define.ServerError).GetMap("/pub/listKLine?symbol=%v&interval=5min&start_time=100&end_time=%v", symbol, xsql.TimeNow().Timestamp())
 }
 
 func TestFavoritesSymbol(t *testing.T) {

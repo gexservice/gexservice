@@ -96,10 +96,22 @@ func UpdateUserFavorites(ctx context.Context, userID int64, call func(favorites 
 	return
 }
 
-func LoadUserFavorites(ctx context.Context, userID int64) (favorites *UserFavorites, err error) {
+func FindUserFavorites(ctx context.Context, userID int64) (favorites *UserFavorites, err error) {
 	user, err := FindUserFilterWheref(ctx, "favorites#all", "tid=$%v", userID)
 	if err == nil {
 		favorites = &user.Favorites
+	}
+	return
+}
+
+func ListUserFavorites(ctx context.Context, userID int64, symbols ...string) (favorites map[string]int, err error) {
+	all, err := FindUserFavorites(ctx, userID)
+	if err != nil {
+		return
+	}
+	favorites = map[string]int{}
+	for _, symbol := range all.Symbols {
+		favorites[symbol] = 1
 	}
 	return
 }

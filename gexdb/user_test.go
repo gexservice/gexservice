@@ -193,8 +193,13 @@ func TestUserFavorites(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	fav, err = LoadUserFavorites(ctx, user.TID)
+	fav, err = FindUserFavorites(ctx, user.TID)
 	if err != nil || fav == nil || len(fav.Symbols) < 1 {
+		t.Error(err)
+		return
+	}
+	isFav, err := ListUserFavorites(ctx, user.TID, fav.Symbols...)
+	if err != nil || len(isFav) < 1 {
 		t.Error(err)
 		return
 	}
@@ -207,6 +212,10 @@ func TestUserFavorites(t *testing.T) {
 		err = UpdateUserFavorites(ctx, user.TID, func(favorites *UserFavorites) {
 			favorites.Symbols = append(favorites.Symbols, "a", "b", "c")
 		})
+		return
+	})
+	pgx.MockerSetCall("Rows.Scan", 1).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
+		_, err = ListUserFavorites(ctx, user.TID, fav.Symbols...)
 		return
 	})
 }

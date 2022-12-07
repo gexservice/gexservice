@@ -24,6 +24,7 @@ import (
  * @apiParam  {String} orderby the symbol orderby, supported in +rate/-rate/+volume/-volume
  *
  * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>
+ * @apiSuccess (Success) {Object} favorited if user favorited, mapping by symbol, favorited[symbol]>0
  * @apiSuccess (SymbolInfo) {Array} symbols the symbol info list
  * @apiUse SymbolInfoObject
  * @apiSuccess (KLine) {Object} days the symbol day change line, mapping by key is symbol
@@ -75,10 +76,25 @@ import (
  */
 func ListSymbolH(s *web.Session) web.Result {
 	symbols, _, days := market.ListSymbol(s.Argument("type"), nil, s.Argument("orderby"))
+	symbolAll := []string{}
+	for _, symbol := range symbols {
+		symbolAll = append(symbolAll, symbol.Symbol)
+	}
+	userID := s.Int64("user_id")
+	var err error
+	var favorited map[string]int
+	if userID > 0 {
+		favorited, err = gexdb.ListUserFavorites(s.R.Context(), userID, symbolAll...)
+		if err != nil {
+			xlog.Errorf("ListSymbolH list user favorites fail with %v", err)
+			return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
+		}
+	}
 	return s.SendJSON(xmap.M{
-		"code":    0,
-		"symbols": symbols,
-		"days":    days,
+		"code":      0,
+		"symbols":   symbols,
+		"days":      days,
+		"favorited": favorited,
 	})
 }
 
@@ -92,6 +108,7 @@ func ListSymbolH(s *web.Session) web.Result {
  * @apiParam  {String} symbol the symbol
  *
  * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>
+ * @apiSuccess (Success) {Number} favorited if user favorited, favorited>0
  * @apiSuccess (SymbolInfo) {Object} symbol the symbol info
  * @apiUse SymbolInfoObject
  * @apiSuccess (KLine) {Object} day the symbol day change line
@@ -132,10 +149,21 @@ func ListSymbolH(s *web.Session) web.Result {
  */
 func LoadSymbolH(s *web.Session) web.Result {
 	symbol, day := market.LoadSymbol(s.Argument("symbol"))
+	userID := s.Int64("user_id")
+	var favorited int
+	if userID > 0 {
+		favoriteAll, err := gexdb.ListUserFavorites(s.R.Context(), userID, symbol.Symbol)
+		if err != nil {
+			xlog.Errorf("ListSymbolH list user favorites fail with %v", err)
+			return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
+		}
+		favorited = favoriteAll[symbol.Symbol]
+	}
 	return s.SendJSON(xmap.M{
-		"code":   0,
-		"symbol": symbol,
-		"day":    day,
+		"code":      0,
+		"symbol":    symbol,
+		"day":       day,
+		"favorited": favorited,
 	})
 }
 
@@ -282,6 +310,7 @@ var MarketOnline *OnlineHander
  * @apiParam  {Number} end_time filter kline kline.start_time<end_time
  *
  * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>
+ * @apiSuccess (Success) {Object} favorited if user favorited, mapping by symbol, favorited[symbol]>0
  * @apiSuccess (KLine) {Array} lines the all kline array
  * @apiUse KLineObject
  *
@@ -328,9 +357,23 @@ func ListKLineH(s *web.Session) web.Result {
 		xlog.Warnf("ListKLineH list kline fail with %v", err)
 		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
 	}
+	symbolAll := []string{}
+	for _, line := range lines {
+		symbolAll = append(symbolAll, line.Symbol)
+	}
+	userID := s.Int64("user_id")
+	var favorited map[string]int
+	if userID > 0 {
+		favorited, err = gexdb.ListUserFavorites(s.R.Context(), userID, symbolAll...)
+		if err != nil {
+			xlog.Errorf("ListSymbolH list user favorites fail with %v", err)
+			return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
+		}
+	}
 	return s.SendJSON(xmap.M{
-		"code":  0,
-		"lines": lines,
+		"code":      0,
+		"lines":     lines,
+		"favorited": favorited,
 	})
 }
 
@@ -452,7 +495,7 @@ func LoadDepthH(s *web.Session) web.Result {
  */
 func ListFavoritesSymbolH(s *web.Session) web.Result {
 	userID := s.Value("user_id").(int64)
-	favorites, err := gexdb.LoadUserFavorites(s.R.Context(), userID)
+	favorites, err := gexdb.FindUserFavorites(s.R.Context(), userID)
 	if err != nil {
 		xlog.Errorf("ListFavoritesSymbolH load user favorites fail with %v", err)
 		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
