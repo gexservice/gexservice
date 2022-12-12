@@ -975,6 +975,7 @@ func (f *FuturesMatcher) blowupHolding(tx *pgx.Tx, ctx context.Context, changed 
 		Creator:   holding.UserID,
 		BalanceID: balance.TID,
 		Type:      gexdb.BalanceRecordTypeBlowup,
+		Source:    &f.Symbol,
 		Changed:   decimal.Zero.Sub(allClear),
 	}
 	_, err = gexdb.AddBalanceRecordCall(tx, ctx, record)
@@ -1325,6 +1326,7 @@ func (f *FuturesMatcher) syncHoldingByPartDone(tx *pgx.Tx, ctx context.Context, 
 			Creator:   holding.UserID,
 			BalanceID: balance.TID,
 			Type:      gexdb.BalanceRecordTypeProfit,
+			Source:    &f.Symbol,
 			Changed:   profit,
 		})
 	}
@@ -1333,6 +1335,7 @@ func (f *FuturesMatcher) syncHoldingByPartDone(tx *pgx.Tx, ctx context.Context, 
 			Creator:   holding.UserID,
 			BalanceID: balance.TID,
 			Type:      gexdb.BalanceRecordTypeTradeFee,
+			Source:    &f.Symbol,
 			Changed:   fee,
 		})
 	}

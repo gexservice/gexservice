@@ -274,6 +274,7 @@ CREATE TABLE gex_balance_record (
     creator bigint NOT NULL,
     balance_id bigint NOT NULL,
     type integer NOT NULL,
+    source character varying(64),
     target integer DEFAULT 0 NOT NULL,
     changed double precision NOT NULL,
     transaction jsonb DEFAULT '{}'::jsonb NOT NULL,

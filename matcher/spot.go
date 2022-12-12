@@ -897,12 +897,14 @@ func (s *SpotMatcher) syncBalanceByOrderDone(tx *pgx.Tx, ctx context.Context, ch
 			Creator:   order.UserID,
 			BalanceID: in.TID,
 			Type:      gexdb.BalanceRecordTypeTrade,
+			Source:    &s.Symbol,
 			Changed:   inChanged,
 		},
 		{
 			Creator:   order.UserID,
 			BalanceID: out.TID,
 			Type:      gexdb.BalanceRecordTypeTrade,
+			Source:    &s.Symbol,
 			Changed:   decimal.Zero.Sub(outChanged),
 		},
 	}

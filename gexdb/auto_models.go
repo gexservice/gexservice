@@ -121,7 +121,7 @@ var BalanceRecordStatusShow = BalanceRecordStatusArray{BalanceRecordStatusPendin
 
 /*
  * BalanceRecord  represents gex_balance_record
- * BalanceRecord Fields:tid,creator,balance_id,type,target,changed,transaction,update_time,create_time,status,
+ * BalanceRecord Fields:tid,creator,balance_id,type,source,target,changed,transaction,update_time,create_time,status,
  */
 type BalanceRecord struct {
 	T           string              `json:"-" table:"gex_balance_record"`                       /* the table name tag */
@@ -129,6 +129,7 @@ type BalanceRecord struct {
 	Creator     int64               `json:"creator,omitempty" valid:"creator,r|i,r:0;"`         /* the balance creator */
 	BalanceID   int64               `json:"balance_id,omitempty" valid:"balance_id,r|i,r:0;"`   /* the balance id */
 	Type        BalanceRecordType   `json:"type,omitempty" valid:"type,r|i,e:0;"`               /* the balance record type, Trade=100: is trade type, TradeFee=110:is trade fee, Profit=200:is close profit, Blowup=210:is blowup, Transfer=300:is transfer, Change=400: is manual change type, Topup=500: is topup, Withdraw=600: is withdraw, Goldbar=700:is gold bar */
+	Source      *string             `json:"source,omitempty" valid:"source,r|s,l:0;"`           /*  */
 	Target      int                 `json:"target,omitempty" valid:"target,r|i,r:0;"`           /* the balance target type */
 	Changed     decimal.Decimal     `json:"changed,omitempty" valid:"changed,r|f,r:0;"`         /* the balance change value */
 	Transaction xsql.M              `json:"transaction,omitempty" valid:"transaction,r|s,l:0;"` /* the balance record transaction info */
