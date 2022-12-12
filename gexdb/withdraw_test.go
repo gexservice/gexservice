@@ -403,7 +403,7 @@ func TestGoldbar(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	goldbar, err := CreateGoldbar(ctx, user.TID, 1, xtime.Now(), "address")
+	goldbar, err := CreateGoldbar(ctx, user.TID, 1, xtime.Now(), "phone", "address")
 	if err != nil || goldbar.Status != WithdrawStatusPending {
 		t.Error(err)
 		return
@@ -423,7 +423,7 @@ func TestGoldbar(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	goldbar00, err := CreateGoldbar(ctx, user.TID, 1, xtime.Now(), "address")
+	goldbar00, err := CreateGoldbar(ctx, user.TID, 1, xtime.Now(), "phone", "address")
 	if err != nil || goldbar00.Status != WithdrawStatusPending {
 		t.Error(err)
 		return
@@ -475,7 +475,7 @@ func TestGoldbar(t *testing.T) {
 	pgx.MockerStart()
 	defer pgx.MockerStop()
 	pgx.MockerClear()
-	goldbar, err = CreateGoldbar(ctx, user.TID, 1, xtime.Now(), "address")
+	goldbar, err = CreateGoldbar(ctx, user.TID, 1, xtime.Now(), "phone", "address")
 	if err != nil || goldbar00.Status != WithdrawStatusPending {
 		t.Error(err)
 		return
@@ -483,7 +483,7 @@ func TestGoldbar(t *testing.T) {
 	pgx.MockerClear()
 	//
 	pgx.MockerSetCall("Pool.Begin", 1, "Rows.Scan", 1, 2, 3).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
-		_, err = CreateGoldbar(ctx, user.TID, 1, xtime.Now(), "address")
+		_, err = CreateGoldbar(ctx, user.TID, 1, xtime.Now(), "phone", "address")
 		return
 	})
 	pgx.MockerSetCall("Pool.Begin", 1, "Rows.Scan", 1, 2).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {

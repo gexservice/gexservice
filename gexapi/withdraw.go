@@ -2,6 +2,7 @@ package gexapi
 
 import (
 	"github.com/codingeasygo/util/converter"
+	"github.com/codingeasygo/util/xhash"
 	"github.com/codingeasygo/util/xmap"
 	"github.com/codingeasygo/web"
 	"github.com/gexservice/gexservice/base/define"
@@ -18,6 +19,7 @@ import (
  * @apiGroup Withdraw
  *
  * @apiUse WithdrawUpdate
+ * @apiParam  {String} trade_pass the trade password
  *
  * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>
  * @apiSuccess (Withdraw) {Object} withdraw the withdraw info
@@ -42,13 +44,21 @@ import (
  */
 func CreateWithdrawH(s *web.Session) web.Result {
 	var withdraw gexdb.Withdraw
-	err := s.Valid(&withdraw, "method,asset,quantity,receiver#all")
+	var tradePass string
+	format, args := web.Valider.ValidArgs(&withdraw, "asset,quantity,receiver,trade_pass#all")
+	format += "trade_pass,r|s,l:0;"
+	args = append(args, &tradePass)
+	err := s.ValidFormat(format, args...)
 	if err != nil {
 		return util.ReturnCodeLocalErr(s, define.ArgsInvalid, "arg-err", err)
 	}
 	userID := s.Int64("user_id")
 	withdraw.UserID = userID
 	withdraw.Creator = userID
+	err = gexdb.UserVerifyTradePassword(s.R.Context(), userID, xhash.SHA1([]byte(tradePass)))
+	if err != nil {
+		return util.ReturnCodeLocalErr(s, gexdb.CodeTradePasswordInvalid, "arg-err", err)
+	}
 	err = gexdb.CreateWithdraw(s.R.Context(), &withdraw)
 	if err != nil {
 		xlog.Errorf("CreateWithdrawH create withdraw by %v fail with %v", converter.JSON(withdraw), err)
@@ -209,7 +219,11 @@ func SearchWithdrawH(s *web.Session) web.Result {
  * @apiName CreateGoldbar
  * @apiGroup Withdraw
  *
- * @apiUse WithdrawUpdate
+ * @apiParam  {Int} pickup_amount the amount to pickup
+ * @apiParam  {Int} pickup_time the time to pickup
+ * @apiParam  {String} pickup_phone the record phone to pickup
+ * @apiParam  {String} pickup_address the address to pickup
+ * @apiParam  {String} trade_pass the trade password
  *
  * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>
  * @apiSuccess (Withdraw) {Object} goldbar the withdraw info
@@ -235,17 +249,25 @@ func SearchWithdrawH(s *web.Session) web.Result {
 func CreateGoldbarH(s *web.Session) web.Result {
 	var pickupAmount int64
 	var pickupTime int64
+	var pickupPhone string
 	var pickupAddress string
+	var tradePass string
 	err := s.ValidFormat(`
 		pickup_amount,R|I,R:0;
 		pickup_time,R|I,R:0;
+		pickup_phone,R|S,L:0;
 		pickup_address,R|S,L:0;
-	`, &pickupAmount, &pickupTime, &pickupAddress)
+		trade_pass,R|S,L:0;
+	`, &pickupAmount, &pickupTime, &pickupPhone, &pickupAddress, &tradePass)
 	if err != nil {
 		return util.ReturnCodeLocalErr(s, define.ArgsInvalid, "arg-err", err)
 	}
 	userID := s.Int64("user_id")
-	goldbar, err := gexdb.CreateGoldbar(s.R.Context(), userID, pickupAmount, pickupTime, pickupAddress)
+	err = gexdb.UserVerifyTradePassword(s.R.Context(), userID, xhash.SHA1([]byte(tradePass)))
+	if err != nil {
+		return util.ReturnCodeLocalErr(s, gexdb.CodeTradePasswordInvalid, "arg-err", err)
+	}
+	goldbar, err := gexdb.CreateGoldbar(s.R.Context(), userID, pickupAmount, pickupTime, pickupPhone, pickupAddress)
 	if err != nil {
 		xlog.Errorf("CreateGoldbarH create goldbar by %v fail with %v", converter.JSON(goldbar), err)
 		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)

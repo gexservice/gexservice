@@ -157,6 +157,9 @@ func initdata() {
 	userabc0 = testAddUser(gexdb.UserRoleNormal, "abc0")
 	userabc1 = testAddUser(gexdb.UserRoleNormal, "abc1")
 
+	userabc0.TradePass = converter.StringPtr(xhash.SHA1([]byte("123")))
+	gexdb.UpdateUser(ctx, userabc0)
+
 	userabc1.Status = gexdb.UserStatusLocked
 	err := gexdb.UpdateUser(ctx, userabc1)
 	if err != nil {
@@ -164,6 +167,8 @@ func initdata() {
 	}
 	userabc2 = testAddUser(gexdb.UserRoleNormal, "abc2")
 	userabc3 = testAddUser(gexdb.UserRoleNormal, "abc3")
+	userabc2.TradePass = converter.StringPtr(xhash.SHA1([]byte("123")))
+	gexdb.UpdateUser(ctx, userabc2)
 	gexdb.TouchBalance(ctx, gexdb.BalanceAreaFunds, spotBalanceAll, userx0.TID, userx1.TID, userabc0.TID, userabc1.TID, userabc2.TID, userabc3.TID)
 	gexdb.TouchBalance(ctx, gexdb.BalanceAreaSpot, spotBalanceAll, userx0.TID, userx1.TID, userabc0.TID, userabc1.TID, userabc2.TID, userabc3.TID)
 	gexdb.TouchBalance(ctx, gexdb.BalanceAreaSpot, []string{gexdb.BalanceAssetUSDT}, userabc0.TID)
