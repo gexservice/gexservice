@@ -202,6 +202,7 @@ type Ticker struct {
 	Symbol string            `json:"symbol"`
 	Ask    []decimal.Decimal `json:"ask"`
 	Bid    []decimal.Decimal `json:"bid"`
+	Close  decimal.Decimal   `json:"close"`
 }
 
 /**

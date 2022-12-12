@@ -228,6 +228,7 @@ type KLineCache struct {
 type DepthCache struct {
 	Bids   [][]decimal.Decimal `json:"bids"`
 	Asks   [][]decimal.Decimal `json:"asks"`
+	Close  decimal.Decimal     `json:"close"`
 	Symbol string              `json:"symbol"`
 	Time   xsql.Time           `json:"time"`
 }
@@ -236,6 +237,7 @@ func (d *DepthCache) Slice(max int) (depth *DepthCache) {
 	depth = &DepthCache{
 		Asks:   d.Asks,
 		Bids:   d.Bids,
+		Close:  d.Close,
 		Symbol: d.Symbol,
 		Time:   xsql.TimeNow(),
 	}
@@ -249,7 +251,9 @@ func (d *DepthCache) Slice(max int) (depth *DepthCache) {
 }
 
 func (d *DepthCache) AsTicker() (ticker *gexdb.Ticker) {
-	ticker = &gexdb.Ticker{}
+	ticker = &gexdb.Ticker{
+		Close: d.Close,
+	}
 	if len(d.Asks) > 0 {
 		ticker.Ask = d.Asks[0]
 	}
@@ -498,11 +502,15 @@ func (m *Market) procTriggerDepth(event *matcher.MatcherEvent) (err error) {
 			err = fmt.Errorf("%v", err)
 		}
 	}()
+	m.klineLock.RLock()
+	avgPrice := m.avgPrice[event.Symbol]
+	m.klineLock.RUnlock()
 	m.depthLock.Lock()
 	depth := &DepthCache{
 		Symbol: event.Symbol,
 		Asks:   event.Depth.Asks,
 		Bids:   event.Depth.Bids,
+		Close:  avgPrice,
 		Time:   xsql.TimeNow(),
 	}
 	m.depthVal[depth.Symbol] = depth
