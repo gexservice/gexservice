@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/codingeasygo/crud"
+	"github.com/codingeasygo/crud/pgx"
 	"github.com/codingeasygo/util/xsql"
 	"github.com/shopspring/decimal"
 )
@@ -55,6 +56,9 @@ func CountOrderFee(ctx context.Context, area OrderArea, start, end time.Time) (f
 			fee[area][balance] = filled
 		},
 	)
+	if err == pgx.ErrNoRows {
+		err = nil
+	}
 	return
 }
 
@@ -66,6 +70,9 @@ func CountOrderVolume(ctx context.Context, area OrderArea, start, end time.Time)
 		"group by area,symbol",
 		&orders,
 	)
+	if err == pgx.ErrNoRows {
+		err = nil
+	}
 	return
 }
 

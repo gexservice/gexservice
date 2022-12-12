@@ -12,6 +12,16 @@ import (
 
 func TestOrder(t *testing.T) {
 	clear()
+	feeAll, err := CountOrderFee(ctx, OrderAreaSpot, time.Time{}, time.Now())
+	if err != nil || len(feeAll) > 0 {
+		t.Error(err)
+		return
+	}
+	volumeAll, err := CountOrderVolume(ctx, OrderAreaSpot, time.Time{}, time.Now())
+	if err != nil || len(volumeAll) > 0 {
+		t.Error(err)
+		return
+	}
 	user := testAddUser("TestOrder")
 	order := &Order{
 		Type:       OrderTypeTrade,
@@ -24,7 +34,7 @@ func TestOrder(t *testing.T) {
 		FeeFilled:  decimal.NewFromFloat(1),
 		Status:     OrderStatusDone,
 	}
-	err := AddOrder(ctx, order)
+	err = AddOrder(ctx, order)
 	if err != nil {
 		t.Error(err)
 		return
@@ -64,12 +74,12 @@ func TestOrder(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	feeAll, err := CountOrderFee(ctx, order.Area, time.Time{}, time.Now())
+	feeAll, err = CountOrderFee(ctx, order.Area, time.Time{}, time.Now())
 	if err != nil || len(feeAll) < 1 {
 		t.Error(err)
 		return
 	}
-	volumeAll, err := CountOrderVolume(ctx, order.Area, time.Time{}, time.Now())
+	volumeAll, err = CountOrderVolume(ctx, order.Area, time.Time{}, time.Now())
 	if err != nil || len(volumeAll) < 1 {
 		t.Error(err)
 		return
