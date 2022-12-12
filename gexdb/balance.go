@@ -219,6 +219,13 @@ func ChangeBalanceCall(caller crud.Queryer, ctx context.Context, creator, userID
 	return
 }
 
+func ListBalanceAsset(ctx context.Context, area BalanceAreaArray) (assets []string, err error) {
+	sql := `select distinct asset from gex_balance`
+	sql, args := crud.JoinWheref(sql, nil, "area=any($%v)", area)
+	err = crud.Query(Pool, ctx, MetaWithBalance(string("")), "asset#all", sql, args, &assets, "asset")
+	return
+}
+
 /**
  * @apiDefine BalanceUnifySearcher
  * @apiParam  {String} [area] the balance area filter, all type supported is <a href="#metadata-Balance">BalanceAreaAll</a>

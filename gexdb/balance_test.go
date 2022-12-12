@@ -135,6 +135,11 @@ func TestBalance(t *testing.T) {
 		return
 	}
 
+	assets, err := ListBalanceAsset(ctx, BalanceAreaAll)
+	if err != nil || len(assets) < 1 {
+		t.Error(err)
+		return
+	}
 }
 
 func TestTransferChange(t *testing.T) {

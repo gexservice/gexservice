@@ -320,11 +320,17 @@ func SearchBalanceH(s *web.Session) web.Result {
 			return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
 		}
 	}
+	assets, err := gexdb.ListBalanceAsset(s.R.Context(), searcher.Where.Area)
+	if err != nil {
+		xlog.Errorf("SearchBalanceH list balance asset fail with %v by %v", err, converter.JSON(searcher))
+		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
+	}
 	return s.SendJSON(xmap.M{
 		"code":      define.Success,
 		"balances":  searcher.Query.Balances,
 		"unprofits": unprofits,
 		"users":     users,
+		"assets":    assets,
 		"total":     searcher.Count.Total,
 	})
 }
