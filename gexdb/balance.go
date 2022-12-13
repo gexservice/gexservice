@@ -315,9 +315,10 @@ type BalanceRecordUnifySearcher struct {
 		Limit int    `json:"limit" valid:"limit,o|i,r:0;"`
 	} `json:"page" valid:"inline"`
 	Query struct {
-		Records []*BalanceRecordItem `json:"records"`
-		UserIDs []int64              `json:"user_id" scan:"user_id"`
-	} `json:"query" filter:"b.user_id,asset#all|r.type,source,target,changed,update_time#all"`
+		Records    []*BalanceRecordItem `json:"records"`
+		UserIDs    []int64              `json:"user_ids" scan:"user_id"`
+		BalanceIDs []int64              `json:"balance_ids" scan:"balance_id"`
+	} `json:"query" filter:"b.user_id,asset#all|r.balance_id,type,source,target,changed,update_time#all"`
 	Count struct {
 		Total int64 `json:"total" scan:"tid"`
 	} `json:"count" filter:"r.count(tid)#all"`

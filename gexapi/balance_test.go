@@ -36,7 +36,7 @@ func TestBalance(t *testing.T) {
 	pgx.Should(t, "code", define.ArgsInvalid).GetMap("/usr/listBalance?area=%d", 1)
 	pgx.MockerSetCall("Rows.Scan", 1).Should(t, "code", define.ServerError).GetMap("/usr/listBalance?area=%d", gexdb.BalanceAreaSpot)
 	pgx.MockerSetCall("Pool.Query", 1, 2, 3, 4).Should(t, "code", define.ServerError).GetMap("/usr/searchBalance")
-	pgx.MockerSetCall("Pool.Query", 1, 2).Should(t, "code", define.ServerError).GetMap("/usr/searchBalanceRecord")
+	pgx.MockerSetCall("Pool.Query", 1, 2, 3).Should(t, "code", define.ServerError).GetMap("/usr/searchBalanceRecord")
 }
 
 func TestTransferBalance(t *testing.T) {

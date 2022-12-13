@@ -208,6 +208,8 @@ type Ticker struct {
 /**
  * @apiDefine BalanceRecordItemObject
  * @apiSuccess (BalanceRecordItem) {Int64} BalanceRecordItem.tid the primary key
+ * @apiSuccess (BalanceRecordItem) {Int64} BalanceRecord.user_id the balance user id
+ * @apiSuccess (BalanceRecordItem) {Int64} BalanceRecord.balance_id the balance id
  * @apiSuccess (BalanceRecordItem) {String} BalanceRecord.asset the balance asset
  * @apiSuccess (BalanceRecordItem) {BalanceRecordType} BalanceRecordItem.type the balance record type, all suported is <a href="#metadata-BalanceRecord">BalanceRecordTypeAll</a>
  * @apiSuccess (BalanceRecordItem) {BalanceArea} BalanceRecordItem.target the balance change target, using for BalanceRecordTransfer, when changed>0 target is from balance area, when changed< target is to balance area,
@@ -219,6 +221,7 @@ type BalanceRecordItem struct {
 	TID        int64             `json:"tid"`
 	UserID     int64             `json:"user_id"`
 	Asset      string            `json:"asset"`
+	BalanceID  int64             `json:"balance_id"`
 	Type       BalanceRecordType `json:"type,omitempty"`
 	Source     *string           `json:"source,omitempty"`
 	Target     int               `json:"target,omitempty"`

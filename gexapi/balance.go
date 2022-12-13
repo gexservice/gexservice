@@ -348,6 +348,8 @@ func SearchBalanceH(s *web.Session) web.Result {
  * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>
  * @apiSuccess (BalanceRecordItem) {Array} records the balance records
  * @apiUse BalanceRecordItemObject
+ * @apiSuccess (Balance) {Object} balances the balance info
+ * @apiUse BalanceObject
  *
  * @apiSuccessExample {type} Success-Response:
  * {
@@ -387,10 +389,19 @@ func SearchBalanceRecordH(s *web.Session) web.Result {
 			return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
 		}
 	}
+	var balances map[int64]*gexdb.Balance
+	if len(searcher.Query.BalanceIDs) > 0 {
+		_, balances, err = gexdb.ListBalanceByID(s.R.Context(), searcher.Query.UserIDs...)
+		if err != nil {
+			xlog.Errorf("SearchBalanceRecordH list balance fail with %v by %v", err, converter.JSON(searcher))
+			return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
+		}
+	}
 	return s.SendJSON(xmap.M{
-		"code":    define.Success,
-		"records": searcher.Query.Records,
-		"users":   users,
-		"total":   searcher.Count.Total,
+		"code":     define.Success,
+		"records":  searcher.Query.Records,
+		"users":    users,
+		"balances": balances,
+		"total":    searcher.Count.Total,
 	})
 }
