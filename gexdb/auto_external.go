@@ -210,6 +210,7 @@ type Ticker struct {
  * @apiSuccess (BalanceRecordItem) {Int64} BalanceRecordItem.tid the primary key
  * @apiSuccess (BalanceRecordItem) {String} BalanceRecord.asset the balance asset
  * @apiSuccess (BalanceRecordItem) {BalanceRecordType} BalanceRecordItem.type the balance record type, all suported is <a href="#metadata-BalanceRecord">BalanceRecordTypeAll</a>
+ * @apiSuccess (BalanceRecordItem) {BalanceArea} BalanceRecordItem.target the balance change target, using for BalanceRecordTransfer, when changed>0 target is from balance area, when changed< target is to balance area,
  * @apiSuccess (BalanceRecordItem) {Decimal} BalanceRecordItem.changed the balance change value
  * @apiSuccess (BalanceRecordItem) {Time} BalanceRecordItem.update_time the balance last update time
  */
