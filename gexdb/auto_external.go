@@ -219,6 +219,7 @@ type BalanceRecordItem struct {
 	UserID     int64             `json:"user_id"`
 	Asset      string            `json:"asset"`
 	Type       BalanceRecordType `json:"type,omitempty"`
+	Source     *string           `json:"source,omitempty"`
 	Target     int               `json:"target,omitempty"`
 	Changed    decimal.Decimal   `json:"changed,omitempty"`
 	UpdateTime xsql.Time         `json:"update_time,omitempty"`

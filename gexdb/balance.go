@@ -317,7 +317,7 @@ type BalanceRecordUnifySearcher struct {
 	Query struct {
 		Records []*BalanceRecordItem `json:"records"`
 		UserIDs []int64              `json:"user_id" scan:"user_id"`
-	} `json:"query" filter:"b.user_id,asset#all|r.type,target,changed,update_time#all"`
+	} `json:"query" filter:"b.user_id,asset#all|r.type,source,target,changed,update_time#all"`
 	Count struct {
 		Total int64 `json:"total" scan:"tid"`
 	} `json:"count" filter:"r.count(tid)#all"`
