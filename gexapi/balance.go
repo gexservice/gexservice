@@ -1,6 +1,8 @@
 package gexapi
 
 import (
+	"time"
+
 	"github.com/codingeasygo/util/converter"
 	"github.com/codingeasygo/util/xmap"
 	"github.com/codingeasygo/web"
@@ -236,6 +238,7 @@ func ChangeUserBalanceH(s *web.Session) web.Result {
  * @apiSuccess (Success) {Object} unprofits the balance unprofit, mapping by user id, then mapping by symbol
  * @apiSuccess (Success) {Decimal} unprofits.total the user total unprofit
  * @apiSuccess (Balance) {Array} balances the balance records
+ * @apiSuccess (Balance) {Object} counts the balance total count, mapping by counts[BalanceArea][asset]
  * @apiUse BalanceObject
  *
  * @apiSuccessExample {type} Success-Response:
@@ -325,12 +328,18 @@ func SearchBalanceH(s *web.Session) web.Result {
 		xlog.Errorf("SearchBalanceH list balance asset fail with %v by %v", err, converter.JSON(searcher))
 		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
 	}
+	_, counts, err := gexdb.CountAreaBalance(s.R.Context(), searcher.Where.Area, "", time.Time{}, time.Time{})
+	if err != nil {
+		xlog.Errorf("SearchBalanceH count area balance fail with %v by %v", err, converter.JSON(searcher))
+		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
+	}
 	return s.SendJSON(xmap.M{
 		"code":      define.Success,
 		"balances":  searcher.Query.Balances,
 		"unprofits": unprofits,
 		"users":     users,
 		"assets":    assets,
+		"counts":    counts,
 		"total":     searcher.Count.Total,
 	})
 }
