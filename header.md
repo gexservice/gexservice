@@ -117,6 +117,9 @@
 
 ## 关于后台统计
 * 首页使用<a href="#api-Count-LoadOverview">总览接口</a>
+* 币币统计：`spot.balances`
+* 手续费统计：以`assets`为所有币列表，`fee.total[OrderArea][asset]`获取对应区域对应Asset的手续费
+* 合约统计：以`futures.symbols`为所有交易对列表，`futures.buy`为正仓，`futures.sell`为负仓，以symbol为key
 
 ## 关于后台用户管理
 * <a href="#api-User">用户接口</a>

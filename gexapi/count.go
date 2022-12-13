@@ -31,10 +31,12 @@ var overviewLast = time.Time{}
  * @apiSuccess (Success) {Object} fee the fee count info, fee.today is today fee info, fee.total is total fee info
  * @apiSuccess (Success) {Object} fee.xxx the fee count info by area, all suported is <a href="#metadata-Order">OrderAreaAll</a>
  * @apiSuccess (Success) {Object} fee.xxx.xxx the fee count info by balance asset
+ * @apiSuccess (Success) {Array} assets the all asset key
  * @apiSuccess (Success) {Object} spot the spot balance info
- * @apiSuccess (Success) {Array} spot.total the total spot balance info
+ * @apiSuccess (Success) {Array} spot.balances the total spot balance info
  * @apiSuccess (Success) {Object} futures the futures holding info
- * @apiSuccess (Success) {Array} futures.total the total spot balance info
+ * @apiSuccess (Success) {Array} futures.balances the total futures balance info
+ * @apiSuccess (Success) {Array} futures.symbols the all symbol key
  * @apiSuccess (Success) {Array} futures.buy the futures buy holding info
  * @apiSuccess (Success) {Array} futures.sell the futures sell holding info
  * @apiSuccess (Success) {Object} trade the trade count info
@@ -44,6 +46,10 @@ var overviewLast = time.Time{}
  *
  * @apiSuccessExample {type} Success-Response:
  * {
+ *     "assets": [
+ *         "USDT",
+ *         "YWE"
+ *     ],
  *     "code": 0,
  *     "fee": {
  *         "today": {
@@ -58,8 +64,28 @@ var overviewLast = time.Time{}
  *         }
  *     },
  *     "futures": {
- *         "buy": [
+ *         "balances": [
  *             {
+ *                 "area": 100,
+ *                 "asset": "USDT",
+ *                 "create_time": 0,
+ *                 "free": "1000",
+ *                 "locked": "0",
+ *                 "margin": "0",
+ *                 "update_time": 0
+ *             },
+ *             {
+ *                 "area": 100,
+ *                 "asset": "YWE",
+ *                 "create_time": 0,
+ *                 "free": "0",
+ *                 "locked": "0",
+ *                 "margin": "0",
+ *                 "update_time": 0
+ *             }
+ *         ],
+ *         "buy": {
+ *             "futures.YWEUSDT": {
  *                 "amount": "0.5",
  *                 "blowup": "0",
  *                 "create_time": 0,
@@ -69,9 +95,9 @@ var overviewLast = time.Time{}
  *                 "symbol": "futures.YWEUSDT",
  *                 "update_time": 0
  *             }
- *         ],
- *         "sell": [
- *             {
+ *         },
+ *         "sell": {
+ *             "futures.YWEUSDT": {
  *                 "amount": "-0.5",
  *                 "blowup": "0",
  *                 "create_time": 0,
@@ -81,19 +107,24 @@ var overviewLast = time.Time{}
  *                 "symbol": "futures.YWEUSDT",
  *                 "update_time": 0
  *             }
+ *         },
+ *         "symbols": [
+ *             "futures.YWEUSDT"
  *         ]
  *     },
  *     "spot": {
- *         "total": [
+ *         "balances": [
  *             {
+ *                 "area": 200,
  *                 "asset": "USDT",
  *                 "create_time": 0,
- *                 "free": "5999.51",
- *                 "locked": "0",
+ *                 "free": "2954.71",
+ *                 "locked": "45",
  *                 "margin": "0",
  *                 "update_time": 0
  *             },
  *             {
+ *                 "area": 200,
  *                 "asset": "YWE",
  *                 "create_time": 0,
  *                 "free": "1999.997",
@@ -124,6 +155,7 @@ var overviewLast = time.Time{}
  *                 "total_price": "50",
  *                 "transaction": {},
  *                 "trigger_price": "0",
+ *                 "trigger_time": 0,
  *                 "unhedged": "0",
  *                 "update_time": 0
  *             }
@@ -148,6 +180,7 @@ var overviewLast = time.Time{}
  *                 "total_price": "290",
  *                 "transaction": {},
  *                 "trigger_price": "0",
+ *                 "trigger_time": 0,
  *                 "unhedged": "0",
  *                 "update_time": 0
  *             }
@@ -172,6 +205,13 @@ func LoadOverviewH(s *web.Session) web.Result {
 	}
 	var err error
 	result := xmap.M{}
+	{
+		result["assets"], err = gexdb.ListBalanceAsset(s.R.Context(), nil)
+		if err != nil {
+			xlog.Errorf("LoadOverviewH list balance asset fail with %v", err)
+			return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
+		}
+	}
 	{ //user
 		user := xmap.M{}
 		user["total"], err = gexdb.CountUser(s.R.Context(), time.Time{}, time.Time{})
@@ -189,12 +229,12 @@ func LoadOverviewH(s *web.Session) web.Result {
 	}
 	{ //fee
 		fee := xmap.M{}
-		fee["total"], err = gexdb.CountOrderFee(s.R.Context(), 0, time.Time{}, time.Time{})
+		_, fee["total"], err = gexdb.CountOrderFee(s.R.Context(), 0, time.Time{}, time.Time{})
 		if err != nil {
 			xlog.Errorf("LoadOverviewH count user total fail with %v", err)
 			return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
 		}
-		fee["today"], err = gexdb.CountOrderFee(s.R.Context(), 0, xtime.TimeStartOfToday(), time.Time{})
+		_, fee["today"], err = gexdb.CountOrderFee(s.R.Context(), 0, xtime.TimeStartOfToday(), time.Time{})
 		if err != nil {
 			xlog.Errorf("LoadOverviewH count user today fail with %v", err)
 			return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
@@ -203,7 +243,7 @@ func LoadOverviewH(s *web.Session) web.Result {
 	}
 	{ //spot
 		spot := xmap.M{}
-		spot["total"], err = gexdb.CountAreaBalance(s.R.Context(), gexdb.BalanceAreaSpot, time.Time{}, time.Time{})
+		spot["balances"], _, err = gexdb.CountAreaBalance(s.R.Context(), gexdb.BalanceAreaArray{gexdb.BalanceAreaSpot}, "", time.Time{}, time.Time{})
 		if err != nil {
 			xlog.Errorf("LoadOverviewH count user total fail with %v", err)
 			return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
@@ -212,17 +252,22 @@ func LoadOverviewH(s *web.Session) web.Result {
 	}
 	{ //futures
 		futures := xmap.M{}
-		futures["total"], err = gexdb.CountAreaBalance(s.R.Context(), gexdb.BalanceAreaFunds, time.Time{}, time.Time{})
+		futures["balances"], _, err = gexdb.CountAreaBalance(s.R.Context(), gexdb.BalanceAreaArray{gexdb.BalanceAreaFunds}, "", time.Time{}, time.Time{})
 		if err != nil {
 			xlog.Errorf("LoadOverviewH count user total fail with %v", err)
 			return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
 		}
-		futures["buy"], err = gexdb.CountHolding(s.R.Context(), 1, time.Time{}, time.Time{})
+		futures["symbols"], err = gexdb.ListHoldingSymbol(s.R.Context())
+		if err != nil {
+			xlog.Errorf("LoadOverviewH list holding symbol fail with %v", err)
+			return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
+		}
+		_, futures["buy"], err = gexdb.CountHolding(s.R.Context(), 1, time.Time{}, time.Time{})
 		if err != nil {
 			xlog.Errorf("LoadOverviewH count buy holding fail with %v", err)
 			return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
 		}
-		futures["sell"], err = gexdb.CountHolding(s.R.Context(), -1, time.Time{}, time.Time{})
+		_, futures["sell"], err = gexdb.CountHolding(s.R.Context(), -1, time.Time{}, time.Time{})
 		if err != nil {
 			xlog.Errorf("LoadOverviewH count sell holding fail with %v", err)
 			return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
@@ -321,7 +366,7 @@ func ListBalanceCountH(s *web.Session) web.Result {
 		})
 	}
 	asset := s.Argument("asset")
-	balances, err := gexdb.CountAllBalance(s.R.Context(), asset)
+	balances, _, err := gexdb.CountAreaBalance(s.R.Context(), nil, asset, time.Time{}, time.Time{})
 	if err != nil {
 		xlog.Errorf("ListBalanceCountH count all balance fail with %v", err)
 		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)

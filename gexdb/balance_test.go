@@ -117,13 +117,7 @@ func TestBalance(t *testing.T) {
 		return
 	}
 
-	balanceAll, err := CountAllBalance(ctx, asset)
-	if err != nil || len(balanceAll) < 1 {
-		t.Error(err)
-		return
-	}
-
-	balanceArea, err := CountAreaBalance(ctx, BalanceAreaSpot, time.Time{}, time.Now())
+	_, balanceArea, err := CountAreaBalance(ctx, BalanceAreaArray{BalanceAreaSpot}, "", time.Time{}, time.Now())
 	if err != nil || len(balanceArea) < 1 {
 		t.Error(err)
 		return

@@ -117,6 +117,13 @@ func ListHoldingByUserCall(caller crud.Queryer, ctx context.Context, userIDs []i
 	return
 }
 
+func ListHoldingSymbol(ctx context.Context) (symbols []string, err error) {
+	sql := `select distinct symbol from gex_holding`
+	sql += " order by symbol asc"
+	err = crud.Query(Pool, ctx, MetaWithBalance(string("")), "symbol#all", sql, nil, &symbols, "symbol")
+	return
+}
+
 /**
  * @apiDefine HoldingUnifySearcher
  * @apiParam  {Number} [symbol] the holding symbol filter, multi with comma

@@ -59,13 +59,19 @@ func TestHolding(t *testing.T) {
 		return
 	}
 
-	holdings, err = CountHolding(ctx, 1, time.Time{}, time.Now())
+	symbols, err = ListHoldingSymbol(ctx)
+	if err != nil || len(symbols) < 1 {
+		t.Error(err)
+		return
+	}
+
+	holdings, _, err = CountHolding(ctx, 1, time.Time{}, time.Now())
 	if err != nil || len(holdings) < 1 {
 		t.Error(err)
 		return
 	}
 
-	holdings, err = CountHolding(ctx, -1, time.Time{}, time.Now())
+	holdings, _, err = CountHolding(ctx, -1, time.Time{}, time.Now())
 	if err != nil || len(holdings) > 0 {
 		t.Error(err)
 		return

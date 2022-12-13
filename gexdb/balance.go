@@ -222,6 +222,7 @@ func ChangeBalanceCall(caller crud.Queryer, ctx context.Context, creator, userID
 func ListBalanceAsset(ctx context.Context, area BalanceAreaArray) (assets []string, err error) {
 	sql := `select distinct asset from gex_balance`
 	sql, args := crud.JoinWheref(sql, nil, "area=any($%v)", area)
+	sql += " order by asset asc"
 	err = crud.Query(Pool, ctx, MetaWithBalance(string("")), "asset#all", sql, args, &assets, "asset")
 	return
 }

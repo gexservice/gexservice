@@ -12,7 +12,7 @@ import (
 
 func TestOrder(t *testing.T) {
 	clear()
-	feeAll, err := CountOrderFee(ctx, OrderAreaSpot, time.Time{}, time.Now())
+	feeAll, _, err := CountOrderFee(ctx, OrderAreaSpot, time.Time{}, time.Now())
 	if err != nil || len(feeAll) > 0 {
 		t.Error(err)
 		return
@@ -74,7 +74,7 @@ func TestOrder(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	feeAll, err = CountOrderFee(ctx, order.Area, time.Time{}, time.Now())
+	feeAll, _, err = CountOrderFee(ctx, order.Area, time.Time{}, time.Now())
 	if err != nil || len(feeAll) < 1 {
 		t.Error(err)
 		return

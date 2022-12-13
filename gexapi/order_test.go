@@ -135,7 +135,7 @@ func TestOrder(t *testing.T) {
 	pgx.MockerClear()
 	overviewLast = time.Time{}
 	pgx.MockerSetCall("Rows.Scan", 1).Should(t, "code", define.NotAccess).GetMap("/usr/loadOverview")
-	pgx.MockerSetRangeCall("Rows.Scan", 2, 14).Should(t, "code", define.ServerError).GetMap("/usr/loadOverview")
+	pgx.MockerSetRangeCall("Rows.Scan", 2, 17).Should(t, "code", define.ServerError).GetMap("/usr/loadOverview")
 	pgx.MockerSetCall("Rows.Scan", 1).Should(t, "code", define.NotAccess).GetMap("/usr/listBalanceCount")
 	pgx.MockerSetCall("Rows.Scan", 2).Should(t, "code", define.ServerError).GetMap("/usr/listBalanceCount")
 }
