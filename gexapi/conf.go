@@ -82,6 +82,7 @@ var ConfRuleH = baseapi.ConfigLoader{gexdb.ConfigTradeRule}
  *     "config": {
  *         "goldbar_explain": "xxx",
  *         "goldbar_address": "[{\"city\":\"city1\",\"addresss\":\"address1\"}]",
+ *         "goldbar_time": "[9,10,11,15,16]",
  *         "goldbar_rate": "1600",
  *         "goldbar_fee": "0.05",
  *         "goldbar_tips": "warning"
@@ -89,4 +90,4 @@ var ConfRuleH = baseapi.ConfigLoader{gexdb.ConfigTradeRule}
  * }
  *
  */
-var ConfGoldbarH = baseapi.ConfigLoader{gexdb.ConfigGoldbarAddress, gexdb.ConfigGoldbarExplain, gexdb.ConfigGoldbarRate, gexdb.ConfigGoldbarFee, gexdb.ConfigGoldbarTips}
+var ConfGoldbarH = baseapi.ConfigLoader{gexdb.ConfigGoldbarAddress, gexdb.ConfigGoldbarTime, gexdb.ConfigGoldbarExplain, gexdb.ConfigGoldbarRate, gexdb.ConfigGoldbarFee, gexdb.ConfigGoldbarTips}
