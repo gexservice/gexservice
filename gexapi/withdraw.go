@@ -48,7 +48,7 @@ import (
 func CreateWithdrawH(s *web.Session) web.Result {
 	var withdraw gexdb.Withdraw
 	var tradePass string
-	format, args := web.Valider.ValidArgs(&withdraw, "asset,quantity,receiver,trade_pass#all")
+	format, args := web.Valider.ValidArgs(&withdraw, "method,asset,quantity,receiver,trade_pass#all")
 	format += "trade_pass,r|s,l:0;"
 	args = append(args, &tradePass)
 	err := s.ValidFormat(format, args...)
