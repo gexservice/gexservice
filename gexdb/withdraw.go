@@ -294,7 +294,7 @@ func RandGoldbarCode() (code string) {
 	return
 }
 
-func CreateGoldbar(ctx context.Context, userID int64, pickupAmount, pickupTime int64, pickupPhone, pickupAddress string) (goldbar *Withdraw, err error) {
+func CreateGoldbar(ctx context.Context, userID int64, pickupAmount, pickupTime int64, pickupName, pickupPhone, pickupAddress string) (goldbar *Withdraw, err error) {
 	goldbar = &Withdraw{}
 	goldbar.OrderID = fmt.Sprintf("goldbar_%v", NewOrderID())
 	goldbar.UserID = userID
@@ -306,6 +306,7 @@ func CreateGoldbar(ctx context.Context, userID int64, pickupAmount, pickupTime i
 	goldbar.Result = xsql.M{
 		"pickup_code":    goldbar.Receiver,
 		"pickup_time":    pickupTime,
+		"pickup_name":    pickupName,
 		"pickup_phone":   pickupPhone,
 		"pickup_address": pickupAddress,
 	}
