@@ -118,7 +118,7 @@ func ListAreaBalance(ctx context.Context, userID int64, area BalanceAreaArray, a
 	return
 }
 
-func TransferChange(ctx context.Context, creator, userID int64, from, to BalanceArea, asset string, value decimal.Decimal) (err error) {
+func TransferBalance(ctx context.Context, creator, userID int64, from, to BalanceArea, asset string, value decimal.Decimal) (err error) {
 	tx, err := Pool().Begin(ctx)
 	if err != nil {
 		return
@@ -130,11 +130,11 @@ func TransferChange(ctx context.Context, creator, userID int64, from, to Balance
 			tx.Rollback(ctx)
 		}
 	}()
-	err = TransferChangeCall(tx, ctx, creator, userID, from, to, asset, value)
+	err = TransferBalanceCall(tx, ctx, creator, userID, from, to, asset, value)
 	return
 }
 
-func TransferChangeCall(caller crud.Queryer, ctx context.Context, creator, userID int64, from, to BalanceArea, asset string, value decimal.Decimal) (err error) {
+func TransferBalanceCall(caller crud.Queryer, ctx context.Context, creator, userID int64, from, to BalanceArea, asset string, value decimal.Decimal) (err error) {
 	_, err = TouchMultiBalanceCall(caller, ctx, BalanceAreaArray{from, to}, []string{asset}, userID)
 	if err != nil {
 		return
@@ -164,14 +164,14 @@ func TransferChangeCall(caller crud.Queryer, ctx context.Context, creator, userI
 		&BalanceRecord{
 			Creator:   creator,
 			BalanceID: fromBalance.TID,
-			Type:      BalanceRecordTypeChange,
+			Type:      BalanceRecordTypeTransfer,
 			Target:    int(to),
 			Changed:   decimal.Zero.Sub(value),
 		},
 		&BalanceRecord{
 			Creator:   creator,
 			BalanceID: toBalance.TID,
-			Type:      BalanceRecordTypeChange,
+			Type:      BalanceRecordTypeTransfer,
 			Target:    int(from),
 			Changed:   value,
 		},

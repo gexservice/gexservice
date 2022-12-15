@@ -145,25 +145,25 @@ func TestTransferChange(t *testing.T) {
 		return
 	}
 	//from->to
-	err = TransferChange(ctx, 100, user.TID, BalanceAreaFunds, BalanceAreaSpot, "test", decimal.NewFromFloat(100))
+	err = TransferBalance(ctx, 100, user.TID, BalanceAreaFunds, BalanceAreaSpot, "test", decimal.NewFromFloat(100))
 	if err != nil {
 		t.Error(err)
 		return
 	}
 	//transfer error
-	err = TransferChange(ctx, 100, user.TID, BalanceAreaFunds, BalanceAreaSpot, "test", decimal.NewFromFloat(100))
+	err = TransferBalance(ctx, 100, user.TID, BalanceAreaFunds, BalanceAreaSpot, "test", decimal.NewFromFloat(100))
 	if !IsErrBalanceNotEnought(err) {
 		t.Error(err)
 		return
 	}
 	//to->from
-	err = TransferChange(ctx, 100, user.TID, BalanceAreaFunds, BalanceAreaSpot, "test", decimal.NewFromFloat(-100))
+	err = TransferBalance(ctx, 100, user.TID, BalanceAreaFunds, BalanceAreaSpot, "test", decimal.NewFromFloat(-100))
 	if err != nil {
 		t.Error(err)
 		return
 	}
 	//transfer error
-	err = TransferChange(ctx, 100, user.TID, BalanceAreaFunds, BalanceAreaSpot, "test", decimal.NewFromFloat(-100))
+	err = TransferBalance(ctx, 100, user.TID, BalanceAreaFunds, BalanceAreaSpot, "test", decimal.NewFromFloat(-100))
 	if !IsErrBalanceNotEnought(err) {
 		t.Error(err)
 		return
@@ -171,7 +171,7 @@ func TestTransferChange(t *testing.T) {
 	pgx.MockerStart()
 	defer pgx.MockerStop()
 	pgx.MockerSetCall("Pool.Begin", 1, "Tx.Exec", 1, 2).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
-		err = TransferChange(ctx, 100, user.TID, BalanceAreaFunds, BalanceAreaSpot, "test", decimal.NewFromFloat(100))
+		err = TransferBalance(ctx, 100, user.TID, BalanceAreaFunds, BalanceAreaSpot, "test", decimal.NewFromFloat(100))
 		return
 	})
 }

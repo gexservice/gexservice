@@ -170,7 +170,7 @@ func TransferBalanceH(s *web.Session) web.Result {
 		return util.ReturnCodeLocalErr(s, define.ArgsInvalid, "arg-err", err)
 	}
 	userID := s.Int64("user_id")
-	err = gexdb.TransferChange(s.R.Context(), userID, userID, from, to, asset, value)
+	err = gexdb.TransferBalance(s.R.Context(), userID, userID, from, to, asset, value)
 	if err != nil {
 		xlog.Errorf("ChangeBalanceH change balance by %v,%v,%v,%v fail with %v", from, to, asset, value, err)
 		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
