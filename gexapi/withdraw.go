@@ -19,11 +19,14 @@ import (
  * @apiGroup Withdraw
  *
  * @apiUse WithdrawUpdate
- * @apiParam  {String} trade_pass the trade password
+ * @apiParam (Withdraw) {String} Withdraw.trade_pass the trade password
  *
  * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>
  * @apiSuccess (Withdraw) {Object} withdraw the withdraw info
  * @apiUse WithdrawObject
+ *
+ * @apiParamExample  {Query} Create Withdraw:
+ * method=tron&asset=USDT&quantity=0.001&receiver=test&trade_pass=123
  *
  * @apiSuccessExample {type} Success-Response:
  * {
@@ -228,6 +231,9 @@ func SearchWithdrawH(s *web.Session) web.Result {
  * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>
  * @apiSuccess (Withdraw) {Object} goldbar the withdraw info
  * @apiUse WithdrawObject
+ *
+ * @apiParamExample  {Query} Create Golbar:
+ * pickup_amount=1&pickup_time=1667896705684&trade_pass=123&pickup_phone=phone&pickup_address=addr
  *
  * @apiSuccessExample {type} Success-Response:
  * {
