@@ -121,7 +121,10 @@ func main() {
 	gexdb.ApplyWithdraw = gexpay.ApplyWithdraw
 
 	//base handler
-	web.Shared.Filter("^.*$", filter.NewAllCORS())
+	cors := filter.NewAllCORS()
+	cors.Methods = append(cors.Methods, "OPTIONS")
+	cors.Headers = append(cors.Headers, "x-access-token")
+	web.Shared.Filter("^.*$", cors)
 	web.Shared.FilterFunc("^/(index.html)?(\\?.*)?$", filter.NoCacheF)
 	web.Shared.FilterFunc("^/(usr|pub)/.*$", filter.NoCacheF)
 	web.Shared.StartMonitor()
