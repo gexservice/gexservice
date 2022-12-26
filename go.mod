@@ -7,7 +7,7 @@ require (
 	github.com/centny/orderbook v0.2.6-0.20221105030542-d65960ed84c0
 	github.com/codingeasygo/crud v0.0.0-20221126080044-1f5ed3a45248
 	github.com/codingeasygo/util v0.0.0-20221127032202-62328ed58958
-	github.com/codingeasygo/web v0.0.0-20221103094050-e9f39f8e9983
+	github.com/codingeasygo/web v0.0.0-20221226083409-ecb061bca81e
 	github.com/dchest/captcha v1.0.0
 	github.com/gomodule/redigo v1.8.9
 	github.com/jackc/pgx/v4 v4.16.1

@@ -11,8 +11,8 @@ github.com/codingeasygo/crud v0.0.0-20221126080044-1f5ed3a45248 h1:C0nxcTyTXgWLf
 github.com/codingeasygo/crud v0.0.0-20221126080044-1f5ed3a45248/go.mod h1:qi2dKB0sI6Prbeg2OaQHkz5IbtNDFXhcfTTS0wc+FIY=
 github.com/codingeasygo/util v0.0.0-20221127032202-62328ed58958 h1:FoV7/mcrg36LDUpCbuj/VbEaPCvepWrCe0IjL0xSobU=
 github.com/codingeasygo/util v0.0.0-20221127032202-62328ed58958/go.mod h1:CE705pc3Xn2F3nqMKhvfaigeXeDudpdteTzbf+2jwig=
-github.com/codingeasygo/web v0.0.0-20221103094050-e9f39f8e9983 h1:wm/XAOrn4AplQqXsCCAqPOQQu6M/5jmEazDHAyDAH3Y=
-github.com/codingeasygo/web v0.0.0-20221103094050-e9f39f8e9983/go.mod h1:2g18e/pfOaPeeUzDBcZxh4kxdTS+pQMSmBZGYfwpFOc=
+github.com/codingeasygo/web v0.0.0-20221226083409-ecb061bca81e h1:IcL9PW5yTcQ+XfkmpEZHIekrdf7U1mPzsDeJkqIhR+8=
+github.com/codingeasygo/web v0.0.0-20221226083409-ecb061bca81e/go.mod h1:rMVR6+LxR6t30VO959xYdSkMazkwiJW3vV1taBMFktM=
 github.com/coreos/go-systemd v0.0.0-20190321100706-95778dfbb74e/go.mod h1:F5haX7vjVVG0kc13fIWeqUViNPyEJxv/OmvnBo0Yme4=
 github.com/coreos/go-systemd v0.0.0-20190719114852-fd7a80b32e1f/go.mod h1:F5haX7vjVVG0kc13fIWeqUViNPyEJxv/OmvnBo0Yme4=
 github.com/creack/pty v1.1.7/go.mod h1:lj5s0c3V2DBrqTV7llrYr5NG6My20zk30Fl46Y7DoTY=
