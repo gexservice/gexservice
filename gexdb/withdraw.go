@@ -75,7 +75,7 @@ func CreateWithdraw(ctx context.Context, withdraw *Withdraw) (err error) {
 	return
 }
 
-func CancelWithdraw(ctx context.Context, userID int64, orderID string) (withdraw *Withdraw, err error) {
+func CancelWithdraw(ctx context.Context, userID int64, orderID, reason string) (withdraw *Withdraw, err error) {
 	tx, err := Pool().Begin(ctx)
 	if err != nil {
 		return
@@ -116,7 +116,8 @@ func CancelWithdraw(ctx context.Context, userID int64, orderID string) (withdraw
 	if err != nil {
 		return
 	}
-	err = withdraw.UpdateFilter(tx, ctx, "status")
+	withdraw.Result["reason"] = reason
+	err = withdraw.UpdateFilter(tx, ctx, "result,status")
 	return
 }
 

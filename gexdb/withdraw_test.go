@@ -55,7 +55,7 @@ func TestWithdraw(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	withdraw, err = CancelWithdraw(ctx, user.TID, withdraw.OrderID)
+	withdraw, err = CancelWithdraw(ctx, user.TID, withdraw.OrderID, "test")
 	if err != nil || withdraw.Status != WithdrawStatusCanceled {
 		t.Error(err)
 		return
@@ -154,12 +154,12 @@ func TestWithdraw(t *testing.T) {
 	}
 	//
 	//test error
-	_, err = CancelWithdraw(ctx, 11, withdraw.OrderID)
+	_, err = CancelWithdraw(ctx, 11, withdraw.OrderID, "test")
 	if err == nil {
 		t.Error(err)
 		return
 	}
-	_, err = CancelWithdraw(ctx, user.TID, withdraw.OrderID)
+	_, err = CancelWithdraw(ctx, user.TID, withdraw.OrderID, "test")
 	if err == nil {
 		t.Error(err)
 		return
@@ -197,7 +197,7 @@ func TestWithdraw(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	_, err = CancelWithdraw(ctx, user.TID, withdraw4.OrderID)
+	_, err = CancelWithdraw(ctx, user.TID, withdraw4.OrderID, "test")
 	if err == nil {
 		t.Error(err)
 		return
@@ -216,11 +216,11 @@ func TestWithdraw(t *testing.T) {
 		return
 	})
 	pgx.MockerSetCall("Pool.Begin", 1, "Rows.Scan", 1).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
-		_, err = CancelWithdraw(ctx, user.TID, withdraw2.OrderID)
+		_, err = CancelWithdraw(ctx, user.TID, withdraw2.OrderID, "test")
 		return
 	})
 	pgx.MockerSetCall("Rows.Scan", 2, "Tx.Exec", 1).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
-		_, err = CancelWithdraw(ctx, user.TID, withdraw2.OrderID)
+		_, err = CancelWithdraw(ctx, user.TID, withdraw2.OrderID, "test")
 		return
 	})
 	pgx.MockerSetCall("Pool.Begin", 1, "Rows.Scan", 1, 2, 3, "Tx.Exec", 1, 2, 3).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
