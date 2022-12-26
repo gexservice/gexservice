@@ -408,17 +408,17 @@ func TestGoldbar(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	_, err = CancelGoldbar(ctx, 1, goldbar.OrderID)
+	_, err = CancelGoldbar(ctx, 1, goldbar.OrderID, "test")
 	if err != define.ErrNotAccess {
 		t.Error(err)
 		return
 	}
-	goldbar, err = CancelGoldbar(ctx, user.TID, goldbar.OrderID)
+	goldbar, err = CancelGoldbar(ctx, user.TID, goldbar.OrderID, "test")
 	if err != nil || goldbar.Status != WithdrawStatusCanceled {
 		t.Error(err)
 		return
 	}
-	_, err = CancelGoldbar(ctx, user.TID, goldbar.OrderID)
+	_, err = CancelGoldbar(ctx, user.TID, goldbar.OrderID, "test")
 	if err == nil {
 		t.Error(err)
 		return
@@ -466,7 +466,7 @@ func TestGoldbar(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	_, err = CancelGoldbar(ctx, user.TID, goldbar4.OrderID)
+	_, err = CancelGoldbar(ctx, user.TID, goldbar4.OrderID, "test")
 	if err == nil {
 		t.Error(err)
 		return
@@ -487,7 +487,7 @@ func TestGoldbar(t *testing.T) {
 		return
 	})
 	pgx.MockerSetCall("Pool.Begin", 1, "Rows.Scan", 1, 2).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
-		_, err = CancelGoldbar(ctx, user.TID, goldbar.OrderID)
+		_, err = CancelGoldbar(ctx, user.TID, goldbar.OrderID, "test")
 		return
 	})
 	pgx.MockerSetCall("Pool.Begin", 1, "Rows.Scan", 1, 2, 3, "Tx.Exec", 1, 2, 3).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {

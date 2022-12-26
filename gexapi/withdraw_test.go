@@ -57,7 +57,7 @@ func TestGoldbar(t *testing.T) {
 	ts.Should(t, "code", define.Success).GetMap("/pub/login?username=%v&password=%v", "abc0", "123")
 	//
 	ts.Should(t, "code", define.ArgsInvalid).PostJSONMap(xmap.M{}, "/usr/createGoldbar")
-	createGoldbar, _ := ts.Should(t, "code", define.Success).GetMap("/usr/createGoldbar?pickup_amount=%v&pickup_time=%v&trade_pass=123&pickup_phone=phone&pickup_address=addr", "1", xtime.Now())
+	createGoldbar, _ := ts.Should(t, "code", define.Success).GetMap("/usr/createGoldbar?pickup_amount=%v&pickup_time=%v&trade_pass=123&pickup_name=name&pickup_phone=phone&pickup_address=addr", "1", xtime.Now())
 	fmt.Printf("createGoldbar--->%v\n", converter.JSON(createGoldbar))
 	//
 	ts.Should(t, "code", define.ArgsInvalid).GetMap("/usr/searchGoldbar?status=%v", "xx")
@@ -69,7 +69,7 @@ func TestGoldbar(t *testing.T) {
 	fmt.Printf("cancelGoldbar--->%v\n", converter.JSON(cancelGoldbar))
 	//
 	ts.Should(t, "code", define.ArgsInvalid).GetMap("/usr/confirmGoldbar?order_id=%v", "")
-	createGoldbar, _ = ts.Should(t, "code", define.Success).GetMap("/usr/createGoldbar?pickup_amount=%v&pickup_time=%v&trade_pass=123&pickup_phone=phone&pickup_address=addr", "1", xtime.Now())
+	createGoldbar, _ = ts.Should(t, "code", define.Success).GetMap("/usr/createGoldbar?pickup_amount=%v&pickup_time=%v&trade_pass=123&pickup_name=name&pickup_phone=phone&pickup_address=addr", "1", xtime.Now())
 	ts.Should(t, "code", define.NotAccess).GetMap("/usr/confirmGoldbar?order_id=%v", createGoldbar.StrDef("", "/goldbar/order_id"))
 	ts.Should(t, "code", define.NotAccess).PostJSONMap(xmap.M{
 		"code":     createGoldbar.StrDef("", "/goldbar/receiver"),
@@ -97,8 +97,8 @@ func TestGoldbar(t *testing.T) {
 
 	ts.Should(t, "code", define.Success).GetMap("/pub/login?username=%v&password=%v", "abc0", "123")
 	pgx.MockerClear()
-	pgx.MockerSetCall("Rows.Scan", 1).Should(t, "code", gexdb.CodeTradePasswordInvalid).GetMap("/usr/createGoldbar?pickup_amount=%v&pickup_time=%v&trade_pass=123&pickup_phone=phone&pickup_address=addr", "1", xtime.Now())
-	pgx.MockerSetCall("Rows.Scan", 2).Should(t, "code", define.ServerError).GetMap("/usr/createGoldbar?pickup_amount=%v&pickup_time=%v&trade_pass=123&pickup_phone=phone&pickup_address=addr", "1", xtime.Now())
+	pgx.MockerSetCall("Rows.Scan", 1).Should(t, "code", gexdb.CodeTradePasswordInvalid).GetMap("/usr/createGoldbar?pickup_amount=%v&pickup_time=%v&trade_pass=123&pickup_name=name&pickup_phone=phone&pickup_address=addr", "1", xtime.Now())
+	pgx.MockerSetCall("Rows.Scan", 2).Should(t, "code", define.ServerError).GetMap("/usr/createGoldbar?pickup_amount=%v&pickup_time=%v&trade_pass=123&pickup_name=name&pickup_phone=phone&pickup_address=addr", "1", xtime.Now())
 }
 
 func TestLoadTopupAddress(t *testing.T) {

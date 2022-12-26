@@ -295,6 +295,7 @@ func CreateGoldbarH(s *web.Session) web.Result {
  * @apiGroup Withdraw
  *
  * @apiParam  {String} order_id the withdraw order id
+ * @apiParam  {String} [reason] the reason to cancel
  *
  * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>
  *
@@ -304,15 +305,16 @@ func CreateGoldbarH(s *web.Session) web.Result {
  * }
  */
 func CancelGoldbarH(s *web.Session) web.Result {
-	var orderID string
+	var orderID, reason string
 	err := s.ValidFormat(`
 		order_id,r|s,l:0;
-	`, &orderID)
+		reason,o|s,l:0;
+	`, &orderID, &reason)
 	if err != nil {
 		return util.ReturnCodeLocalErr(s, define.ArgsInvalid, "arg-err", err)
 	}
 	userID := s.Int64("user_id")
-	withdraw, err := gexdb.CancelGoldbar(s.R.Context(), userID, orderID)
+	withdraw, err := gexdb.CancelGoldbar(s.R.Context(), userID, orderID, reason)
 	if err != nil {
 		xlog.Errorf("CreateGoldbarH create withdraw by %v,%v fail with %v", userID, orderID, err)
 		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)

@@ -345,7 +345,7 @@ func CreateGoldbar(ctx context.Context, userID int64, pickupAmount, pickupTime i
 	return
 }
 
-func CancelGoldbar(ctx context.Context, userID int64, orderID string) (goldbar *Withdraw, err error) {
+func CancelGoldbar(ctx context.Context, userID int64, orderID, reason string) (goldbar *Withdraw, err error) {
 	tx, err := Pool().Begin(ctx)
 	if err != nil {
 		return
@@ -386,7 +386,8 @@ func CancelGoldbar(ctx context.Context, userID int64, orderID string) (goldbar *
 	if err != nil {
 		return
 	}
-	err = goldbar.UpdateFilter(tx, ctx, "status")
+	goldbar.Result["reason"] = reason
+	err = goldbar.UpdateFilter(tx, ctx, "result,status")
 	return
 }
 
