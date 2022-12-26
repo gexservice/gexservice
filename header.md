@@ -87,15 +87,15 @@
 * 后台发布通知使用<a href="#api-Message-AddMessage">添加通知</a>
 
 ## 关于黄金提取
-* 提取申请：使用<a href="#api-Withdraw-CreateGoldbar">创建黄金订单接口</a>申请，获得提取码，申请后可以使用<a href="#api-Withdraw-CancelGoldbar">取消黄金订单接口</a>取消
-* 列出申请：使用<a href="#api-Withdraw-SearchGoldbar">列出黄金订单接口</a>列出，使用<a href="#api-Withdraw-ConfirmGoldbar">审核黄金订单接口</a>审核，使用<a href="#api-Withdraw-DoneGoldbar">完成黄金订单接口</a>完成
-* 提取管理：使用<a href="#api-Withdraw-SearchGoldbar">列出订单接口</a>，状态为`OrderStatusPending`
+* 提取申请：使用<a href="#api-Goldbar-CreateGoldbar">创建黄金订单接口</a>申请，获得提取码，申请后可以使用<a href="#api-Goldbar-CancelGoldbar">取消黄金订单接口</a>取消
+* 列出申请：使用<a href="#api-Goldbar-SearchGoldbar">列出黄金订单接口</a>列出，使用<a href="#api-Goldbar-ConfirmGoldbar">审核黄金订单接口</a>审核, <a href="#api-Goldbar-CancelGoldbar">拒绝黄金订单接口</a>拒绝，使用<a href="#api-Goldbar-DoneGoldbar">完成黄金订单接口</a>完成
+* 提取管理：使用<a href="#api-Goldbar-SearchGoldbar">列出订单接口</a>，状态为`OrderStatusPending`
 * 提取配置：使用<a href="#api-Conf-ConfGoldbar">黄金提取配置接口</a>
 * 更新配置调用<a href="#api-Sys-UpdateSysConfig">更新系统配置接口</a>更新配置
 
 ## 关于充值提币
 * 提币申请：使用<a href="#api-Withdraw-CreateWithdraw">创建提币订单接口</a>申请，申请后可以使用<a href="#api-Withdraw-CancelWithdraw">取消提现订单接口</a>取消
-* 列出申请：使用<a href="#api-Withdraw-SearchWithdraw">列出提币充值订单接口</a>，使用<a href="#api-Withdraw-ConfirmWithdraw">审核黄金订单接口</a>审核
+* 列出申请：使用<a href="#api-Withdraw-SearchWithdraw">列出提币充值订单接口</a>，使用<a href="#api-Withdraw-ConfirmWithdraw">审核提现订单接口</a>审核，使用<a href="#api-Withdraw-CancelWithdraw">拒绝提现订单接口</a>拒绝
 * 提币管理：使用<a href="#api-Withdraw-SearchWithdraw">列出提币订单接口</a>，状态为`OrderStatusPending`
 * 自动审核配置：使用<a href="#api-Sys-LoadSysConfig">获取系统配置接口</a>列出自动审核配置，配置key为`ConfigWithdrawReview = "withdraw_review"`，调用<a href="#api-Sys-UpdateSysConfig">更新系统配置接口</a>更新配置，配置格式如下，以币种为key, *表示所有币中
 ```

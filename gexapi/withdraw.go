@@ -222,7 +222,7 @@ func SearchWithdrawH(s *web.Session) web.Result {
  *
  * @api {GET} /usr/createGoldbar Create Goldbar
  * @apiName CreateGoldbar
- * @apiGroup Withdraw
+ * @apiGroup Goldbar
  *
  * @apiParam  {Int} pickup_amount the amount to pickup
  * @apiParam  {Int} pickup_time the time to pickup
@@ -294,7 +294,7 @@ func CreateGoldbarH(s *web.Session) web.Result {
  *
  * @api {GET} /usr/cancelGoldbar Cancel Goldbar
  * @apiName CancelGoldbar
- * @apiGroup Withdraw
+ * @apiGroup Goldbar
  *
  * @apiParam  {String} order_id the withdraw order id
  * @apiParam  {String} [reason] the reason to cancel
@@ -417,7 +417,7 @@ func DoneGoldbarH(s *web.Session) web.Result {
  *
  * @api {GET} /usr/searchGoldbar Search Goldbar
  * @apiName SearchGoldbar
- * @apiGroup Withdraw
+ * @apiGroup Goldbar
  *
  *
  * @apiUse WithdrawUnifySearcher
