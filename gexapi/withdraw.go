@@ -99,10 +99,13 @@ func CancelWithdrawH(s *web.Session) web.Result {
 	if err != nil {
 		return util.ReturnCodeLocalErr(s, define.ArgsInvalid, "arg-err", err)
 	}
-	userID := s.Int64("user_id")
-	withdraw, err := gexdb.CancelWithdraw(s.R.Context(), userID, orderID, reason)
+	targetUserID := s.Int64("user_id")
+	if AdminAccess(s) {
+		targetUserID = 0
+	}
+	withdraw, err := gexdb.CancelWithdraw(s.R.Context(), targetUserID, orderID, reason)
 	if err != nil {
-		xlog.Errorf("CreateWithdrawH create withdraw by %v,%v fail with %v", userID, orderID, err)
+		xlog.Errorf("CreateWithdrawH create withdraw by %v,%v fail with %v", targetUserID, orderID, err)
 		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
 	}
 	return s.SendJSON(xmap.M{
@@ -315,10 +318,13 @@ func CancelGoldbarH(s *web.Session) web.Result {
 	if err != nil {
 		return util.ReturnCodeLocalErr(s, define.ArgsInvalid, "arg-err", err)
 	}
-	userID := s.Int64("user_id")
-	withdraw, err := gexdb.CancelGoldbar(s.R.Context(), userID, orderID, reason)
+	targetUserID := s.Int64("user_id")
+	if AdminAccess(s) {
+		targetUserID = 0
+	}
+	withdraw, err := gexdb.CancelGoldbar(s.R.Context(), targetUserID, orderID, reason)
 	if err != nil {
-		xlog.Errorf("CreateGoldbarH create withdraw by %v,%v fail with %v", userID, orderID, err)
+		xlog.Errorf("CreateGoldbarH create withdraw by %v,%v fail with %v", targetUserID, orderID, err)
 		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
 	}
 	return s.SendJSON(xmap.M{
