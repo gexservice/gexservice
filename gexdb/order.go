@@ -116,6 +116,7 @@ func CountPendingOrderCall(caller crud.Queryer, ctx context.Context, userID int6
  * @apiParam  {String} [symbol] the symbol filter
  * @apiParam  {Number} [start_time] the time filter
  * @apiParam  {Number} [end_time] the time filter
+ * @apiParam  {Number} [trigger_type] the trigger_type filter, multi with comma, all status supported is <a href="#metadata-Order">OrderTriggerTypeAll</a>
  * @apiParam  {Number} [status] the status filter, multi with comma, all status supported is <a href="#metadata-Order">OrderStatusAll</a>
  * @apiParam  {String} [key] search key
  * @apiParam  {Number} [skip] page skip
@@ -124,16 +125,17 @@ func CountPendingOrderCall(caller crud.Queryer, ctx context.Context, userID int6
 type OrderUnifySearcher struct {
 	Model Order `json:"model"`
 	Where struct {
-		UserID    xsql.Int64Array  `json:"user_id" cmp:"user_id=any($%v)" valid:"user_id,o|i,r:0;"`
-		Creator   xsql.Int64Array  `json:"creator" cmp:"creator=any($%v)" valid:"creator,o|i,r:0;"`
-		Area      OrderAreaArray   `json:"area" cmp:"area=any($%v)" valid:"area,o|i,e:0;"`
-		Symbol    string           `json:"symbol" cmp:"symbol=$%v"  valid:"symbol,o|s,l:0;"`
-		Side      OrderSideArray   `json:"side" cmp:"side=any($%v)" valid:"side,o|s,e:0;"`
-		Type      OrderTypeArray   `json:"type" cmp:"type=any($%v)" valid:"type,o|i,e:;"`
-		StartTime xsql.Time        `json:"start_time" cmp:"update_time>=$%v" valid:"start_time,o|i,r:-1;"`
-		EndTime   xsql.Time        `json:"end_time" cmp:"update_time<$%v" valid:"end_time,o|i,r:-1;"`
-		Status    OrderStatusArray `json:"status" cmp:"status=any($%v)" valid:"status,o|i,e:;"`
-		Key       string           `json:"key" cmp:"(tid::text ilike $%v or order_id ilike $%v)" valid:"key,o|s,l:0;"`
+		UserID      xsql.Int64Array       `json:"user_id" cmp:"user_id=any($%v)" valid:"user_id,o|i,r:0;"`
+		Creator     xsql.Int64Array       `json:"creator" cmp:"creator=any($%v)" valid:"creator,o|i,r:0;"`
+		Area        OrderAreaArray        `json:"area" cmp:"area=any($%v)" valid:"area,o|i,e:0;"`
+		Symbol      string                `json:"symbol" cmp:"symbol=$%v"  valid:"symbol,o|s,l:0;"`
+		Side        OrderSideArray        `json:"side" cmp:"side=any($%v)" valid:"side,o|s,e:0;"`
+		Type        OrderTypeArray        `json:"type" cmp:"type=any($%v)" valid:"type,o|i,e:;"`
+		StartTime   xsql.Time             `json:"start_time" cmp:"update_time>=$%v" valid:"start_time,o|i,r:-1;"`
+		EndTime     xsql.Time             `json:"end_time" cmp:"update_time<$%v" valid:"end_time,o|i,r:-1;"`
+		TriggerType OrderTriggerTypeArray `json:"trigger_type" cmp:"trigger_type=any($%v)" valid:"trigger_type,o|i,e:;"`
+		Status      OrderStatusArray      `json:"status" cmp:"status=any($%v)" valid:"status,o|i,e:;"`
+		Key         string                `json:"key" cmp:"(tid::text ilike $%v or order_id ilike $%v)" valid:"key,o|s,l:0;"`
 	} `json:"where" join:"and" valid:"inline"`
 	Page struct {
 		Order string `json:"order" default:"order by update_time desc" valid:"order,o|s,l:0;"`

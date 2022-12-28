@@ -113,6 +113,14 @@ func TestTriggerOrder(t *testing.T) {
 		t.Error(err)
 		return
 	}
+	searcher := &OrderUnifySearcher{}
+	searcher.Where.Area = OrderAreaAll
+	searcher.Where.TriggerType = OrderTriggerTypeArray{OrderTriggerTypeStopProfit}
+	err = searcher.Apply(ctx)
+	if err != nil || searcher.Count.Total != 1 || len(searcher.Query.Orders) != 1 {
+		t.Errorf("%v,%v", err, searcher.Count.Total)
+		return
+	}
 	orders, err := ListOrderForTrigger(ctx, symbol, decimal.Zero, decimal.NewFromFloat(100))
 	if err != nil || len(orders) != 1 {
 		t.Errorf("%v,%v", err, converter.JSON(orders))
