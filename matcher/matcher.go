@@ -3,6 +3,7 @@ package matcher
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/centny/orderbook"
 	"github.com/codingeasygo/util/xprop"
@@ -232,6 +233,15 @@ func IsErrCode(err error) (code int, ok bool) {
 		code, ok = gexdb.CodeOrderNotCancelable, true
 	} else if IsErrOrderPending(err) {
 		code, ok = gexdb.CodeOrderPending, true
+	}
+	return
+}
+
+func SymbolArea(symbol string) (area gexdb.BalanceArea) {
+	if strings.HasPrefix(symbol, "spot.") {
+		area = gexdb.BalanceAreaSpot
+	} else if strings.HasPrefix(symbol, "futures.") {
+		area = gexdb.BalanceAreaFutures
 	}
 	return
 }

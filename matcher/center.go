@@ -664,6 +664,7 @@ func (m *MatcherCenter) ProcessOrder(ctx context.Context, args *gexdb.Order) (or
 		order = &gexdb.Order{
 			UserID:       args.UserID,
 			Creator:      args.Creator,
+			Area:         gexdb.OrderArea(SymbolArea(args.Symbol)),
 			Type:         gexdb.OrderTypeTrigger,
 			OrderID:      gexdb.NewOrderID(),
 			Symbol:       args.Symbol,
