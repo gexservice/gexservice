@@ -599,7 +599,7 @@ func (m *MatcherCenter) procTriggerSybmolOrder(ctx context.Context, symbol strin
 				xlog.Warnf("MatcherCenter apply %v trigger order fail with %v, args is %v", symbol, xerr, converter.JSON(args))
 			}
 		}
-		updated, xerr := gexdb.CancelTriggerOrder(ctx, args.UserID, args.Symbol, 0)
+		updated, xerr := gexdb.CancelTriggerOrder(ctx, args.UserID, args.Symbol, gexdb.OrderTriggerTypeArray{gexdb.OrderTriggerTypeStopLoss, gexdb.OrderTriggerTypeStopProfit}, 0)
 		if xerr != nil {
 			xlog.Errorf("MatcherCenter cancel trigger order by %v,%v fail with %v", args.UserID, args.Symbol, err)
 		}

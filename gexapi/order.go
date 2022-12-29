@@ -189,7 +189,7 @@ func CancelOrderH(s *web.Session) web.Result {
 		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
 	}
 	if order.Status == gexdb.OrderStatusWaiting {
-		_, err = gexdb.CancelTriggerOrder(s.R.Context(), userID, order.Symbol, order.TID)
+		_, err = gexdb.CancelTriggerOrder(s.R.Context(), userID, order.Symbol, nil, order.TID)
 		if err == nil {
 			order.Status = gexdb.OrderStatusCanceled
 		}
@@ -250,7 +250,7 @@ func CancelAllOrderH(s *web.Session) web.Result {
 	}
 	for _, order := range orders {
 		if order.Status == gexdb.OrderStatusWaiting {
-			_, err = gexdb.CancelTriggerOrder(s.R.Context(), userID, order.Symbol, order.TID)
+			_, err = gexdb.CancelTriggerOrder(s.R.Context(), userID, order.Symbol, nil, order.TID)
 		} else {
 			_, err = matcher.ProcessCancel(s.R.Context(), userID, order.Symbol, order.OrderID)
 		}

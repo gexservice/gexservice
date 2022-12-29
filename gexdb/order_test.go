@@ -130,7 +130,7 @@ func TestTriggerOrder(t *testing.T) {
 		t.Error("data")
 		return
 	}
-	updated, err := CancelTriggerOrder(ctx, user.TID, symbol, orders[0].TID)
+	updated, err := CancelTriggerOrder(ctx, user.TID, symbol, nil, orders[0].TID)
 	if err != nil || updated < 1 {
 		t.Error(err)
 		return
@@ -162,7 +162,7 @@ func TestTriggerOrder(t *testing.T) {
 		t.Error("data")
 		return
 	}
-	updated, err = CancelTriggerOrder(ctx, user.TID, symbol, orders[0].TID)
+	updated, err = CancelTriggerOrder(ctx, user.TID, symbol, nil, orders[0].TID)
 	if err != nil || updated < 1 {
 		t.Error(err)
 		return
@@ -194,7 +194,7 @@ func TestTriggerOrder(t *testing.T) {
 		t.Error("data")
 		return
 	}
-	updated, err = CancelTriggerOrder(ctx, user.TID, symbol, orders[0].TID)
+	updated, err = CancelTriggerOrder(ctx, user.TID, symbol, nil, orders[0].TID)
 	if err != nil || updated < 1 {
 		t.Error(err)
 		return
@@ -226,7 +226,7 @@ func TestTriggerOrder(t *testing.T) {
 		t.Error("data")
 		return
 	}
-	updated, err = CancelTriggerOrder(ctx, user.TID, symbol, orders[0].TID)
+	updated, err = CancelTriggerOrder(ctx, user.TID, symbol, nil, orders[0].TID)
 	if err != nil || updated < 1 {
 		t.Error(err)
 		return

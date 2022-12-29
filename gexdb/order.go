@@ -51,8 +51,10 @@ func ClearCanceledOrder(ctx context.Context, userID int64, symbol string, before
 	return
 }
 
-func CancelTriggerOrder(ctx context.Context, userID int64, symbol string, orderID int64) (updated int64, err error) {
-	updated, err = crud.UpdateWheref(Pool, ctx, &Order{Status: OrderStatusCanceled}, "status", "user_id=$%v,symbol=$%v,tid=$%v,status=$%v", userID, symbol, orderID, OrderStatusWaiting)
+func CancelTriggerOrder(ctx context.Context, userID int64, symbol string, triggerType OrderTriggerTypeArray, orderID int64) (updated int64, err error) {
+	updated, err = crud.UpdateWheref(Pool, ctx, &Order{Status: OrderStatusCanceled}, "status",
+		"user_id=$%v,type=$%v,symbol=$%v,trigger_type=any($%v),tid=$%v,status=$%v", userID, OrderTypeTrigger, symbol, triggerType, orderID, OrderStatusWaiting,
+	)
 	return
 }
 
