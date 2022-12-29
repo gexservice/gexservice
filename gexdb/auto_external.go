@@ -11,6 +11,7 @@ import (
 )
 
 const (
+	ConfigBalanceImage   = "balance_images"
 	ConfigWelcomeMessage = "welcome_message"
 	ConfigWithdrawMax    = "withdraw_max"
 	ConfigWithdrawReview = "withdraw_review"
@@ -24,7 +25,7 @@ const (
 	ConfigCoinRate       = "coin_rate"
 )
 
-var ConfigAll = []string{ConfigWelcomeMessage, ConfigWithdrawMax, ConfigGoldbarAddress, ConfigGoldbarTime, ConfigGoldbarExplain, ConfigGoldbarRate, ConfigGoldbarFee, ConfigGoldbarTips, ConfigTradeRule, ConfigCoinRate}
+var ConfigAll = []string{ConfigBalanceImage, ConfigWelcomeMessage, ConfigWithdrawMax, ConfigGoldbarAddress, ConfigGoldbarTime, ConfigGoldbarExplain, ConfigGoldbarRate, ConfigGoldbarFee, ConfigGoldbarTips, ConfigTradeRule, ConfigCoinRate}
 
 const (
 	// BalanceAssetYWE = "YWE"

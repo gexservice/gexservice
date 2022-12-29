@@ -1,8 +1,12 @@
 package gexapi
 
 import (
-	"github.com/codingeasygo/util/xmap"
 	"github.com/codingeasygo/web"
+	"github.com/gexservice/gexservice/base/basedb"
+	"github.com/gexservice/gexservice/base/define"
+	"github.com/gexservice/gexservice/base/util"
+	"github.com/gexservice/gexservice/base/xlog"
+	"github.com/gexservice/gexservice/gexdb"
 )
 
 //IndexH is http handler
@@ -53,7 +57,11 @@ import (
  *
  */
 func IndexH(s *web.Session) web.Result {
-	return s.SendJSON(xmap.M{
-		"international_prices": InternationalPrice,
-	})
+	config, err := basedb.LoadConfigList(s.R.Context(), gexdb.ConfigBalanceImage, gexdb.ConfigWelcomeMessage)
+	if err != nil {
+		xlog.Errorf("IndexH load config fail with %v", err)
+		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
+	}
+	config["international_prices"] = InternationalPrice
+	return s.SendJSON(config)
 }
