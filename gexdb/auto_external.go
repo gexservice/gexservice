@@ -219,15 +219,16 @@ type Ticker struct {
  */
 
 type BalanceRecordItem struct {
-	TID        int64             `json:"tid"`
-	UserID     int64             `json:"user_id"`
-	Asset      string            `json:"asset"`
-	BalanceID  int64             `json:"balance_id"`
-	Type       BalanceRecordType `json:"type,omitempty"`
-	Source     *string           `json:"source,omitempty"`
-	Target     int               `json:"target,omitempty"`
-	Changed    decimal.Decimal   `json:"changed,omitempty"`
-	UpdateTime xsql.Time         `json:"update_time,omitempty"`
+	TID        int64               `json:"tid"`
+	UserID     int64               `json:"user_id"`
+	Asset      string              `json:"asset"`
+	BalanceID  int64               `json:"balance_id"`
+	Type       BalanceRecordType   `json:"type,omitempty"`
+	Source     *string             `json:"source,omitempty"`
+	Target     int                 `json:"target,omitempty"`
+	Changed    decimal.Decimal     `json:"changed,omitempty"`
+	UpdateTime xsql.Time           `json:"update_time,omitempty"`
+	Status     BalanceRecordStatus `json:"status,omitempty"`
 }
 
 /***** metadata:ExReturnCode *****/
