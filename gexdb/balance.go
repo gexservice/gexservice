@@ -279,7 +279,9 @@ func AddBalanceRecordCall(caller crud.Queryer, ctx context.Context, records ...*
 	for _, record := range records {
 		record.UpdateTime = now
 		record.CreateTime = now
-		record.Status = BalanceRecordStatusNormal
+		if record.Status == 0 {
+			record.Status = BalanceRecordStatusNormal
+		}
 		var param []string
 		_, _, param, insertArg = crud.InsertArgs(record, "^tid#all", insertArg)
 		insertVal = append(insertVal, "("+strings.Join(param, ",")+")")

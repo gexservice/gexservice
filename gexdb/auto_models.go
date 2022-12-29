@@ -111,13 +111,14 @@ type BalanceRecordStatusArray []BalanceRecordStatus
 const (
 	BalanceRecordStatusPending BalanceRecordStatus = 90  //is pending
 	BalanceRecordStatusNormal  BalanceRecordStatus = 100 //is normal
+	BalanceRecordStatusFail    BalanceRecordStatus = 110 //is fail.
 )
 
 //BalanceRecordStatusAll is the balance status
-var BalanceRecordStatusAll = BalanceRecordStatusArray{BalanceRecordStatusPending, BalanceRecordStatusNormal}
+var BalanceRecordStatusAll = BalanceRecordStatusArray{BalanceRecordStatusPending, BalanceRecordStatusNormal, BalanceRecordStatusFail}
 
 //BalanceRecordStatusShow is the balance status
-var BalanceRecordStatusShow = BalanceRecordStatusArray{BalanceRecordStatusPending, BalanceRecordStatusNormal}
+var BalanceRecordStatusShow = BalanceRecordStatusArray{BalanceRecordStatusPending, BalanceRecordStatusNormal, BalanceRecordStatusFail}
 
 /*
  * BalanceRecord  represents gex_balance_record
@@ -129,13 +130,13 @@ type BalanceRecord struct {
 	Creator     int64               `json:"creator,omitempty" valid:"creator,r|i,r:0;"`         /* the balance creator */
 	BalanceID   int64               `json:"balance_id,omitempty" valid:"balance_id,r|i,r:0;"`   /* the balance id */
 	Type        BalanceRecordType   `json:"type,omitempty" valid:"type,r|i,e:0;"`               /* the balance record type, Trade=100: is trade type, TradeFee=110:is trade fee, Profit=200:is close profit, Blowup=210:is blowup, Transfer=300:is transfer, Change=400: is manual change type, Topup=500: is topup, Withdraw=600: is withdraw, Goldbar=700:is gold bar */
-	Source      *string             `json:"source,omitempty" valid:"source,r|s,l:0;"`           /*  */
+	Source      *string             `json:"source,omitempty" valid:"source,r|s,l:0;"`           /* the balance record source */
 	Target      int                 `json:"target,omitempty" valid:"target,r|i,r:0;"`           /* the balance target type */
 	Changed     decimal.Decimal     `json:"changed,omitempty" valid:"changed,r|f,r:0;"`         /* the balance change value */
 	Transaction xsql.M              `json:"transaction,omitempty" valid:"transaction,r|s,l:0;"` /* the balance record transaction info */
 	UpdateTime  xsql.Time           `json:"update_time,omitempty" valid:"update_time,r|i,r:1;"` /* the balance last update time */
 	CreateTime  xsql.Time           `json:"create_time,omitempty" valid:"create_time,r|i,r:1;"` /* the balance create time */
-	Status      BalanceRecordStatus `json:"status,omitempty" valid:"status,r|i,e:0;"`           /* the balance status, Pending=90:is pending, Normal=100: is normal */
+	Status      BalanceRecordStatus `json:"status,omitempty" valid:"status,r|i,e:0;"`           /* the balance status, Pending=90:is pending, Normal=100: is normal, Fail=110: is fail. */
 }
 
 /***** metadata:Holding *****/

@@ -58,6 +58,24 @@ func CreateWithdraw(ctx context.Context, withdraw *Withdraw) (err error) {
 	if err != nil {
 		return
 	}
+	record := &BalanceRecord{
+		Creator:   withdraw.UserID,
+		BalanceID: balance.TID,
+		Type:      BalanceRecordTypeWithdraw,
+		Changed:   withdraw.Quantity,
+		Transaction: xsql.M{
+			"txid": withdraw.OrderID,
+		},
+		Status: BalanceRecordStatusPending,
+	}
+	err = record.Insert(tx, ctx)
+	if err != nil {
+		return
+	}
+	if withdraw.Result == nil {
+		withdraw.Result = xsql.M{}
+	}
+	withdraw.Result["record"] = record.TID
 	review, err := LoadWithdrawReviewCall(tx, ctx)
 	if err != nil {
 		return
@@ -118,6 +136,20 @@ func CancelWithdraw(ctx context.Context, userID int64, orderID, reason string) (
 	}
 	withdraw.Result["reason"] = reason
 	err = withdraw.UpdateFilter(tx, ctx, "result,status")
+	if err != nil {
+		return
+	}
+	recordID := withdraw.Result.AsMap().Int64Def(0, "/record")
+	if recordID < 1 {
+		return
+	}
+	record, err := FindBalanceRecordCall(tx, ctx, recordID, false)
+	if err != nil {
+		return
+	}
+	record.Transaction["reason"] = reason
+	record.Status = BalanceRecordStatusFail
+	err = record.UpdateFilter(tx, ctx, "transaction,status")
 	return
 }
 
@@ -180,25 +212,32 @@ func DoneWithdraw(ctx context.Context, orderID string, success bool, result xmap
 	if err != nil {
 		return
 	}
+	recordID := withdraw.Result.AsMap().Int64Def(0, "/record")
+	if recordID > 0 {
+		record, xerr := FindBalanceRecordCall(tx, ctx, recordID, false)
+		if xerr != nil {
+			err = xerr
+			return
+		}
+		for k, v := range result {
+			record.Transaction[k] = v
+		}
+		if success {
+			record.Status = BalanceRecordStatusNormal
+		} else {
+			record.Status = BalanceRecordStatusFail
+		}
+		err = record.UpdateFilter(tx, ctx, "transaction,status")
+		if err != nil {
+			return
+		}
+	}
 	messageEnv := xmap.M{
 		"_amount": withdraw.Quantity,
 		"_asset":  withdraw.Asset,
 		"_time":   time.Now().UTC().Format("2006-01-02 15:04:05(MST)"),
 	}
 	if success {
-		_, err = AddBalanceRecordCall(tx, ctx, &BalanceRecord{
-			Creator:   withdraw.UserID,
-			BalanceID: balance.TID,
-			Type:      BalanceRecordTypeWithdraw,
-			Changed:   withdraw.Quantity,
-			Transaction: xsql.M{
-				"txid":     withdraw.OrderID,
-				"withdraw": withdraw.TID,
-			},
-		})
-		if err != nil {
-			return
-		}
 		_, err = AddTemplateMessageCall(tx, ctx, MessageTypeUser, messageEnv, MessageKeyWithdrawDone, withdraw.UserID)
 	} else {
 		messageEnv["_message"] = converter.JSON(withdraw.Result)

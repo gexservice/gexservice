@@ -313,6 +313,13 @@ COMMENT ON COLUMN gex_balance_record.type IS 'the balance record type, Trade=100
 
 
 --
+-- Name: COLUMN gex_balance_record.source; Type: COMMENT; Schema: public;
+--
+
+COMMENT ON COLUMN gex_balance_record.source IS 'the balance record source';
+
+
+--
 -- Name: COLUMN gex_balance_record.target; Type: COMMENT; Schema: public;
 --
 
@@ -351,7 +358,7 @@ COMMENT ON COLUMN gex_balance_record.create_time IS 'the balance create time';
 -- Name: COLUMN gex_balance_record.status; Type: COMMENT; Schema: public;
 --
 
-COMMENT ON COLUMN gex_balance_record.status IS 'the balance status, Pending=90:is pending, Normal=100: is normal';
+COMMENT ON COLUMN gex_balance_record.status IS 'the balance status, Pending=90:is pending, Normal=100: is normal, Fail=110: is fail.';
 
 
 --

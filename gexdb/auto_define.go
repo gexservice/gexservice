@@ -41,7 +41,7 @@ package gexdb
  * @apiSuccess (BalanceRecord) {Int64} BalanceRecord.creator the balance creator
  * @apiSuccess (BalanceRecord) {Int64} BalanceRecord.balance_id the balance id
  * @apiSuccess (BalanceRecord) {BalanceRecordType} BalanceRecord.type the balance record type, all suported is <a href="#metadata-BalanceRecord">BalanceRecordTypeAll</a>
- * @apiSuccess (BalanceRecord) {StringPtr} BalanceRecord.source
+ * @apiSuccess (BalanceRecord) {StringPtr} BalanceRecord.source the balance record source
  * @apiSuccess (BalanceRecord) {Int} BalanceRecord.target the balance target type
  * @apiSuccess (BalanceRecord) {Decimal} BalanceRecord.changed the balance change value
  * @apiSuccess (BalanceRecord) {Object} BalanceRecord.transaction the balance record transaction info
