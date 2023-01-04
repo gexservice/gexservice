@@ -91,6 +91,13 @@ func (s *SpotMatcher) Bootstrap(ctx context.Context) (changed *MatcherEvent, err
 		} else {
 			order.Status = gexdb.OrderStatusCanceled
 		}
+		//touch balance
+		_, err = gexdb.TouchBalanceCall(tx, ctx, s.Area, []string{s.Base, s.Quote}, order.UserID)
+		if err != nil {
+			err = NewErrMatcher(err, "[Bootstrap] touch balance by order %v fail", converter.JSON(order))
+			break
+		}
+
 		//free balance
 		err = s.syncBalanceByOrderDone(tx, ctx, changed, order)
 		if err != nil {
