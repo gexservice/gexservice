@@ -154,7 +154,7 @@ type UserUnifySearcher struct {
 		Type   UserTypeArray   `json:"type" cmp:"type=any($%v)" valid:"type,o|i,e:;"`
 		Role   UserRoleArray   `json:"role" cmp:"role=any($%v)" valid:"role,o|i,e:;"`
 		Status UserStatusArray `json:"status" cmp:"status=any($%v)" valid:"status,o|i,e:;"`
-		Key    string          `json:"key" cmp:"(tid::text like $%v or name like $%v or phone like $%v or account like $%v)" valid:"key,o|s,l:0;"`
+		Key    string          `json:"key" cmp:"(tid::text like $%v or name like $%v or email like $%v or phone like $%v or account like $%v)" valid:"key,o|s,l:0;"`
 	} `json:"where" join:"and" valid:"inline"`
 	Page struct {
 		Order string `json:"order" default:"order by update_time desc" valid:"order,o|s,l:0;"`
