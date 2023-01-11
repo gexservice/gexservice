@@ -88,22 +88,23 @@ type BalanceRecordType int
 type BalanceRecordTypeArray []BalanceRecordType
 
 const (
-	BalanceRecordTypeTrade    BalanceRecordType = 100 //is trade type
-	BalanceRecordTypeTradeFee BalanceRecordType = 110 //is trade fee
-	BalanceRecordTypeProfit   BalanceRecordType = 200 //is close profit
-	BalanceRecordTypeBlowup   BalanceRecordType = 210 //is blowup
-	BalanceRecordTypeTransfer BalanceRecordType = 300 //is transfer
-	BalanceRecordTypeChange   BalanceRecordType = 400 //is manual change type
-	BalanceRecordTypeTopup    BalanceRecordType = 500 //is topup
-	BalanceRecordTypeWithdraw BalanceRecordType = 600 //is withdraw
-	BalanceRecordTypeGoldbar  BalanceRecordType = 700 //is gold bar
+	BalanceRecordTypeTrade         BalanceRecordType = 100 //is trade type
+	BalanceRecordTypeTradeFee      BalanceRecordType = 110 //is trade fee
+	BalanceRecordTypeProfit        BalanceRecordType = 200 //is close profit
+	BalanceRecordTypeBlowup        BalanceRecordType = 210 //is blowup
+	BalanceRecordTypeTransfer      BalanceRecordType = 300 //is transfer
+	BalanceRecordTypeTransferInner BalanceRecordType = 310 //is transfer inner
+	BalanceRecordTypeChange        BalanceRecordType = 400 //is manual change type
+	BalanceRecordTypeTopup         BalanceRecordType = 500 //is topup
+	BalanceRecordTypeWithdraw      BalanceRecordType = 600 //is withdraw
+	BalanceRecordTypeGoldbar       BalanceRecordType = 700 //is gold bar
 )
 
 //BalanceRecordTypeAll is the balance record type
-var BalanceRecordTypeAll = BalanceRecordTypeArray{BalanceRecordTypeTrade, BalanceRecordTypeTradeFee, BalanceRecordTypeProfit, BalanceRecordTypeBlowup, BalanceRecordTypeTransfer, BalanceRecordTypeChange, BalanceRecordTypeTopup, BalanceRecordTypeWithdraw, BalanceRecordTypeGoldbar}
+var BalanceRecordTypeAll = BalanceRecordTypeArray{BalanceRecordTypeTrade, BalanceRecordTypeTradeFee, BalanceRecordTypeProfit, BalanceRecordTypeBlowup, BalanceRecordTypeTransfer, BalanceRecordTypeTransferInner, BalanceRecordTypeChange, BalanceRecordTypeTopup, BalanceRecordTypeWithdraw, BalanceRecordTypeGoldbar}
 
 //BalanceRecordTypeShow is the balance record type
-var BalanceRecordTypeShow = BalanceRecordTypeArray{BalanceRecordTypeTrade, BalanceRecordTypeTradeFee, BalanceRecordTypeProfit, BalanceRecordTypeBlowup, BalanceRecordTypeTransfer, BalanceRecordTypeChange, BalanceRecordTypeTopup, BalanceRecordTypeWithdraw, BalanceRecordTypeGoldbar}
+var BalanceRecordTypeShow = BalanceRecordTypeArray{BalanceRecordTypeTrade, BalanceRecordTypeTradeFee, BalanceRecordTypeProfit, BalanceRecordTypeBlowup, BalanceRecordTypeTransfer, BalanceRecordTypeTransferInner, BalanceRecordTypeChange, BalanceRecordTypeTopup, BalanceRecordTypeWithdraw, BalanceRecordTypeGoldbar}
 
 type BalanceRecordStatus int
 type BalanceRecordStatusArray []BalanceRecordStatus
@@ -129,7 +130,7 @@ type BalanceRecord struct {
 	TID         int64               `json:"tid,omitempty" valid:"tid,r|i,r:0;"`                 /* the primary key */
 	Creator     int64               `json:"creator,omitempty" valid:"creator,r|i,r:0;"`         /* the balance creator */
 	BalanceID   int64               `json:"balance_id,omitempty" valid:"balance_id,r|i,r:0;"`   /* the balance id */
-	Type        BalanceRecordType   `json:"type,omitempty" valid:"type,r|i,e:0;"`               /* the balance record type, Trade=100: is trade type, TradeFee=110:is trade fee, Profit=200:is close profit, Blowup=210:is blowup, Transfer=300:is transfer, Change=400: is manual change type, Topup=500: is topup, Withdraw=600: is withdraw, Goldbar=700:is gold bar */
+	Type        BalanceRecordType   `json:"type,omitempty" valid:"type,r|i,e:0;"`               /* the balance record type, Trade=100: is trade type, TradeFee=110:is trade fee, Profit=200:is close profit, Blowup=210:is blowup, Transfer=300:is transfer, TransferInner=310:is transfer inner, Change=400: is manual change type, Topup=500: is topup, Withdraw=600: is withdraw, Goldbar=700:is gold bar */
 	Source      *string             `json:"source,omitempty" valid:"source,r|s,l:0;"`           /* the balance record source */
 	Target      int                 `json:"target,omitempty" valid:"target,r|i,r:0;"`           /* the balance target type */
 	Changed     decimal.Decimal     `json:"changed,omitempty" valid:"changed,r|f,r:0;"`         /* the balance change value */

@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/codingeasygo/util/converter"
+	"github.com/codingeasygo/util/xhash"
 	"github.com/codingeasygo/util/xmap"
 	"github.com/codingeasygo/web"
 	"github.com/gexservice/gexservice/base/define"
@@ -11,6 +12,7 @@ import (
 	"github.com/gexservice/gexservice/base/xlog"
 	"github.com/gexservice/gexservice/gexdb"
 	"github.com/gexservice/gexservice/market"
+	"github.com/jackc/pgx/v4"
 	"github.com/shopspring/decimal"
 )
 
@@ -172,8 +174,60 @@ func TransferBalanceH(s *web.Session) web.Result {
 	userID := s.Int64("user_id")
 	err = gexdb.TransferBalance(s.R.Context(), userID, userID, from, to, asset, value)
 	if err != nil {
-		xlog.Errorf("ChangeBalanceH change balance by %v,%v,%v,%v fail with %v", from, to, asset, value, err)
+		xlog.Errorf("TransferInnerH transfer balance by %v,%v,%v,%v fail with %v", from, to, asset, value, err)
 		return util.ReturnCodeLocalErr(s, define.ServerError, "srv-err", err)
+	}
+	return s.SendJSON(xmap.M{
+		"code": define.Success,
+	})
+}
+
+//TransferInnerH is http handler
+/**
+ *
+ * @api {GET} /usr/transferBalanceTo Transfer Inner
+ * @apiName TransferInner
+ * @apiGroup Balance
+ *
+ * @apiParam  {String} asset the balance asset to change
+ * @apiParam  {Number} value the transfer value
+ * @apiParam  {String} receiver the balance receiver
+ * @apiParam  {String} trade_pass the user trade pass
+ *
+ * @apiSuccess (Success) {Number} code the result code, see the common define <a href="#metadata-ReturnCode">ReturnCode</a>
+ *
+ * @apiSuccessExample {type} Success-Response:
+ * {
+ *     "code": 0
+ * }
+ */
+func TransferInnerH(s *web.Session) web.Result {
+	var asset string
+	var value decimal.Decimal
+	var receiver string
+	var tradePass string
+	err := s.ValidFormat(`
+		asset,r|s,l:0;
+		value,r|f,n:;
+		receiver,r|s,l:0;
+		trade_pass,r|s,l:0;
+	`, &asset, &value, &receiver, &tradePass)
+	if err != nil {
+		return util.ReturnCodeLocalErr(s, define.ArgsInvalid, "arg-err", err)
+	}
+	userID := s.Int64("user_id")
+	err = gexdb.UserVerifyTradePassword(s.R.Context(), userID, xhash.SHA1([]byte(tradePass)))
+	if err != nil {
+		return util.ReturnCodeLocalErr(s, gexdb.CodeTradePasswordInvalid, "arg-err", err)
+	}
+	err = gexdb.TransferInner(s.R.Context(), userID, userID, gexdb.BalanceAreaSpot, asset, value, receiver)
+	if err != nil {
+		code := define.ServerError
+		if err == pgx.ErrNoRows {
+			code = define.NotFound
+		}
+		xlog.Errorf("TransferInnerH trander inner by %v,%v,%v,%v,%v fail with %v", userID, gexdb.BalanceAreaSpot, asset, value, receiver, err)
+		return util.ReturnCodeLocalErr(s, code, "srv-err", err)
 	}
 	return s.SendJSON(xmap.M{
 		"code": define.Success,

@@ -136,8 +136,8 @@ func TestBalance(t *testing.T) {
 	}
 }
 
-func TestTransferChange(t *testing.T) {
-	user := testAddUser("TestTransferChange")
+func TestTransferBalance(t *testing.T) {
+	user := testAddUser("TestTransferBalance")
 	//inc
 	_, err := ChangeBalance(ctx, 100, user.TID, BalanceAreaFunds, "test", decimal.NewFromFloat(100))
 	if err != nil {
@@ -174,6 +174,102 @@ func TestTransferChange(t *testing.T) {
 		err = TransferBalance(ctx, 100, user.TID, BalanceAreaFunds, BalanceAreaSpot, "test", decimal.NewFromFloat(100))
 		return
 	})
+}
+
+func TestTransferInner(t *testing.T) {
+	var err error
+	receiver := testAddUser("TestTransferInnerReceiver")
+	{ //normal
+		sender := testAddUser("TestTransferInnerSender")
+		//inc
+		_, err = ChangeBalance(ctx, 100, sender.TID, BalanceAreaSpot, "test", decimal.NewFromFloat(100))
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		//to inner
+		err = TransferInner(ctx, 100, sender.TID, BalanceAreaSpot, "test", decimal.NewFromFloat(10), *receiver.Email)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		err = TransferInner(ctx, 100, sender.TID, BalanceAreaSpot, "test", decimal.NewFromFloat(10), *receiver.Phone)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		pgx.MockerStart()
+		defer pgx.MockerStop()
+		pgx.MockerSetCall("Pool.Begin", 1, "Rows.Scan", 1, 2, "Tx.Exec", 1, 2, 3).ShouldError(t).Call(func(trigger int) (res xmap.M, err error) {
+			err = TransferInner(ctx, 100, sender.TID, BalanceAreaSpot, "test", decimal.NewFromFloat(10), *receiver.Phone)
+			return
+		})
+	}
+	{ //email
+		prefix := "TestTransferInnerEmail"
+		account, email, password := prefix+"_acc", prefix+"@test.com", "123"
+		image := prefix + "_image"
+		sender := &User{
+			Type:      UserTypeNormal,
+			Role:      UserRoleNormal,
+			Name:      &prefix,
+			Account:   &account,
+			Email:     &email,
+			Image:     &image,
+			Password:  &password,
+			TradePass: &password,
+			External:  xsql.M{"abc": 1},
+			Status:    UserStatusNormal,
+		}
+		err = AddUser(ctx, sender)
+		if err != nil {
+			panic(err)
+		}
+		//inc
+		_, err = ChangeBalance(ctx, 100, sender.TID, BalanceAreaSpot, "test", decimal.NewFromFloat(100))
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		//to inner
+		err = TransferInner(ctx, 100, sender.TID, BalanceAreaSpot, "test", decimal.NewFromFloat(10), *receiver.Email)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+	}
+	{ //none
+		prefix := "TestTransferInnerNone"
+		account, password := prefix+"_acc", "123"
+		image := prefix + "_image"
+		sender := &User{
+			Type:      UserTypeNormal,
+			Role:      UserRoleNormal,
+			Name:      &prefix,
+			Account:   &account,
+			Image:     &image,
+			Password:  &password,
+			TradePass: &password,
+			External:  xsql.M{"abc": 1},
+			Status:    UserStatusNormal,
+		}
+		err = AddUser(ctx, sender)
+		if err != nil {
+			panic(err)
+		}
+		//inc
+		_, err = ChangeBalance(ctx, 100, sender.TID, BalanceAreaSpot, "test", decimal.NewFromFloat(100))
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		//to inner
+		err = TransferInner(ctx, 100, sender.TID, BalanceAreaSpot, "test", decimal.NewFromFloat(10), *receiver.Email)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+	}
 }
 
 func TestChangeBalance(t *testing.T) {

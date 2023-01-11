@@ -13,13 +13,14 @@ import (
 )
 
 func testAddUser(prefix string) (user *User) {
-	account, phone, password := prefix+"_acc", prefix+"_123", "123"
+	account, email, phone, password := prefix+"_acc", prefix+"@test.com", prefix+"_123", "123"
 	image := prefix + "_image"
 	user = &User{
 		Type:      UserTypeNormal,
 		Role:      UserRoleNormal,
 		Name:      &prefix,
 		Account:   &account,
+		Email:     &email,
 		Phone:     &phone,
 		Image:     &image,
 		Password:  &password,

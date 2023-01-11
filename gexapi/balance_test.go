@@ -53,6 +53,22 @@ func TestTransferBalance(t *testing.T) {
 	pgx.MockerSetCall("Tx.Exec", 1).Should(t, "code", define.ServerError).GetMap("/usr/transferBalance?from=%d&to=%d&asset=%v&value=10", gexdb.BalanceAreaFunds, gexdb.BalanceAreaSpot, spotBalanceQuote)
 }
 
+func TestTransferInner(t *testing.T) {
+	clearCookie()
+	ts.Should(t, "code", define.Success).GetMap("/pub/login?username=%v&password=%v", "abc2", "123")
+	ts.Should(t, "code", define.ArgsInvalid).GetMap("/usr/transferInner?asset=%v&value=10&receiver=%v&trade_pass=%v", spotBalanceQuote, *userabc0.Phone, "")
+	ts.Should(t, "code", define.NotFound).GetMap("/usr/transferInner?asset=%v&value=10&receiver=%v&trade_pass=%v", spotBalanceQuote, userabc0.TID, "123")
+	transferInner, _ := ts.Should(t, "code", define.Success).GetMap("/usr/transferInner?asset=%v&value=10&receiver=%v&trade_pass=%v", spotBalanceQuote, *userabc0.Phone, "123")
+	fmt.Printf("transferInner->%v\n", converter.JSON(transferInner))
+	//
+	//test error
+	pgx.MockerStart()
+	defer pgx.MockerStop()
+	pgx.MockerClear()
+	pgx.MockerSetCall("Rows.Scan", 1).Should(t, "code", gexdb.CodeTradePasswordInvalid).GetMap("/usr/transferInner?asset=%v&value=10&receiver=%v&trade_pass=%v", spotBalanceQuote, *userabc0.Phone, "123")
+	pgx.MockerSetCall("Tx.Exec", 1).Should(t, "code", define.ServerError).GetMap("/usr/transferInner?asset=%v&value=10&receiver=%v&trade_pass=%v", spotBalanceQuote, *userabc0.Phone, "123")
+}
+
 func TestChangeUserBalance(t *testing.T) {
 	user := testAddUser(gexdb.UserRoleNormal, "TestChangeBalance")
 	clearCookie()

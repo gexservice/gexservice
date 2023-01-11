@@ -50,6 +50,7 @@ func Handle(pre string, mux *web.SessionMux) {
 	mux.HandleFunc("^"+pre+"/usr/loadBalanceOverview(\\?.*)?$", LoadBalanceOverviewH)
 	mux.HandleFunc("^"+pre+"/usr/listBalance(\\?.*)?$", ListBalanceH)
 	mux.HandleFunc("^"+pre+"/usr/transferBalance(\\?.*)?$", TransferBalanceH)
+	mux.HandleFunc("^"+pre+"/usr/transferInner(\\?.*)?$", TransferInnerH)
 	mux.HandleFunc("^"+pre+"/usr/searchBalance(\\?.*)?$", SearchBalanceH)
 	mux.HandleFunc("^"+pre+"/usr/searchBalanceRecord(\\?.*)?$", SearchBalanceRecordH)
 	//withdraw

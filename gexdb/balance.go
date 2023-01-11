@@ -179,6 +179,85 @@ func TransferBalanceCall(caller crud.Queryer, ctx context.Context, creator, user
 	return
 }
 
+func TransferInner(ctx context.Context, creator, userID int64, area BalanceArea, asset string, value decimal.Decimal, receiverID string) (err error) {
+	tx, err := Pool().Begin(ctx)
+	if err != nil {
+		return
+	}
+	defer func() {
+		if err == nil {
+			err = tx.Commit(ctx)
+		} else {
+			tx.Rollback(ctx)
+		}
+	}()
+	err = TransferInnerCall(tx, ctx, creator, userID, area, asset, value, receiverID)
+	return
+}
+
+func TransferInnerCall(caller crud.Queryer, ctx context.Context, creator, userID int64, area BalanceArea, asset string, value decimal.Decimal, receiverID string) (err error) {
+	receiver, err := FindUserWherefCall(caller, ctx, false, "(email=$%v or phone=$%v)", receiverID)
+	if err != nil {
+		return
+	}
+	sender, err := FindUserCall(caller, ctx, userID, false)
+	if err != nil {
+		return
+	}
+	senderID := ""
+	if sender.Phone != nil && len(*sender.Phone) > 0 {
+		senderID = *sender.Phone
+	} else if sender.Email != nil && len(*sender.Email) > 0 {
+		senderID = *sender.Email
+	} else {
+		senderID = fmt.Sprintf("%d", sender.TID)
+	}
+	_, err = TouchMultiBalanceCall(caller, ctx, BalanceAreaArray{area}, []string{asset}, userID, receiver.TID)
+	if err != nil {
+		return
+	}
+	fromBalance := &Balance{
+		UserID: userID,
+		Area:   area,
+		Asset:  asset,
+		Free:   decimal.Zero.Sub(value),
+	}
+	err = IncreaseBalanceCall(caller, ctx, fromBalance)
+	if err != nil {
+		return
+	}
+	toBalance := &Balance{
+		UserID: receiver.TID,
+		Area:   area,
+		Asset:  asset,
+		Free:   value,
+	}
+	err = IncreaseBalanceCall(caller, ctx, toBalance)
+	if err != nil {
+		return
+	}
+	_, err = AddBalanceRecordCall(
+		caller, ctx,
+		&BalanceRecord{
+			Creator:     creator,
+			BalanceID:   fromBalance.TID,
+			Type:        BalanceRecordTypeTransferInner,
+			Target:      int(area),
+			Changed:     decimal.Zero.Sub(value),
+			Transaction: xsql.M{"receiver": receiverID},
+		},
+		&BalanceRecord{
+			Creator:     creator,
+			BalanceID:   toBalance.TID,
+			Type:        BalanceRecordTypeTransferInner,
+			Target:      int(area),
+			Changed:     value,
+			Transaction: xsql.M{"sender": senderID},
+		},
+	)
+	return
+}
+
 func ChangeBalance(ctx context.Context, creator, userID int64, area BalanceArea, asset string, changed decimal.Decimal) (balance *Balance, err error) {
 	tx, err := Pool().Begin(ctx)
 	if err != nil {

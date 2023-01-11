@@ -309,7 +309,7 @@ COMMENT ON COLUMN gex_balance_record.balance_id IS 'the balance id';
 -- Name: COLUMN gex_balance_record.type; Type: COMMENT; Schema: public;
 --
 
-COMMENT ON COLUMN gex_balance_record.type IS 'the balance record type, Trade=100: is trade type, TradeFee=110:is trade fee, Profit=200:is close profit, Blowup=210:is blowup, Transfer=300:is transfer, Change=400: is manual change type, Topup=500: is topup, Withdraw=600: is withdraw, Goldbar=700:is gold bar';
+COMMENT ON COLUMN gex_balance_record.type IS 'the balance record type, Trade=100: is trade type, TradeFee=110:is trade fee, Profit=200:is close profit, Blowup=210:is blowup, Transfer=300:is transfer, TransferInner=310:is transfer inner, Change=400: is manual change type, Topup=500: is topup, Withdraw=600: is withdraw, Goldbar=700:is gold bar';
 
 
 --
