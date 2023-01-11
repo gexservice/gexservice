@@ -125,22 +125,22 @@ func CountPendingOrderCall(caller crud.Queryer, ctx context.Context, userID int6
  * @apiParam  {Number} [limit] page limit
  */
 type OrderUnifySearcher struct {
-	Model Order `json:"model"`
+	Model Order `json:"model" from:"gex_order o join gex_user u on o.user_id=u.tid"`
 	Where struct {
-		UserID      xsql.Int64Array       `json:"user_id" cmp:"user_id=any($%v)" valid:"user_id,o|i,r:0;"`
-		Creator     xsql.Int64Array       `json:"creator" cmp:"creator=any($%v)" valid:"creator,o|i,r:0;"`
-		Area        OrderAreaArray        `json:"area" cmp:"area=any($%v)" valid:"area,o|i,e:0;"`
-		Symbol      string                `json:"symbol" cmp:"symbol=$%v"  valid:"symbol,o|s,l:0;"`
-		Side        OrderSideArray        `json:"side" cmp:"side=any($%v)" valid:"side,o|s,e:0;"`
-		Type        OrderTypeArray        `json:"type" cmp:"type=any($%v)" valid:"type,o|i,e:;"`
-		StartTime   xsql.Time             `json:"start_time" cmp:"update_time>=$%v" valid:"start_time,o|i,r:-1;"`
-		EndTime     xsql.Time             `json:"end_time" cmp:"update_time<$%v" valid:"end_time,o|i,r:-1;"`
-		TriggerType OrderTriggerTypeArray `json:"trigger_type" cmp:"trigger_type=any($%v)" valid:"trigger_type,o|i,e:;"`
-		Status      OrderStatusArray      `json:"status" cmp:"status=any($%v)" valid:"status,o|i,e:;"`
-		Key         string                `json:"key" cmp:"(tid::text ilike $%v or order_id ilike $%v)" valid:"key,o|s,l:0;"`
+		UserID      xsql.Int64Array       `json:"user_id" cmp:"o.user_id=any($%v)" valid:"user_id,o|i,r:0;"`
+		Creator     xsql.Int64Array       `json:"creator" cmp:"o.creator=any($%v)" valid:"creator,o|i,r:0;"`
+		Area        OrderAreaArray        `json:"area" cmp:"o.area=any($%v)" valid:"area,o|i,e:0;"`
+		Symbol      string                `json:"symbol" cmp:"o.symbol=$%v"  valid:"symbol,o|s,l:0;"`
+		Side        OrderSideArray        `json:"side" cmp:"o.side=any($%v)" valid:"side,o|s,e:0;"`
+		Type        OrderTypeArray        `json:"type" cmp:"o.type=any($%v)" valid:"type,o|i,e:;"`
+		StartTime   xsql.Time             `json:"start_time" cmp:"o.update_time>=$%v" valid:"start_time,o|i,r:-1;"`
+		EndTime     xsql.Time             `json:"end_time" cmp:"o.update_time<$%v" valid:"end_time,o|i,r:-1;"`
+		TriggerType OrderTriggerTypeArray `json:"trigger_type" cmp:"o.trigger_type=any($%v)" valid:"trigger_type,o|i,e:;"`
+		Status      OrderStatusArray      `json:"status" cmp:"o.status=any($%v)" valid:"status,o|i,e:;"`
+		Key         string                `json:"key" cmp:"(o.order_id ilike $%v or u.tid::text like $%v or u.name like $%v or u.email like $%v or u.phone like $%v or u.account like $%v)" valid:"key,o|s,l:0;"`
 	} `json:"where" join:"and" valid:"inline"`
 	Page struct {
-		Order string `json:"order" default:"order by update_time desc" valid:"order,o|s,l:0;"`
+		Order string `json:"order" default:"order by o.update_time desc" valid:"order,o|s,l:0;"`
 		Skip  int    `json:"skip" valid:"skip,o|i,r:-1;"`
 		Limit int    `json:"limit" valid:"limit,o|i,r:0;"`
 	} `json:"page" valid:"inline"`
@@ -149,10 +149,10 @@ type OrderUnifySearcher struct {
 		OrderIDs []int64  `json:"order_ids" scan:"tid"`
 		UserIDs  []int64  `json:"user_ids" scan:"user_id"`
 		Symbols  []string `json:"symbols" scan:"symbol"`
-	} `json:"query" filter:"^transaction#all"`
+	} `json:"query" filter:"o.^transaction#all"`
 	Count struct {
 		Total int64 `json:"total" scan:"tid"`
-	} `json:"count" filter:"count(tid)#all"`
+	} `json:"count" filter:"o.count(tid)#all"`
 }
 
 func (o *OrderUnifySearcher) Apply(ctx context.Context) (err error) {
